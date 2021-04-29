@@ -22,7 +22,7 @@ class Student(models.Model):
     application_type = models.CharField(max_length=20, choices=ApplicationType.choices, default=ApplicationType.web)
     register_link = models.CharField(max_length=200, blank=True, null=True, verbose_name='Ссылка на регистрацию')
     courses = models.ManyToManyField('Course', through='StudentCourse')
-    lessons = models.ManyToManyField('Lesson')
+    lessons = models.ManyToManyField('Lesson', through='StudentLesson')
 
 
 class Stream(models.Model):
@@ -58,12 +58,12 @@ class LessonUrl(models.Model):
 
 
 class StudentCourse(models.Model):
-    student = models.OneToOneField(Student, on_delete=models.CASCADE)
-    course = models.OneToOneField(Course, on_delete=models.CASCADE)
-    stream = models.ForeignKey(Stream, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    stream = models.ForeignKey(Stream, on_delete=models.PROTECT)
 
 
 class StudentLesson(models.Model):
-    student = models.OneToOneField(Student, on_delete=models.CASCADE)
-    lesson = models.OneToOneField(Lesson, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
     has_homework = models.BooleanField(verbose_name='Есть домашнее задание', default=False)
