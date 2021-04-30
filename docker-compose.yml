@@ -13,6 +13,11 @@ services:
       - ./src:/parcel
     ports:
       - 3307:3306
+  redis:
+    image: redis:rc-alpine3.12
+    restart: on-failure
+    ports:
+      - 6379:6379
   web:
     build: .
     command: python manage.py runserver 0.0.0.0:8000
@@ -22,3 +27,4 @@ services:
       - 8000:8000
     depends_on:
     - parcel-db
+    - redis
