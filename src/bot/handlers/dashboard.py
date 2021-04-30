@@ -84,7 +84,7 @@ async def set_course(cb: types.callback_query, state: FSMContext):
             last_name=data['last_name'],
             tg_id=cb.from_user.id,
             phone=data['phone'],
-            application_type='telegram',
+            application_type=StudentTable.ApplicationType.telegram,
             is_client=False
         )
         session.add(lead)

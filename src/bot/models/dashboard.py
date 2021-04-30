@@ -9,8 +9,8 @@ from bot.models.db import Base
 
 class StudentTable(Base):
     class ApplicationType(enum.Enum):
-        web = 1
-        telegram = 2
+        web = '1'
+        telegram = '2'
 
     __tablename__ = 'dashboard_student'
 
@@ -19,7 +19,7 @@ class StudentTable(Base):
     last_name = Column(String(50))
     tg_id = Column(BIGINT, nullable=True)
     phone = Column(String(20))
-    application_type = Column(Enum(ApplicationType))
+    application_type = Column(Enum(ApplicationType, values_callable=lambda x: [e.value for e in x]), default=ApplicationType.web.value)
     is_client = Column(Boolean)
 
     courses = relationship('StudentCourse', back_populates='students')
@@ -35,21 +35,21 @@ class StreamTable(Base):
 
 class CourseTable(Base):
     class CategoryType(enum.Enum):
-        game_dev = 1
-        web = 2
+        game_dev = '1'
+        web = '2'
 
     class DifficultyType(enum.Enum):
-        beginner = 1
-        intermediate = 2
-        advanced = 3
+        beginner = '1'
+        intermediate = '2'
+        advanced = '3'
 
     __tablename__ = 'dashboard_course'
 
     id = Column(BIGINT, primary_key=True)
     name = Column(String(50))
     info = Column(LONGTEXT, nullable=True)
-    category = Column(Enum(CategoryType))
-    difficulty = Column(Enum(DifficultyType))
+    category = Column(Enum(CategoryType, values_callable=lambda x: [e.value for e in x]))
+    difficulty = Column(Enum(DifficultyType), values_callable=lambda x: [e.value for e in x])
     price = Column(BIGINT)
 
     students = relationship('StudentCourse', back_populates='courses')
