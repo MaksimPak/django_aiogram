@@ -43,7 +43,7 @@ class CourseTable(Base):
         intermediate = 2
         advanced = 3
 
-    __tablename__ = 'dashbpard_course'
+    __tablename__ = 'dashboard_course'
 
     id = Column(BIGINT, primary_key=True)
     name = Column(String(50))
@@ -78,7 +78,7 @@ class StudentCourse(Base):
 
     id = Column(BIGINT, primary_key=True)
     course_id = Column(BIGINT, ForeignKey('dashboard_course.id'), nullable=False)
-    stream_id = Column(BIGINT, ForeignKey('dashboard_stream.id'), nullable=False)
+    stream_id = Column(BIGINT, ForeignKey('dashboard_stream.id'))
     student_id = Column(BIGINT, ForeignKey('dashboard_student.id'), nullable=False)
 
     students = relationship('StudentTable', back_populates='courses')

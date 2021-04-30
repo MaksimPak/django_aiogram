@@ -68,6 +68,9 @@ class Course(models.Model):
     difficulty = models.CharField(max_length=20, choices=DifficultyType.choices)
     price = models.BigIntegerField()
 
+    def __str__(self):
+        return self.name
+
 
 class Lesson(models.Model):
     title = models.CharField(max_length=50, verbose_name='Название урока')
@@ -83,7 +86,7 @@ class LessonUrl(models.Model):
 class StudentCourse(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    stream = models.ForeignKey(Stream, on_delete=models.PROTECT)
+    stream = models.ForeignKey(Stream, on_delete=models.PROTECT, blank=True, null=True)
 
 
 class StudentLesson(models.Model):

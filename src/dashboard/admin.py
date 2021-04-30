@@ -22,3 +22,4 @@ class ClientAdmin(admin.ModelAdmin):
 admin.site.register(models.User, UserAdmin)
 admin.site.register(models.Lead, LeadAdmin)
 admin.site.register(models.Client, ClientAdmin)
+admin.site.register(models.Course)
