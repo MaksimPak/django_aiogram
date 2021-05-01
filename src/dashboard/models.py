@@ -2,6 +2,7 @@ import uuid
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.template.defaultfilters import truncatewords
 
 from dashboard.misc import LeadManager, ClientManager
 
@@ -34,8 +35,8 @@ class Lead(Student):
 
     class Meta:
         proxy = True
-        verbose_name = 'Lead'
-        verbose_name_plural = 'Leads'
+        verbose_name = 'Лид'
+        verbose_name_plural = 'Лиды'
 
 
 class Client(Student):
@@ -44,8 +45,8 @@ class Client(Student):
 
     class Meta:
         proxy = True
-        verbose_name = 'client'
-        verbose_name_plural = 'clients'
+        verbose_name = 'Клиент'
+        verbose_name_plural = 'Клиенты'
 
 
 class Stream(models.Model):
@@ -62,19 +63,34 @@ class Course(models.Model):
         medium = '2', 'Intermediate',
         hard = '3', 'Advanced'
 
-    name = models.CharField(max_length=50)
-    info = models.TextField(blank=True, null=True)
-    category = models.CharField(max_length=20, choices=CategoryType.choices)
-    difficulty = models.CharField(max_length=20, choices=DifficultyType.choices)
-    price = models.BigIntegerField()
+    name = models.CharField(max_length=50, verbose_name='Название курса')
+    info = models.TextField(blank=True, null=True, verbose_name='Описание')
+    category = models.CharField(max_length=20, choices=CategoryType.choices, verbose_name='Категория')
+    difficulty = models.CharField(max_length=20, choices=DifficultyType.choices, verbose_name='Сложность')
+    price = models.BigIntegerField(verbose_name='Цена')
 
     def __str__(self):
         return self.name
 
+    @property
+    def short_info(self):
+        return truncatewords(self.info, 10)
+
+    class Meta:
+        verbose_name = 'Курс'
+        verbose_name_plural = 'Курсы'
+
 
 class Lesson(models.Model):
     title = models.CharField(max_length=50, verbose_name='Название урока')
-    info = models.TextField(blank=True, null=True)
+    info = models.TextField(blank=True, null=True, verbose_name='Описание')
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = 'Урок'
+        verbose_name_plural = 'Уроки'
 
 
 class LessonUrl(models.Model):

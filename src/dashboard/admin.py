@@ -9,21 +9,25 @@ import requests
 from dashboard import models
 
 
-class CourseList(admin.TabularInline):
+class StudentCourseList(admin.TabularInline):
     model = models.StudentCourse
 
 
 class LeadAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__', 'application_type', 'phone')
+    list_per_page = 20
     list_display_links = ('__str__',)
-    inlines = (CourseList,)
+    inlines = (StudentCourseList,)
+    search_fields = ('id', 'first_name', 'last_name')
 
 
 class ClientAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__', 'phone')
+    list_per_page = 20
     list_display_links = ('__str__',)
-    inlines = (CourseList,)
+    inlines = (StudentCourseList,)
     actions = ('send_message',)
+    search_fields = ('id', 'first_name', 'last_name')
 
     def send_message(self, request, qs):
         clients = models.Client.objects.all()
@@ -38,7 +42,24 @@ class ClientAdmin(admin.ModelAdmin):
     send_message.short_description = 'Массовая рассылка'
 
 
+class CourseAdmin(admin.ModelAdmin):
+    list_display = ('id', '__str__', 'short_info', 'category', 'difficulty', 'price')
+    list_display_links = ('__str__',)
+    list_per_page = 20
+    search_fields = ('id', 'name')
+    list_filter = ('category', 'price',)
+    inlines = (StudentCourseList,)
+
+
+class LessonAdmin(admin.ModelAdmin):
+    list_display = ('id', '__str__', 'info')
+    list_display_links = ('__str__',)
+    list_per_page = 20
+    search_fields = ('id', 'title')
+
+
 admin.site.register(models.User, UserAdmin)
 admin.site.register(models.Lead, LeadAdmin)
 admin.site.register(models.Client, ClientAdmin)
-admin.site.register(models.Course)
+admin.site.register(models.Course, CourseAdmin)
+admin.site.register(models.Lesson, LessonAdmin)
