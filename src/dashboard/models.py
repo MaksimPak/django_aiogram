@@ -10,6 +10,10 @@ from dashboard.misc import LeadManager, ClientManager
 class User(AbstractUser):
     pass
 
+    class Meta:
+        verbose_name = 'Админ'
+        verbose_name_plural = 'Админы'
+
 
 class Student(models.Model):
     class ApplicationType(models.TextChoices):
@@ -18,12 +22,14 @@ class Student(models.Model):
 
     first_name = models.CharField(max_length=50, verbose_name='Имя')
     last_name = models.CharField(max_length=50, verbose_name='Фамилия')
-    tg_id = models.BigIntegerField(verbose_name='Telegram ID', blank=True, null=True)
-    phone = models.CharField(max_length=20, verbose_name='Контактный телефон')
+    tg_id = models.BigIntegerField(verbose_name='Telegram ID', blank=True, null=True, unique=True)
+    phone = models.CharField(max_length=20, verbose_name='Контактный телефон', unique=True)
     application_type = models.CharField(verbose_name='Как заполнил форму', max_length=20, choices=ApplicationType.choices, default=ApplicationType.web)
     is_client = models.BooleanField(verbose_name='Клиент', default=False)
     courses = models.ManyToManyField('Course', through='StudentCourse')
-    lessons = models.ManyToManyField('Lesson', through='StudentLesson')
+
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
@@ -52,6 +58,9 @@ class Client(Student):
 class Stream(models.Model):
     name = models.CharField(max_length=50)
 
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
+
 
 class Course(models.Model):
     class CategoryType(models.TextChoices):
@@ -68,6 +77,10 @@ class Course(models.Model):
     category = models.CharField(max_length=20, choices=CategoryType.choices, verbose_name='Категория')
     difficulty = models.CharField(max_length=20, choices=DifficultyType.choices, verbose_name='Сложность')
     price = models.BigIntegerField(verbose_name='Цена')
+    lessons = models.ManyToManyField('Lesson', through='LessonCourse')
+
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
 
     def __str__(self):
         return self.name
@@ -84,6 +97,9 @@ class Course(models.Model):
 class Lesson(models.Model):
     title = models.CharField(max_length=50, verbose_name='Название урока')
     info = models.TextField(blank=True, null=True, verbose_name='Описание')
+    video = models.FileField(verbose_name='Видео у уроку')  # todo: Typo
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
 
     def __str__(self):
         return self.title
@@ -95,8 +111,11 @@ class Lesson(models.Model):
 
 class LessonUrl(models.Model):
     student = models.OneToOneField(Student, on_delete=models.CASCADE, primary_key=True)
-    hash = models.UUIDField(default=uuid.uuid4, unique=True)
+    hash = models.CharField(max_length=36, default=uuid.uuid4, unique=True)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, verbose_name='Урок')
+
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
 
 
 class StudentCourse(models.Model):
@@ -104,8 +123,14 @@ class StudentCourse(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     stream = models.ForeignKey(Stream, on_delete=models.PROTECT, blank=True, null=True)
 
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
 
-class StudentLesson(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+
+class LessonCourse(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
     has_homework = models.BooleanField(verbose_name='Есть домашнее задание', default=False)
+
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True)

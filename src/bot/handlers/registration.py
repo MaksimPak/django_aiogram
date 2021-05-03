@@ -58,7 +58,7 @@ async def set_last_name(message: types.Message, state: FSMContext):
 
 
 @dp.message_handler(state=RegistrationState.phone)
-async def set_last_name(message: types.Message, state: FSMContext):
+async def set_phone(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['phone'] = message.text
 
@@ -66,7 +66,7 @@ async def set_last_name(message: types.Message, state: FSMContext):
         courses = await session.execute(select(CourseTable.id, CourseTable.name))
 
     kb = InlineKeyboardMarkup()
-    btns = [InlineKeyboardButton(name, callback_data=f'course_{idx}') for idx, name in courses]
+    btns = [InlineKeyboardButton(name, callback_data=f'course|{idx}') for idx, name in courses]
     for btn in btns:
         kb.insert(btn)
 
@@ -74,9 +74,11 @@ async def set_last_name(message: types.Message, state: FSMContext):
     await RegistrationState.selected_course.set()
 
 
-@dp.callback_query_handler(lambda x: 'course_' in x.data, state=RegistrationState.selected_course)
+@dp.callback_query_handler(lambda x: 'course|' in x.data, state=RegistrationState.selected_course)
 async def set_course(cb: types.callback_query, state: FSMContext):
-    _, course_id = cb.data.split('_')
+    await bot.answer_callback_query(cb.id)
+
+    _, course_id = cb.data.split('|')
     data = await state.get_data()
     async with SessionLocal() as session:
         lead = StudentTable(
@@ -97,3 +99,4 @@ async def set_course(cb: types.callback_query, state: FSMContext):
         await session.commit()
 
     await bot.send_message(cb.from_user.id, 'Done')
+    await state.finish()

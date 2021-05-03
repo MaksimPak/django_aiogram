@@ -11,6 +11,12 @@ from dashboard import models
 
 class StudentCourseList(admin.TabularInline):
     model = models.StudentCourse
+    extra = 1
+
+
+class LessonCourseList(admin.TabularInline):
+    model = models.LessonCourse
+    extra = 1
 
 
 class LeadAdmin(admin.ModelAdmin):
@@ -19,6 +25,8 @@ class LeadAdmin(admin.ModelAdmin):
     list_display_links = ('__str__',)
     inlines = (StudentCourseList,)
     search_fields = ('id', 'first_name', 'last_name')
+    ordering = ('id',)
+    date_hierarchy = 'created_at'
 
 
 class ClientAdmin(admin.ModelAdmin):
@@ -28,6 +36,8 @@ class ClientAdmin(admin.ModelAdmin):
     inlines = (StudentCourseList,)
     actions = ('send_message',)
     search_fields = ('id', 'first_name', 'last_name')
+    ordering = ('id',)
+    date_hierarchy = 'created_at'
 
     def send_message(self, request, qs):
         clients = models.Client.objects.all()
@@ -48,7 +58,9 @@ class CourseAdmin(admin.ModelAdmin):
     list_per_page = 20
     search_fields = ('id', 'name')
     list_filter = ('category', 'price',)
-    inlines = (StudentCourseList,)
+    inlines = (StudentCourseList, LessonCourseList)
+    ordering = ('id',)
+    date_hierarchy = 'created_at'
 
 
 class LessonAdmin(admin.ModelAdmin):
@@ -56,6 +68,8 @@ class LessonAdmin(admin.ModelAdmin):
     list_display_links = ('__str__',)
     list_per_page = 20
     search_fields = ('id', 'title')
+    ordering = ('id',)
+    date_hierarchy = 'created_at'
 
 
 admin.site.register(models.User, UserAdmin)

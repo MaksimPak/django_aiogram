@@ -19,10 +19,12 @@ logging.basicConfig(level=logging.INFO)
 
 
 def setup():
+    from bot import filters
     from bot.utils import executor
     import django
 
     django.setup()
+    filters.setup(dp)
 
     logging.info("Configuring handlers...")
     # noinspection PyUnresolvedReferences
