@@ -4,6 +4,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
+from bot import config
 from bot.misc import dp, bot
 from bot.models.db import SessionLocal
 from bot.models.dashboard import StudentTable, StudentCourse, CourseTable, LessonCourse, LessonTable, LessonUrlTable
@@ -67,7 +68,7 @@ async def get_lesson(cb: types.callback_query):
             session.add(lesson_url)
         await session.commit()
         kb = InlineKeyboardMarkup()
-        kb.add(InlineKeyboardButton('Watch video', url=f'http://127.0.0.1:8000/dashboard/watch/{lesson_url.hash}'))
+        kb.add(InlineKeyboardButton('Watch video', url=f'{config.DOMAIN}/dashboard/watch/{lesson_url.hash}'))
         await bot.send_message(
             cb.from_user.id,
             f'{lesson.title}\n\n'
