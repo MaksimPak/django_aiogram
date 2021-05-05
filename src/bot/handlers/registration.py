@@ -7,14 +7,15 @@ from sqlalchemy import select
 
 from bot.misc import dp, bot
 from bot.models.db import SessionLocal
-from bot.models.dashboard import StudentTable, CourseTable, StudentCourse
+from bot.models.dashboard import StudentTable, CourseTable, StudentCourse, CategoryType
 
 
 class RegistrationState(StatesGroup):
+    lang = State()
     first_name = State()
     last_name = State()
     phone = State()
-    selected_course = State()
+    selected_field = State()
 
 
 @dp.message_handler(state='*', commands='cancel')
@@ -35,7 +36,24 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
 @dp.message_handler(CommandStart())
 async def greetings(message: types.Message):
-    await message.reply('Привет! Для того что-бы продолжить напиши свое имя!')
+    kb = InlineKeyboardMarkup()
+    btns = [InlineKeyboardButton(name.capitalize(), callback_data=f'lang|{member.value}')
+            for name, member in StudentTable.LanguageType.__members__.items()]
+
+    for btn in btns:
+        kb.insert(btn)
+    await bot.send_message(message.from_user.id, 'Привет! Выбери язык', reply_markup=kb)
+    await RegistrationState.lang.set()
+
+
+@dp.callback_query_handler(lambda x: 'lang|' in x.data, state=RegistrationState.lang)
+async def set_lang(cb: types.callback_query, state: FSMContext):
+    await bot.answer_callback_query(cb.id)
+    _, lang = cb.data.split('|')
+    async with state.proxy() as data:
+        data['lang'] = lang
+
+    await bot.send_message(cb.from_user.id, 'Как тебя зовут?')
     await RegistrationState.first_name.set()
 
 
@@ -62,41 +80,35 @@ async def set_phone(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['phone'] = message.text
 
-    async with SessionLocal() as session:
-        courses = await session.execute(select(CourseTable.id, CourseTable.name))
-
     kb = InlineKeyboardMarkup()
-    btns = [InlineKeyboardButton(name, callback_data=f'course|{idx}') for idx, name in courses]
+    btns = [InlineKeyboardButton(name.capitalize(), callback_data=f'field|{member.value}')
+            for name, member in CategoryType.__members__.items()]
     for btn in btns:
         kb.insert(btn)
 
-    await bot.send_message(message.chat.id, 'Select a course', reply_markup=kb)
-    await RegistrationState.selected_course.set()
+    await bot.send_message(message.chat.id, 'В каком направлении вы хотите учиться?', reply_markup=kb)
+    await RegistrationState.selected_field.set()
 
 
-@dp.callback_query_handler(lambda x: 'course|' in x.data, state=RegistrationState.selected_course)
+@dp.callback_query_handler(lambda x: 'field|' in x.data, state=RegistrationState.selected_field)
 async def set_course(cb: types.callback_query, state: FSMContext):
     await bot.answer_callback_query(cb.id)
 
-    _, course_id = cb.data.split('|')
+    _, field = cb.data.split('|')
     data = await state.get_data()
     async with SessionLocal() as session:
         lead = StudentTable(
             first_name=data['first_name'],
             last_name=data['last_name'],
             tg_id=cb.from_user.id,
+            language_type=data['lang'],
             phone=data['phone'],
+            chosen_field=field,
             application_type=StudentTable.ApplicationType.telegram,
             is_client=False
         )
         session.add(lead)
         await session.commit()
-        student_course_record = StudentCourse(
-            course_id=course_id,
-            student_id=lead.id,
-        )
-        session.add(student_course_record)
-        await session.commit()
 
-    await bot.send_message(cb.from_user.id, 'Done')
+    await bot.send_message(cb.from_user.id, 'Вы зарегистрированы! В ближайшее время с вами свяжется наш оператор')
     await state.finish()

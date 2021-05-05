@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from bot import config
 from bot.misc import dp, bot
 from bot.models.db import SessionLocal
-from bot.models.dashboard import StudentTable, StudentCourse, CourseTable, LessonCourse, LessonTable, LessonUrlTable
+from bot.models.dashboard import StudentTable, StudentCourse, CourseTable, LessonTable, LessonUrlTable
 
 
 @dp.message_handler(state='*', commands='courses', is_client=True)

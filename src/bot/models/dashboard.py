@@ -9,7 +9,16 @@ from sqlalchemy.orm import relationship
 from bot.models.db import Base
 
 
+class CategoryType(enum.Enum):
+    game_dev = '1'
+    web = '2'
+
+
 class StudentTable(Base):
+    class LanguageType(enum.Enum):
+        russian = '1'
+        uzbek = '2'
+
     class ApplicationType(enum.Enum):
         web = '1'
         telegram = '2'
@@ -20,9 +29,11 @@ class StudentTable(Base):
     first_name = Column(String(50))
     last_name = Column(String(50))
     tg_id = Column(BIGINT, nullable=True, unique=True)
+    language_type = Column(Enum(LanguageType, values_callable=lambda x: [e.value for e in x]), default=LanguageType.russian.value)
     phone = Column(String(20), unique=True)
+    chosen_field = Column(Enum(CategoryType, values_callable=lambda x: [e.value for e in x]))
     application_type = Column(Enum(ApplicationType, values_callable=lambda x: [e.value for e in x]), default=ApplicationType.web.value)
-    is_client = Column(Boolean)
+    is_client = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
@@ -41,10 +52,6 @@ class StreamTable(Base):
 
 
 class CourseTable(Base):
-    class CategoryType(enum.Enum):
-        game_dev = '1'
-        web = '2'
-
     class DifficultyType(enum.Enum):
         beginner = '1'
         intermediate = '2'
@@ -63,7 +70,6 @@ class CourseTable(Base):
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
 
     students = relationship('StudentCourse', back_populates='courses')
-    lessons = relationship('LessonCourse', back_populates='courses')
 
 
 class LessonTable(Base):
@@ -72,12 +78,12 @@ class LessonTable(Base):
     id = Column(BIGINT, primary_key=True)
     title = Column(String(50))
     info = Column(LONGTEXT, nullable=True)
-    # todo: Add video field
+    video = Column(String(100))
+    course = Column(BIGINT, ForeignKey('dashboard_course.id'))
+    has_homework = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
-
-    courses = relationship('LessonCourse', back_populates='lessons')
 
 
 class LessonUrlTable(Base):
@@ -105,17 +111,3 @@ class StudentCourse(Base):
     courses = relationship('CourseTable', back_populates='students')
     students = relationship('StudentTable', back_populates='courses')
 
-
-class LessonCourse(Base):
-    __tablename__ = 'dashboard_lessoncourse'
-
-    id = Column(BIGINT, primary_key=True)
-    has_homework = Column(Boolean, default=False)
-    lesson_id = Column(BIGINT, ForeignKey('dashboard_lesson.id'), nullable=False)
-    course_id = Column(BIGINT, ForeignKey('dashboard_course.id'), nullable=False)
-
-    created_at = Column(DateTime, default=datetime.datetime.now)
-    updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
-
-    courses = relationship('CourseTable', back_populates='lessons')
-    lessons = relationship('LessonTable', back_populates='courses')

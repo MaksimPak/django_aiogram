@@ -5,8 +5,8 @@ Are you sure you want to execute this action ?
 
 <form action="" method="POST">
     {% csrf_token %}
-{% for client in clients %}
-    <input type="hidden" name="_selected_action" value="{{ client.pk }}" />
+{% for entity in entities %}
+    <input type="hidden" name="_selected_action" value="{{ entity.pk }}" />
 {% endfor %}
     <textarea name="message" id="" cols="30" rows="10"></textarea>
     <input type="hidden" name="action" value="send_message" />
