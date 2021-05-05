@@ -63,6 +63,7 @@ class CourseTable(Base):
     name = Column(String(50))
     info = Column(LONGTEXT, nullable=True)
     category = Column(Enum(CategoryType, values_callable=lambda x: [e.value for e in x]))
+    # todo: Add field add_message
     difficulty = Column(Enum(DifficultyType, values_callable=lambda x: [e.value for e in x]))
     price = Column(BIGINT)
 

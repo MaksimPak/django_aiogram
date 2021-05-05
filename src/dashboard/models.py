@@ -1,8 +1,10 @@
+import os
 import uuid
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.template.defaultfilters import truncatewords, truncatechars
+import requests
 
 from dashboard.misc import LeadManager, ClientManager
 
@@ -83,6 +85,7 @@ class Course(models.Model):
     name = models.CharField(max_length=50, verbose_name='Название курса')
     info = models.TextField(blank=True, null=True, verbose_name='Описание')
     category = models.CharField(max_length=20, choices=CategoryType.choices, verbose_name='Категория')
+    add_message = models.CharField(max_length=200, verbose_name='Сообщение для отправки студенту после добавления', blank=True, null=True)
     difficulty = models.CharField(max_length=20, choices=DifficultyType.choices, verbose_name='Сложность')
     price = models.BigIntegerField(verbose_name='Цена')
 
@@ -139,3 +142,10 @@ class StudentCourse(models.Model):
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True)
+
+    def save(self, *args, **kwargs):
+        super(StudentCourse, self).save(*args, **kwargs)
+        url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage?chat_id={self.student.tg_id}&text={self.course.add_message}"
+        requests.get(url)
+
+        return super(StudentCourse, self).save(*args, **kwargs)
