@@ -142,6 +142,3 @@ cython_debug/
 
 media/
 !media/.gitkeep
-
-static/
-!static/.gitkeep

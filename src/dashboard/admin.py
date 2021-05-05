@@ -22,7 +22,8 @@ class LessonCourseList(admin.TabularInline):
 
 
 class LeadAdmin(admin.ModelAdmin):
-    list_display = ('id', '__str__', 'application_type', 'phone')
+    list_display = ('id', '__str__', 'application_type', 'phone', 'is_client',)
+    list_editable = ('is_client',)
     list_per_page = 20
     list_display_links = ('__str__',)
     inlines = (StudentCourseList,)
@@ -30,9 +31,15 @@ class LeadAdmin(admin.ModelAdmin):
     ordering = ('id',)
     date_hierarchy = 'created_at'
 
+    class Media:
+        js = (
+            'dashboard/js/admin.js',  # project's static folder ( /static/js/myscript.js )
+        )
+
 
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ('id', '__str__', 'phone')
+    list_display = ('id', '__str__', 'phone', 'is_client',)
+    list_editable = ('is_client',)
     list_per_page = 20
     list_display_links = ('__str__',)
     inlines = (StudentCourseList,)
