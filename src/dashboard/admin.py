@@ -11,11 +11,13 @@ from dashboard import models
 
 class StudentCourseList(admin.TabularInline):
     model = models.StudentCourse
+    classes = ('collapse',)
     extra = 1
 
 
 class LessonCourseList(admin.TabularInline):
     model = models.LessonCourse
+    classes = ('collapse',)
     extra = 1
 
 
@@ -64,12 +66,14 @@ class CourseAdmin(admin.ModelAdmin):
 
 
 class LessonAdmin(admin.ModelAdmin):
-    list_display = ('id', '__str__', 'info')
+    list_display = ('id', '__str__', 'info', 'video')
     list_display_links = ('__str__',)
     list_per_page = 20
     search_fields = ('id', 'title')
+    list_filter = ('lessoncourse__course__name',)
     ordering = ('id',)
     date_hierarchy = 'created_at'
+    inlines = (LessonCourseList,)
 
 
 admin.site.register(models.User, UserAdmin)
