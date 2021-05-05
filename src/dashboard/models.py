@@ -37,6 +37,7 @@ class Student(models.Model):
     chosen_field = models.CharField(max_length=20, verbose_name='Желанная отрасль', choices=CategoryType.choices)
     application_type = models.CharField(verbose_name='Как заполнил форму', max_length=20, choices=ApplicationType.choices, default=ApplicationType.web)
     is_client = models.BooleanField(verbose_name='Клиент', default=False)
+    # todo: add chechkout date field
     courses = models.ManyToManyField('Course', through='StudentCourse')
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True)
