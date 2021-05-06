@@ -64,7 +64,7 @@ class ClientAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     list_per_page = 20
     list_filter = ('studentcourse__course__name',)
     list_display_links = ('__str__',)
-    actions = ('send_message',)
+    actions = ('send_message', 'send_checkout')
     search_fields = ('id', 'first_name', 'last_name')
     ordering = ('id',)
     date_hierarchy = 'created_at'
@@ -72,7 +72,11 @@ class ClientAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     def send_message(self, request, qs, checkout=False):
         return super().send_message(request, qs)
 
+    def send_checkout(self, request, qs, checkout=True):
+        return super().send_message(request, qs, checkout)
+
     send_message.short_description = 'Массовая рассылка'
+    send_checkout.short_description = 'Рассылка чекаута'
 
 
 class CourseAdmin(admin.ModelAdmin):

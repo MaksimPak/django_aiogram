@@ -28,8 +28,9 @@ class Student(models.Model):
         uz = '2', 'Uzbek'
 
     class ApplicationType(models.TextChoices):
-        web = '1', 'Web',
+        admin = '1', 'Admin',
         telegram = '2', 'Telegram'
+        web = '3', 'Web'
 
     first_name = models.CharField(max_length=50, verbose_name='Имя')
     last_name = models.CharField(max_length=50, verbose_name='Фамилия')
@@ -37,9 +38,9 @@ class Student(models.Model):
     language_type = models.CharField(max_length=20, verbose_name='Язык ученика', choices=LanguageType.choices, default=LanguageType.ru)
     phone = models.CharField(max_length=20, verbose_name='Контактный телефон', unique=True)
     chosen_field = models.CharField(max_length=20, verbose_name='Желанная отрасль', choices=CategoryType.choices)
-    application_type = models.CharField(verbose_name='Как заполнил форму', max_length=20, choices=ApplicationType.choices, default=ApplicationType.web)
+    application_type = models.CharField(verbose_name='Как заполнил форму', max_length=20, choices=ApplicationType.choices, default=ApplicationType.admin)
     is_client = models.BooleanField(verbose_name='Клиент', default=False)
-    # todo: add chechkout date field
+    checkout_date = models.DateTimeField(blank=True, null=True, verbose_name='Дата чекаута')
     courses = models.ManyToManyField('Course', through='StudentCourse')
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True)
@@ -85,7 +86,7 @@ class Course(models.Model):
     name = models.CharField(max_length=50, verbose_name='Название курса')
     info = models.TextField(blank=True, null=True, verbose_name='Описание')
     category = models.CharField(max_length=20, choices=CategoryType.choices, verbose_name='Категория')
-    add_message = models.CharField(max_length=200, verbose_name='Сообщение для отправки студенту после добавления', blank=True, null=True)
+    add_message = models.TextField(verbose_name='Сообщение для отправки студенту после добавления', blank=True, null=True)
     difficulty = models.CharField(max_length=20, choices=DifficultyType.choices, verbose_name='Сложность')
     price = models.BigIntegerField(verbose_name='Цена')
 

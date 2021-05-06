@@ -20,8 +20,9 @@ class StudentTable(Base):
         uzbek = '2'
 
     class ApplicationType(enum.Enum):
-        web = '1'
+        admin = '1'
         telegram = '2'
+        web = '3'
 
     __tablename__ = 'dashboard_student'
 
@@ -32,7 +33,7 @@ class StudentTable(Base):
     language_type = Column(Enum(LanguageType, values_callable=lambda x: [e.value for e in x]), default=LanguageType.russian.value)
     phone = Column(String(20), unique=True)
     chosen_field = Column(Enum(CategoryType, values_callable=lambda x: [e.value for e in x]))
-    application_type = Column(Enum(ApplicationType, values_callable=lambda x: [e.value for e in x]), default=ApplicationType.web.value)
+    application_type = Column(Enum(ApplicationType, values_callable=lambda x: [e.value for e in x]), default=ApplicationType.admin.value)
     is_client = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.datetime.now)
@@ -63,7 +64,7 @@ class CourseTable(Base):
     name = Column(String(50))
     info = Column(LONGTEXT, nullable=True)
     category = Column(Enum(CategoryType, values_callable=lambda x: [e.value for e in x]))
-    # todo: Add field add_message
+    add_message = Column(String(200), nullable=True)
     difficulty = Column(Enum(DifficultyType, values_callable=lambda x: [e.value for e in x]))
     price = Column(BIGINT)
 
