@@ -1,5 +1,6 @@
 import os
 import uuid
+import random
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser
@@ -7,6 +8,10 @@ from django.template.defaultfilters import truncatewords, truncatechars
 import requests
 
 from dashboard.misc import LeadManager, ClientManager
+
+
+def random_int():
+    return str(random.randint(100, 999))
 
 
 class CategoryType(models.TextChoices):
@@ -39,6 +44,7 @@ class Student(models.Model):
     phone = models.CharField(max_length=20, verbose_name='Контактный телефон', unique=True)
     chosen_field = models.CharField(max_length=20, verbose_name='Желанная отрасль', choices=CategoryType.choices)
     application_type = models.CharField(verbose_name='Как заполнил форму', max_length=20, choices=ApplicationType.choices, default=ApplicationType.admin)
+    unique_code = models.CharField(max_length=255, verbose_name='Инвайт код', unique=True, null=True, blank=True)
     is_client = models.BooleanField(verbose_name='Клиент', default=False)
     checkout_date = models.DateTimeField(blank=True, null=True, verbose_name='Дата чекаута')
     courses = models.ManyToManyField('Course', through='StudentCourse')
@@ -53,6 +59,14 @@ class Student(models.Model):
 class Lead(Student):
 
     objects = LeadManager()
+
+    def save(self, *args, **kwargs):
+        if not self.unique_code:
+            super(Lead, self).save(*args, **kwargs)
+            self.unique_code = str(self.id) + random_int()
+            return super(Lead, self).save(*args, **kwargs)
+        else:
+            return super(Lead, self).save(*args, **kwargs)
 
     class Meta:
         proxy = True

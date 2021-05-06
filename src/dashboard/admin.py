@@ -38,6 +38,7 @@ class LeadAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     list_per_page = 20
     list_filter = ('chosen_field', 'application_type')
     list_display_links = ('__str__',)
+    readonly_fields = ('unique_code',)
     actions = ('send_message', 'send_checkout',)
     search_fields = ('id', 'first_name', 'last_name')
     ordering = ('id',)

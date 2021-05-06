@@ -35,6 +35,8 @@ class StudentTable(Base):
     chosen_field = Column(Enum(CategoryType, values_callable=lambda x: [e.value for e in x]))
     application_type = Column(Enum(ApplicationType, values_callable=lambda x: [e.value for e in x]), default=ApplicationType.admin.value)
     is_client = Column(Boolean, default=False)
+    checkout_date = Column(DateTime, nullable=True)
+    unique_code = Column(String(255), nullable=True)
 
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)

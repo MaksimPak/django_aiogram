@@ -42,13 +42,10 @@ async def greetings(message: types.Message):
         )).scalar()
     if not student:
         kb = InlineKeyboardMarkup()
-        btns = [InlineKeyboardButton(name.capitalize(), callback_data=f'lang|{member.value}')
-                for name, member in StudentTable.LanguageType.__members__.items()]
-
-        for btn in btns:
-            kb.insert(btn)
-        await bot.send_message(message.from_user.id, 'Привет! Выбери язык', reply_markup=kb)
-        await RegistrationState.lang.set()
+        kb.add(*[InlineKeyboardButton('Через бот', callback_data='tg_reg'),
+                 InlineKeyboardButton('Через инвайт', callback_data='invite_reg')]
+               )
+        await bot.send_message(message.from_user.id, 'Выберите способ регистрации', reply_markup=kb)
     else:
         reply_kb = InlineKeyboardMarkup()
 
@@ -61,6 +58,40 @@ async def greetings(message: types.Message):
             reply_kb.insert(btn)
         await bot.send_message(message.from_user.id, 'Выбери опцию',
                                reply_markup=reply_kb)
+
+
+@dp.callback_query_handler(lambda x: x.data == 'invite_reg')
+async def invite_reg(cb: types.callback_query):
+    await bot.answer_callback_query(cb.id)
+    await bot.send_message(cb.from_user.id, 'Введите инвайт код')
+
+
+@dp.message_handler()
+async def check_invite_code(message: types.Message):
+    async with SessionLocal() as session:
+        student = (await session.execute(
+            select(StudentTable).where(StudentTable.unique_code == message.text)
+        )).scalar()
+        if student:
+            student.tg_id = message.from_user.id
+            await session.commit()
+            await message.reply('Вы были успешно зарегистрированы')
+        else:
+            await message.reply('Неверный инвайт код')
+
+
+@dp.callback_query_handler(lambda x: x.data == 'tg_reg')
+async def tg_reg(cb: types.callback_query):
+    await bot.answer_callback_query(cb.id)
+
+    kb = InlineKeyboardMarkup()
+    btns = [InlineKeyboardButton(name.capitalize(), callback_data=f'lang|{member.value}')
+            for name, member in StudentTable.LanguageType.__members__.items()]
+
+    for btn in btns:
+        kb.insert(btn)
+    await bot.send_message(cb.from_user.id, 'Привет! Выбери язык', reply_markup=kb)
+    await RegistrationState.lang.set()
 
 
 @dp.callback_query_handler(lambda x: 'lang|' in x.data, state=RegistrationState.lang)
