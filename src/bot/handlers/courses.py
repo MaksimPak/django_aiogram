@@ -10,11 +10,14 @@ from bot.models.db import SessionLocal
 from bot.models.dashboard import StudentTable, StudentCourse, CourseTable, LessonTable, LessonUrlTable
 
 
-@dp.message_handler(state='*', commands='courses', is_client=True)
-async def my_courses(message: types.Message):
+@dp.callback_query_handler(lambda x: 'courses|' in x.data)
+async def my_courses(cb: types.CallbackQuery):
+    await bot.answer_callback_query(cb.id)
+    _, client_id = cb.data.split('|')
+
     async with SessionLocal() as session:
         client = (await session.execute(
-            select(StudentTable).where(StudentTable.tg_id == message.from_user.id).options(
+            select(StudentTable).where(StudentTable.id == client_id).options(
                 selectinload(StudentTable.courses).selectinload(StudentCourse.courses)
             ))).scalar()
         kb = InlineKeyboardMarkup()
@@ -24,22 +27,22 @@ async def my_courses(message: types.Message):
         for x in btn_list:
             kb.insert(x)
 
-        await bot.send_message(message.from_user.id, 'Your courses', reply_markup=kb)
+        await bot.send_message(cb.from_user.id, 'Your courses', reply_markup=kb)
 
 
 @dp.callback_query_handler(lambda x: 'get_course|' in x.data, state='*')
 async def course_lessons(cb: types.callback_query):
     await bot.answer_callback_query(cb.id)
     _, course_id = cb.data.split('|')
-
     async with SessionLocal() as session:
         course = (await session.execute(
                 select(CourseTable).where(CourseTable.id == course_id).options(
-                    selectinload(CourseTable.lessons).selectinload(LessonCourse.lessons)
+                    selectinload(CourseTable.lessons)
                 ))).scalar()
+
         kb = InlineKeyboardMarkup()
         btn_list = [
-            InlineKeyboardButton(x.lessons.title, callback_data=f'lesson|{x.lessons.id}') for x in course.lessons
+            InlineKeyboardButton(x.title, callback_data=f'lesson|{x.id}') for x in course.lessons
         ]
 
         for x in btn_list:

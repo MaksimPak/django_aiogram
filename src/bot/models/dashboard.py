@@ -72,6 +72,7 @@ class CourseTable(Base):
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
 
     students = relationship('StudentCourse', back_populates='courses')
+    lessons = relationship('LessonTable', back_populates='lesson_course')
 
 
 class LessonTable(Base):
@@ -81,11 +82,13 @@ class LessonTable(Base):
     title = Column(String(50))
     info = Column(LONGTEXT, nullable=True)
     video = Column(String(100))
-    course = Column(BIGINT, ForeignKey('dashboard_course.id'))
+    course_id = Column(BIGINT, ForeignKey('dashboard_course.id'))
     has_homework = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
+
+    lesson_course = relationship('CourseTable', back_populates='lessons')
 
 
 class LessonUrlTable(Base):

@@ -2,7 +2,7 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import CommandStart, Text
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from sqlalchemy import select
 
 from bot.misc import dp, bot
@@ -36,14 +36,31 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
 @dp.message_handler(CommandStart())
 async def greetings(message: types.Message):
-    kb = InlineKeyboardMarkup()
-    btns = [InlineKeyboardButton(name.capitalize(), callback_data=f'lang|{member.value}')
-            for name, member in StudentTable.LanguageType.__members__.items()]
+    async with SessionLocal() as session:
+        student = (await session.execute(
+            select(StudentTable).where(StudentTable.tg_id == message.from_user.id)
+        )).scalar()
+    if not student:
+        kb = InlineKeyboardMarkup()
+        btns = [InlineKeyboardButton(name.capitalize(), callback_data=f'lang|{member.value}')
+                for name, member in StudentTable.LanguageType.__members__.items()]
 
-    for btn in btns:
-        kb.insert(btn)
-    await bot.send_message(message.from_user.id, 'Привет! Выбери язык', reply_markup=kb)
-    await RegistrationState.lang.set()
+        for btn in btns:
+            kb.insert(btn)
+        await bot.send_message(message.from_user.id, 'Привет! Выбери язык', reply_markup=kb)
+        await RegistrationState.lang.set()
+    else:
+        reply_kb = InlineKeyboardMarkup()
+
+        btns = [
+            InlineKeyboardButton('Курсы', callback_data=f'courses|{student.id}'),
+            InlineKeyboardButton('Профиль', callback_data=f'profile|{student.id}'),
+            InlineKeyboardButton('Задания', callback_data=f'tasks|{student.id}')
+        ]
+        for btn in btns:
+            reply_kb.insert(btn)
+        await bot.send_message(message.from_user.id, 'Выбери опцию',
+                               reply_markup=reply_kb)
 
 
 @dp.callback_query_handler(lambda x: 'lang|' in x.data, state=RegistrationState.lang)
@@ -91,7 +108,7 @@ async def set_phone(message: types.Message, state: FSMContext):
 
 
 @dp.callback_query_handler(lambda x: 'field|' in x.data, state=RegistrationState.selected_field)
-async def set_course(cb: types.callback_query, state: FSMContext):
+async def create_record(cb: types.callback_query, state: FSMContext):
     await bot.answer_callback_query(cb.id)
 
     _, field = cb.data.split('|')
@@ -110,5 +127,14 @@ async def set_course(cb: types.callback_query, state: FSMContext):
         session.add(lead)
         await session.commit()
 
-    await bot.send_message(cb.from_user.id, 'Вы зарегистрированы! В ближайшее время с вами свяжется наш оператор')
+    reply_kb = InlineKeyboardMarkup()
+    btns = [
+        InlineKeyboardButton('Курсы', callback_data=f'courses|{lead.id}'),
+        InlineKeyboardButton('Профиль', callback_data=f'profile|{lead.id}'),
+        InlineKeyboardButton('Задания', callback_data=f'tasks|{lead.id}')
+    ]
+    for btn in btns:
+        reply_kb.insert(btn)
+    await bot.send_message(cb.from_user.id, 'Вы зарегистрированы! В ближайшее время с вами свяжется наш оператор',
+                           reply_markup=reply_kb)
     await state.finish()
