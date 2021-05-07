@@ -5,7 +5,7 @@ import requests
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from dashboard.models import StudentCourse, Client, Lead, Course
+from dashboard.models import StudentCourse, Client, Lead, Course, Student
 
 
 @receiver(post_save, sender=StudentCourse)
@@ -34,3 +34,10 @@ def add_free_courses(sender, instance, created, **kwargs):
     if created:
         courses = Course.objects.filter(is_free=True)
         StudentCourse.objects.bulk_create([StudentCourse(course=course, student=instance) for course in courses])
+
+
+@receiver(post_save, sender=Course)
+def add_students_to_free_course(sender, instance, created, **kwargs):
+    if created and instance.is_free:
+        students = Student.objects.all()
+        StudentCourse.objects.bulk_create([StudentCourse(course=instance, student=student) for student in students])
