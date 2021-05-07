@@ -6,4 +6,5 @@ app_name = 'dashboard'
 
 urlpatterns = [
     path('watch/<uuid:uuid>', views.watch_video, name='lesson_video'),
+    path('signup', views.signup, name='signup'),
 ]

@@ -58,14 +58,6 @@ class Lead(Student):
 
     objects = LeadManager()
 
-    def save(self, *args, **kwargs):
-        if not self.unique_code:
-            super(Lead, self).save(*args, **kwargs)
-            self.unique_code = str(self.id) + random_int()
-            return super(Lead, self).save(*args, **kwargs)
-        else:
-            return super(Lead, self).save(*args, **kwargs)
-
     class Meta:
         proxy = True
         verbose_name = 'Лид'
