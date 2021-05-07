@@ -45,6 +45,7 @@ class Student(models.Model):
     unique_code = models.CharField(max_length=255, verbose_name='Инвайт код', unique=True, null=True, blank=True)
     is_client = models.BooleanField(verbose_name='Клиент', default=False)
     checkout_date = models.DateTimeField(blank=True, null=True, verbose_name='Дата чекаута')
+    invite_link = models.CharField(max_length=255, editable=False, null=True, blank=True, verbose_name='Инвайт ссылка')
     courses = models.ManyToManyField('Course', through='StudentCourse')
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)

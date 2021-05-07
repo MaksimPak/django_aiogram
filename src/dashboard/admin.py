@@ -45,7 +45,7 @@ class LeadAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     list_per_page = 20
     list_filter = ('chosen_field', 'application_type')
     list_display_links = ('__str__',)
-    readonly_fields = ('unique_code', 'checkout_date')
+    readonly_fields = ('unique_code', 'checkout_date', 'invite_link')
     actions = ('send_message', 'send_checkout',)
     search_fields = ('id', 'first_name', 'last_name')
     ordering = ('id',)
@@ -73,7 +73,7 @@ class ClientAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     list_filter = ('studentcourse__course__name',)
     list_display_links = ('__str__',)
     actions = ('send_message', 'send_checkout')
-    readonly_fields = ('unique_code', 'checkout_date')
+    readonly_fields = ('unique_code', 'checkout_date', 'invite_link')
     search_fields = ('id', 'first_name', 'last_name')
     ordering = ('id',)
     date_hierarchy = 'created_at'

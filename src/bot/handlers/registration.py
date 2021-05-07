@@ -36,16 +36,31 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
 @dp.message_handler(CommandStart())
 async def greetings(message: types.Message):
+    invite_code = message.get_args()
     async with SessionLocal() as session:
         student = (await session.execute(
             select(StudentTable).where(StudentTable.tg_id == message.from_user.id)
         )).scalar()
     if not student:
-        kb = InlineKeyboardMarkup()
-        kb.add(*[InlineKeyboardButton('Через бот', callback_data='tg_reg'),
-                 InlineKeyboardButton('Через инвайт', callback_data='invite_reg')]
-               )
-        await bot.send_message(message.from_user.id, 'Выберите способ регистрации', reply_markup=kb)
+
+        if invite_code:
+            async with SessionLocal() as session:
+                student = (await session.execute(
+                    select(StudentTable).where(StudentTable.unique_code == invite_code)
+                )).scalar()
+                if student:
+                    student.tg_id = message.from_user.id
+                    await session.commit()
+                    await message.reply('Вы были успешно зарегистрированы')
+                else:
+                    await message.reply('Неверный инвайт код')
+
+        else:
+            kb = InlineKeyboardMarkup()
+            kb.add(*[InlineKeyboardButton('Через бот', callback_data='tg_reg'),
+                     InlineKeyboardButton('Через инвайт', callback_data='invite_reg')]
+                   )
+            await bot.send_message(message.from_user.id, 'Выберите способ регистрации', reply_markup=kb)
     else:
         reply_kb = InlineKeyboardMarkup()
 

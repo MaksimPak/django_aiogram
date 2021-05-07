@@ -44,6 +44,9 @@ def add_students_to_free_course(sender, instance, created, **kwargs):
 
 
 @receiver(post_save, sender=Lead)
-def add_students_to_free_course(sender, instance, created, **kwargs):
+def lead_invite_data(sender, instance, created, **kwargs):
     if created and not instance.unique_code:
-        Lead.objects.filter(pk=instance.id).update(unique_code=str(instance.id) + random_int())
+        lead = Lead.objects.get(pk=instance.id)
+        lead.unique_code = str(instance.id) + random_int()
+        lead.invite_link = f'https://t.me/{os.getenv("BOT_NAME")}?start={lead.unique_code}'
+        lead.save()
