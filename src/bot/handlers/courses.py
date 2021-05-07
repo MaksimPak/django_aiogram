@@ -1,4 +1,5 @@
 from aiogram import types
+from aiogram.dispatcher import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from sqlalchemy.future import select
@@ -11,9 +12,12 @@ from bot.models.dashboard import StudentTable, StudentCourse, CourseTable, Lesso
 
 
 @dp.callback_query_handler(lambda x: 'courses|' in x.data)
-async def my_courses(cb: types.CallbackQuery):
+async def my_courses(cb: types.CallbackQuery, state: FSMContext):
     await bot.answer_callback_query(cb.id)
     _, client_id = cb.data.split('|')
+
+    async with state.proxy() as data:
+        data['client_id'] = client_id
 
     async with SessionLocal() as session:
         client = (await session.execute(
@@ -38,9 +42,10 @@ async def my_courses(cb: types.CallbackQuery):
 
 
 @dp.callback_query_handler(lambda x: 'get_course|' in x.data, state='*')
-async def course_lessons(cb: types.callback_query):
+async def course_lessons(cb: types.callback_query, state: FSMContext):
     await bot.answer_callback_query(cb.id)
     _, course_id = cb.data.split('|')
+    data = await state.get_data()
     async with SessionLocal() as session:
         course = (await session.execute(
                 select(CourseTable).where(CourseTable.id == course_id).options(
@@ -50,6 +55,8 @@ async def course_lessons(cb: types.callback_query):
     kb = InlineKeyboardMarkup()
     btn_list = [InlineKeyboardButton(x.title, callback_data=f'lesson|{x.id}') for x in course.lessons]
     kb.add(*btn_list)
+
+    kb.add(InlineKeyboardButton('Назад', callback_data=f'to_courses|{data["client_id"]}'))
 
     msg = 'Уроки курса' if course.lessons else 'У курса не уроков'
     await bot.edit_message_text(

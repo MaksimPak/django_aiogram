@@ -1,12 +1,10 @@
-import os
 import uuid
 import random
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.template.defaultfilters import truncatewords, truncatechars
-import requests
 
+from django.template.defaultfilters import truncatewords
 from dashboard.misc import LeadManager, ClientManager
 
 
@@ -49,8 +47,8 @@ class Student(models.Model):
     checkout_date = models.DateTimeField(blank=True, null=True, verbose_name='Дата чекаута')
     courses = models.ManyToManyField('Course', through='StudentCourse')
 
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
-    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
@@ -87,8 +85,8 @@ class Client(Student):
 class Stream(models.Model):
     name = models.CharField(max_length=50)
 
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
-    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
 
 
 class Course(models.Model):
@@ -104,8 +102,8 @@ class Course(models.Model):
     difficulty = models.CharField(max_length=20, choices=DifficultyType.choices, verbose_name='Сложность')
     price = models.BigIntegerField(verbose_name='Цена')
 
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
-    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -126,8 +124,8 @@ class Lesson(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     has_homework = models.BooleanField(verbose_name='Есть домашнее задание', default=False)
 
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
-    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
 
     def __str__(self):
         return self.title
@@ -146,8 +144,8 @@ class LessonUrl(models.Model):
     hash = models.CharField(max_length=36, default=uuid.uuid4, unique=True)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, verbose_name='Урок')
 
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
-    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
 
     class Meta:
         unique_together = [['student', 'lesson']]
@@ -158,12 +156,5 @@ class StudentCourse(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     stream = models.ForeignKey(Stream, on_delete=models.PROTECT, blank=True, null=True)
 
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
-    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
-
-    def save(self, *args, **kwargs):
-        super(StudentCourse, self).save(*args, **kwargs)
-        url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage?chat_id={self.student.tg_id}&text={self.course.add_message}"
-        requests.get(url)
-
-        return super(StudentCourse, self).save(*args, **kwargs)
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)

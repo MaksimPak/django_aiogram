@@ -170,23 +170,4 @@ async def create_record(cb: types.callback_query, state: FSMContext):
     await state.finish()
 
 
-@dp.callback_query_handler(lambda x: 'back|' in x.data)
-async def get_prev(cb: types.callback_query):
-    await bot.answer_callback_query(cb.id)
-    _, client_id = cb.data.split('|')
 
-    reply_kb = InlineKeyboardMarkup()
-
-    btns = [
-        InlineKeyboardButton('Курсы', callback_data=f'courses|{client_id}'),
-        InlineKeyboardButton('Профиль', callback_data=f'profile|{client_id}'),
-        InlineKeyboardButton('Задания', callback_data=f'tasks|{client_id}')
-    ]
-    reply_kb.add(*btns)
-
-    await bot.edit_message_text(
-        'Выбери опцию',
-        cb.from_user.id,
-        cb.message.message_id,
-        reply_markup=reply_kb
-    )
