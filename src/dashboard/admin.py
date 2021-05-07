@@ -1,3 +1,4 @@
+import datetime
 import os
 
 from django.contrib import admin
@@ -10,20 +11,26 @@ from dashboard import models
 
 
 class TelegramBroadcastMixin:
-    def send_message(self, request, qs, checkout=False):
-        if not checkout:
-            if 'send' in request.POST:
-                for record in qs:
-                    url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage?chat_id={record.tg_id}&text={request.POST['message']}"
-                    requests.get(url)
-                return HttpResponseRedirect(request.get_full_path())
+    @staticmethod
+    def send_single_message(tg_id, message):
+        url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage?chat_id={tg_id}&text={message}"
+        requests.get(url)
 
-            return render(request, 'dashboard/send_intermediate.html', context={'entities': qs})
-        else:
+    def send_message(self, request, qs):
+        if 'send' in request.POST:
             for record in qs:
-                url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage?chat_id={record.tg_id}&text=https://paynet.uz/checkout_test"
-                requests.get(url)
+                self.send_single_message(record.tg_id, request.POST['message'])
             return HttpResponseRedirect(request.get_full_path())
+
+        return render(request, 'dashboard/send_intermediate.html', context={'entities': qs})
+
+    def send_checkout(self, request, qs):
+        for record in qs:
+            url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage?chat_id={record.tg_id}&text=https://paynet.uz/checkout_test"
+            resp = requests.get(url).json()
+            resp['ok'] and models.Student.objects.filter(pk=record.id).update(checkout_date=datetime.datetime.now())
+
+        return HttpResponseRedirect(request.get_full_path())
 
 
 class StudentCourseList(admin.TabularInline):
@@ -38,17 +45,17 @@ class LeadAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     list_per_page = 20
     list_filter = ('chosen_field', 'application_type')
     list_display_links = ('__str__',)
-    readonly_fields = ('unique_code',)
+    readonly_fields = ('unique_code', 'checkout_date')
     actions = ('send_message', 'send_checkout',)
     search_fields = ('id', 'first_name', 'last_name')
     ordering = ('id',)
     date_hierarchy = 'created_at'
 
-    def send_message(self, request, qs, checkout=False):
+    def send_message(self, request, qs):
         return super().send_message(request, qs)
 
-    def send_checkout(self, request, qs, checkout=True):
-        return super().send_message(request, qs, checkout)
+    def send_checkout(self, request, qs):
+        return super().send_checkout(request, qs)
 
     send_message.short_description = 'Массовая рассылка'
     send_checkout.short_description = 'Рассылка чекаута'
@@ -66,15 +73,16 @@ class ClientAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     list_filter = ('studentcourse__course__name',)
     list_display_links = ('__str__',)
     actions = ('send_message', 'send_checkout')
+    readonly_fields = ('unique_code', 'checkout_date')
     search_fields = ('id', 'first_name', 'last_name')
     ordering = ('id',)
     date_hierarchy = 'created_at'
 
-    def send_message(self, request, qs, checkout=False):
+    def send_message(self, request, qs):
         return super().send_message(request, qs)
 
-    def send_checkout(self, request, qs, checkout=True):
-        return super().send_message(request, qs, checkout)
+    def send_checkout(self, request, qs):
+        return super().send_checkout(request, qs)
 
     send_message.short_description = 'Массовая рассылка'
     send_checkout.short_description = 'Рассылка чекаута'
