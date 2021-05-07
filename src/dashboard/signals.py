@@ -5,7 +5,7 @@ import requests
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from dashboard.models import StudentCourse
+from dashboard.models import StudentCourse, Client, Lead, Course
 
 
 @receiver(post_save, sender=StudentCourse)
@@ -26,3 +26,11 @@ def send_course_add_message(sender, instance, created, **kwargs):
         }
         url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage"
         requests.post(url, data=d)
+
+
+@receiver(post_save, sender=Client)
+@receiver(post_save, sender=Lead)
+def add_free_courses(sender, instance, created, **kwargs):
+    if created:
+        courses = Course.objects.filter(is_free=True)
+        StudentCourse.objects.bulk_create([StudentCourse(course=course, student=instance) for course in courses])

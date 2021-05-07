@@ -101,6 +101,7 @@ class Course(models.Model):
     add_message = models.TextField(verbose_name='Сообщение для отправки студенту после добавления', blank=True, null=True)
     difficulty = models.CharField(max_length=20, choices=DifficultyType.choices, verbose_name='Сложность')
     price = models.BigIntegerField(verbose_name='Цена')
+    is_free = models.BooleanField(verbose_name='Бесплатный курс', default=False)
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)

@@ -3,6 +3,7 @@ import enum
 import uuid
 
 from sqlalchemy import Column, String, Enum, Boolean, ForeignKey, DateTime
+from sqlalchemy.dialects.mssql import TINYINT
 from sqlalchemy.dialects.mysql import BIGINT, LONGTEXT, CHAR
 from sqlalchemy.orm import relationship
 
@@ -69,6 +70,7 @@ class CourseTable(Base):
     add_message = Column(String(200), nullable=True)
     difficulty = Column(Enum(DifficultyType, values_callable=lambda x: [e.value for e in x]))
     price = Column(BIGINT)
+    is_free = Column(TINYINT, default=0)
 
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
