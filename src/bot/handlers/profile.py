@@ -39,14 +39,16 @@ async def profile_kb(client_id):
     async with SessionLocal() as session:
         client = (await session.execute(
             select(StudentTable).where(StudentTable.id == client_id))).scalar()
-        kb = InlineKeyboardMarkup(row_width=2)
-        kb.add(*[InlineKeyboardButton(title, callback_data=f'{key}|{client.id}') for title, key, _ in PROFILE_FIELDS])
-        message = ''
-        for title, key, renderer in PROFILE_FIELDS:
-            message += '✅' if getattr(client, key) else '✍️'
-            message += ' ' + title + ':' + ' ' + await renderer(client, key) + '\n'
 
-        return tuple((message, kb))
+    kb = InlineKeyboardMarkup(row_width=2)
+    kb.add(*[InlineKeyboardButton(title, callback_data=f'{key}|{client.id}') for title, key, _ in PROFILE_FIELDS])
+    message = ''
+    for title, key, renderer in PROFILE_FIELDS:
+        message += '✅' if getattr(client, key) else '✍️'
+        message += ' ' + title + ':' + ' ' + await renderer(client, key) + '\n'
+
+    kb.add(InlineKeyboardButton('Назад', callback_data=f'back|{client.id}'))
+    return message, kb
 
 
 @dp.callback_query_handler(lambda x: 'profile|' in x.data)
@@ -56,7 +58,12 @@ async def my_profile(cb: types.callback_query):
 
     info, kb = await profile_kb(client_id)
 
-    await bot.send_message(cb.from_user.id, info, reply_markup=kb)
+    await bot.edit_message_text(
+        info,
+        cb.from_user.id,
+        cb.message.message_id,
+        reply_markup=kb
+    )
 
 
 @dp.callback_query_handler(lambda x: 'first_name|' in x.data)

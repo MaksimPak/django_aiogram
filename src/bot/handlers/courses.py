@@ -20,14 +20,21 @@ async def my_courses(cb: types.CallbackQuery):
             select(StudentTable).where(StudentTable.id == client_id).options(
                 selectinload(StudentTable.courses).selectinload(StudentCourse.courses)
             ))).scalar()
-        kb = InlineKeyboardMarkup()
-        btn_list = [
-            InlineKeyboardButton(x.courses.name, callback_data=f'get_course|{x.courses.id}') for x in client.courses
-        ]
-        for x in btn_list:
-            kb.insert(x)
 
-        await bot.send_message(cb.from_user.id, 'Your courses', reply_markup=kb)
+    kb = InlineKeyboardMarkup()
+    btn_list = [
+        InlineKeyboardButton(x.courses.name, callback_data=f'get_course|{x.courses.id}') for x in client.courses
+    ]
+    kb.add(*btn_list)
+    kb.add(InlineKeyboardButton('Назад', callback_data=f'back|{client.id}'))
+
+    msg = 'Ваши курсы' if client.courses else 'Вы не записаны ни на один курс'
+    await bot.edit_message_text(
+        msg,
+        cb.from_user.id,
+        cb.message.message_id,
+        reply_markup=kb
+    )
 
 
 @dp.callback_query_handler(lambda x: 'get_course|' in x.data, state='*')
@@ -40,15 +47,17 @@ async def course_lessons(cb: types.callback_query):
                     selectinload(CourseTable.lessons)
                 ))).scalar()
 
-        kb = InlineKeyboardMarkup()
-        btn_list = [
-            InlineKeyboardButton(x.title, callback_data=f'lesson|{x.id}') for x in course.lessons
-        ]
+    kb = InlineKeyboardMarkup()
+    btn_list = [InlineKeyboardButton(x.title, callback_data=f'lesson|{x.id}') for x in course.lessons]
+    kb.add(*btn_list)
 
-        for x in btn_list:
-            kb.insert(x)
-
-        await bot.send_message(cb.from_user.id, 'Lessons for the course', reply_markup=kb)
+    msg = 'Уроки курса' if course.lessons else 'У курса не уроков'
+    await bot.edit_message_text(
+        msg,
+        cb.from_user.id,
+        cb.message.message_id,
+        reply_markup=kb
+    )
 
 
 @dp.callback_query_handler(lambda x: 'lesson|' in x.data, state='*')
@@ -70,11 +79,12 @@ async def get_lesson(cb: types.callback_query):
             )
             session.add(lesson_url)
         await session.commit()
-        kb = InlineKeyboardMarkup()
-        kb.add(InlineKeyboardButton('Watch video', url=f'{config.DOMAIN}/dashboard/watch/{lesson_url.hash}'))
-        await bot.send_message(
-            cb.from_user.id,
-            f'{lesson.title}\n\n'
-            f'{lesson.info}',
-            reply_markup=kb
-        )
+
+    kb = InlineKeyboardMarkup()
+    kb.add(InlineKeyboardButton('Watch video', url=f'{config.DOMAIN}/dashboard/watch/{lesson_url.hash}'))
+    await bot.send_message(
+        cb.from_user.id,
+        f'{lesson.title}\n\n'
+        f'{lesson.info}',
+        reply_markup=kb
+    )

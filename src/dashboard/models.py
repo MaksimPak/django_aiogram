@@ -142,12 +142,15 @@ class Lesson(models.Model):
 
 
 class LessonUrl(models.Model):
-    student = models.OneToOneField(Student, on_delete=models.CASCADE, primary_key=True)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, verbose_name='Студент')
     hash = models.CharField(max_length=36, default=uuid.uuid4, unique=True)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, verbose_name='Урок')
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True)
+
+    class Meta:
+        unique_together = [['student', 'lesson']]
 
 
 class StudentCourse(models.Model):
