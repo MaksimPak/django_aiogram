@@ -52,9 +52,9 @@ async def course_lessons(cb: types.callback_query, state: FSMContext):
                     selectinload(CourseTable.lessons)
                 ))).scalar()
 
-    kb = InlineKeyboardMarkup()
-    btn_list = [InlineKeyboardButton(x.title, callback_data=f'lesson|{x.id}') for x in course.lessons]
-    kb.add(*btn_list)
+    kb = InlineKeyboardMarkup().add(
+        *[InlineKeyboardButton(x.title, callback_data=f'lesson|{x.id}') for x in course.lessons]
+    )
 
     kb.add(InlineKeyboardButton('Назад', callback_data=f'to_courses|{data["client_id"]}'))
 
@@ -77,8 +77,9 @@ async def get_lesson(cb: types.callback_query):
         )).scalar()
 
         client = (await session.execute(select(StudentTable).where(StudentTable.tg_id == cb.from_user.id))).scalar()
-        lesson_url = (await session.execute(select(LessonUrlTable).where(LessonUrlTable.lesson_id == lesson.id,
-                                                                         LessonUrlTable.student_id == client.id))).scalar()
+        lesson_url = (await session.execute(
+            select(LessonUrlTable).where(LessonUrlTable.lesson_id == lesson.id,
+                                         LessonUrlTable.student_id == client.id))).scalar()
         if not lesson_url:
             lesson_url = LessonUrlTable(
                 student_id=client.id,

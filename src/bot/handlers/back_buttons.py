@@ -13,14 +13,11 @@ async def to_main(cb: types.callback_query):
     await bot.answer_callback_query(cb.id)
     _, client_id = cb.data.split('|')
 
-    reply_kb = InlineKeyboardMarkup()
-
-    btns = [
+    reply_kb = InlineKeyboardMarkup().add(*[
         InlineKeyboardButton('Курсы', callback_data=f'courses|{client_id}'),
         InlineKeyboardButton('Профиль', callback_data=f'profile|{client_id}'),
         InlineKeyboardButton('Задания', callback_data=f'tasks|{client_id}')
-    ]
-    reply_kb.add(*btns)
+    ])
 
     await bot.edit_message_text(
         'Выбери опцию',
@@ -41,11 +38,10 @@ async def to_courses(cb: types.callback_query):
                 selectinload(StudentTable.courses).selectinload(StudentCourse.courses)
             ))).scalar()
 
-    kb = InlineKeyboardMarkup()
-    btn_list = [
+    kb = InlineKeyboardMarkup().add(*[
         InlineKeyboardButton(x.courses.name, callback_data=f'get_course|{x.courses.id}') for x in client.courses
-    ]
-    kb.add(*btn_list)
+    ])
+
     kb.add(InlineKeyboardButton('Назад', callback_data=f'back|{client.id}'))
 
     msg = 'Ваши курсы' if client.courses else 'Вы не записаны ни на один курс'

@@ -1,3 +1,5 @@
+import re
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import CommandStart, Text
@@ -34,42 +36,38 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     await message.reply('Cancelled.', reply_markup=types.ReplyKeyboardRemove())
 
 
+@dp.message_handler(CommandStart(re.compile(r'\d+')))
+async def register_deep_link(message: types.Message):
+    async with SessionLocal() as session:
+        student = (await session.execute(
+            select(StudentTable).where(StudentTable.unique_code == message.get_args())
+        )).scalar()
+        if student:
+            student.tg_id = message.from_user.id
+            await session.commit()
+            await message.reply('Вы были успешно зарегистрированы')
+        else:
+            await message.reply('Неверный инвайт код')
+
+
 @dp.message_handler(CommandStart())
-async def greetings(message: types.Message):
-    invite_code = message.get_args()
+async def start_reg(message: types.Message):
     async with SessionLocal() as session:
         student = (await session.execute(
             select(StudentTable).where(StudentTable.tg_id == message.from_user.id)
         )).scalar()
     if not student:
+        kb = InlineKeyboardMarkup().add(*[InlineKeyboardButton('Через бот', callback_data='tg_reg'),
+                                          InlineKeyboardButton('Через инвайт', callback_data='invite_reg')])
 
-        if invite_code:
-            async with SessionLocal() as session:
-                student = (await session.execute(
-                    select(StudentTable).where(StudentTable.unique_code == invite_code)
-                )).scalar()
-                if student:
-                    student.tg_id = message.from_user.id
-                    await session.commit()
-                    await message.reply('Вы были успешно зарегистрированы')
-                else:
-                    await message.reply('Неверный инвайт код')
-
-        else:
-            kb = InlineKeyboardMarkup()
-            kb.add(*[InlineKeyboardButton('Через бот', callback_data='tg_reg'),
-                     InlineKeyboardButton('Через инвайт', callback_data='invite_reg')]
-                   )
-            await bot.send_message(message.from_user.id, 'Выберите способ регистрации', reply_markup=kb)
+        await bot.send_message(message.from_user.id, 'Выберите способ регистрации', reply_markup=kb)
     else:
-        reply_kb = InlineKeyboardMarkup()
-
-        btns = [
+        reply_kb = InlineKeyboardMarkup().add(*[
             InlineKeyboardButton('Курсы', callback_data=f'courses|{student.id}'),
             InlineKeyboardButton('Профиль', callback_data=f'profile|{student.id}'),
             InlineKeyboardButton('Задания', callback_data=f'tasks|{student.id}')
-        ]
-        reply_kb.add(*btns)
+        ])
+
         await bot.send_message(message.from_user.id, 'Выбери опцию',
                                reply_markup=reply_kb)
 
@@ -98,12 +96,10 @@ async def check_invite_code(message: types.Message):
 async def tg_reg(cb: types.callback_query):
     await bot.answer_callback_query(cb.id)
 
-    kb = InlineKeyboardMarkup()
-    btns = [InlineKeyboardButton(name.capitalize(), callback_data=f'lang|{member.value}')
-            for name, member in StudentTable.LanguageType.__members__.items()]
+    kb = InlineKeyboardMarkup().add(
+        *[InlineKeyboardButton(name.capitalize(), callback_data=f'lang|{member.value}')
+          for name, member in StudentTable.LanguageType.__members__.items()])
 
-    for btn in btns:
-        kb.insert(btn)
     await bot.send_message(cb.from_user.id, 'Привет! Выбери язык', reply_markup=kb)
     await RegistrationState.lang.set()
 
@@ -142,11 +138,9 @@ async def set_phone(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['phone'] = message.text
 
-    kb = InlineKeyboardMarkup()
-    btns = [InlineKeyboardButton(name.capitalize(), callback_data=f'field|{member.value}')
-            for name, member in CategoryType.__members__.items()]
-    for btn in btns:
-        kb.insert(btn)
+    kb = InlineKeyboardMarkup().add(
+        *[InlineKeyboardButton(name.capitalize(), callback_data=f'field|{member.value}')
+          for name, member in CategoryType.__members__.items()])
 
     await bot.send_message(message.chat.id, 'В каком направлении вы хотите учиться?', reply_markup=kb)
     await RegistrationState.selected_field.set()
@@ -176,14 +170,12 @@ async def create_record(cb: types.callback_query, state: FSMContext):
         session.add_all([StudentCourse(course_id=course.id, student_id=lead.id) for course in courses])
         await session.commit()
 
-    reply_kb = InlineKeyboardMarkup()
-    btns = [
+    reply_kb = InlineKeyboardMarkup().add(*[
         InlineKeyboardButton('Курсы', callback_data=f'courses|{lead.id}'),
         InlineKeyboardButton('Профиль', callback_data=f'profile|{lead.id}'),
         InlineKeyboardButton('Задания', callback_data=f'tasks|{lead.id}')
-    ]
-    for btn in btns:
-        reply_kb.insert(btn)
+    ])
+
     await bot.send_message(cb.from_user.id, 'Вы зарегистрированы! В ближайшее время с вами свяжется наш оператор',
                            reply_markup=reply_kb)
     await state.finish()
