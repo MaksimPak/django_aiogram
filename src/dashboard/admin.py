@@ -123,9 +123,13 @@ class CourseAdmin(admin.ModelAdmin):
     def set_schedule(obj):
         students = obj.student_set.all()
         lessons = obj.lesson_set.all()[obj.last_lesson_index: obj.last_lesson_index + obj.week_size]
-        CourseAdmin.send_students(students, lessons)
+        obj.last_lesson_index += obj.week_size
         obj.is_started = True
         obj.save()
+        if lessons:
+            CourseAdmin.send_students(students, lessons)
+        else:
+            SCHEDULER.remove_job(f'course_{obj.id}')
 
     def response_change(self, request, obj):
         if '_start_course' in request.POST:
