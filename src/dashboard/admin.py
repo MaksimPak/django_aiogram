@@ -11,7 +11,7 @@ from django.shortcuts import render
 import requests
 
 from dashboard import models
-from dashboard.management.commands.runapscheduler import SCHEDULER
+from dashboard.scheduler import SCHEDULER
 
 
 class TelegramBroadcastMixin:
@@ -124,12 +124,8 @@ class CourseAdmin(admin.ModelAdmin):
         students = obj.student_set.all()
         lessons = obj.lesson_set.all()[obj.last_lesson_index: obj.last_lesson_index + obj.week_size]
         obj.last_lesson_index += obj.week_size
-        obj.is_started = True
         obj.save()
-        if lessons:
-            CourseAdmin.send_students(students, lessons)
-        else:
-            SCHEDULER.remove_job(f'course_{obj.id}')
+        CourseAdmin.send_students(students, lessons) if lessons else SCHEDULER.remove_job(f'course_{obj.id}')
 
     def response_change(self, request, obj):
         if '_start_course' in request.POST:
@@ -141,8 +137,8 @@ class CourseAdmin(admin.ModelAdmin):
                 max_instances=1,
                 replace_existing=True,
             )
-            with suppress(SchedulerAlreadyRunningError):
-                SCHEDULER.start()
+            obj.is_started = True
+            obj.save()
         return super().response_change(request, obj)
 
 
