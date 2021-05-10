@@ -95,6 +95,9 @@ class Course(models.Model):
     difficulty = models.CharField(max_length=20, choices=DifficultyType.choices, verbose_name='Сложность')
     price = models.BigIntegerField(verbose_name='Цена')
     is_free = models.BooleanField(verbose_name='Бесплатный курс', default=False)
+    week_size = models.IntegerField(verbose_name='Количество уроков в неделю')
+    last_lesson_index = models.IntegerField(verbose_name='Последний посланный урок')
+    is_started = models.BooleanField(verbose_name='Урок начат', default=False)
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
