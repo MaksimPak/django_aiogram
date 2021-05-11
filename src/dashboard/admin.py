@@ -1,6 +1,9 @@
 import datetime
 import os
+from contextlib import suppress
 
+from apscheduler.schedulers import SchedulerAlreadyRunningError
+from apscheduler.triggers.cron import CronTrigger
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.http import HttpResponseRedirect
@@ -8,6 +11,11 @@ from django.shortcuts import render
 import requests
 
 from dashboard import models
+from dashboard.scheduler import SCHEDULER
+import logging
+
+logging.basicConfig()
+logging.getLogger('apscheduler').setLevel(logging.DEBUG)
 
 
 class TelegramBroadcastMixin:
@@ -35,6 +43,12 @@ class TelegramBroadcastMixin:
 
 class StudentCourseList(admin.TabularInline):
     model = models.StudentCourse
+    classes = ('collapse',)
+    extra = 1
+
+
+class LessonList(admin.StackedInline):
+    model = models.Lesson
     classes = ('collapse',)
     extra = 1
 
@@ -89,14 +103,54 @@ class ClientAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
 
 
 class CourseAdmin(admin.ModelAdmin):
-    list_display = ('id', '__str__', 'short_info', 'category', 'difficulty', 'price')
+    list_display = ('id', '__str__', 'short_info', 'is_started', 'category', 'difficulty', 'price')
     list_display_links = ('__str__',)
     list_per_page = 20
     search_fields = ('id', 'name')
     list_filter = ('category', 'price',)
-    inlines = (StudentCourseList,)
+    inlines = (StudentCourseList, LessonList)
     ordering = ('id',)
     date_hierarchy = 'created_at'
+
+    @staticmethod
+    def send_lessons(lessons, tg_id):
+        for lesson in lessons:
+            url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/" \
+                  f"sendMessage?chat_id={tg_id}&text={lesson.title}"
+            requests.get(url)
+
+    @staticmethod
+    def send_students(students, lessons):
+        [CourseAdmin.send_lessons(lessons, x.tg_id) for x in students]
+
+    @staticmethod
+    def set_schedule(obj):
+        students = obj.student_set.all()
+        lessons = obj.lesson_set.all()[obj.last_lesson_index: obj.last_lesson_index + obj.week_size]
+        obj.last_lesson_index += obj.week_size
+        if lessons:
+            obj.save()
+            CourseAdmin.send_students(students, lessons)
+        else:
+            obj.last_lesson_index = 0
+            obj.is_started = False
+            obj.save()
+            SCHEDULER.pause_job(f'course_{obj.id}')
+            SCHEDULER.remove_job(f'course_{obj.id}')
+
+    def response_change(self, request, obj):
+        if '_start_course' in request.POST:
+            SCHEDULER.add_job(
+                self.set_schedule,
+                trigger=CronTrigger(second='*/10'),
+                args=(obj,),
+                id=f'course_{obj.id}',
+                max_instances=1,
+                replace_existing=True,
+            )
+            obj.is_started = True
+            obj.save()
+        return super().response_change(request, obj)
 
 
 class LessonAdmin(admin.ModelAdmin):
