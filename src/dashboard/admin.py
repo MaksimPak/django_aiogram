@@ -1,8 +1,7 @@
 import datetime
 import os
-from contextlib import suppress
+import json
 
-from apscheduler.schedulers import SchedulerAlreadyRunningError
 from apscheduler.triggers.cron import CronTrigger
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
@@ -72,7 +71,7 @@ class LeadAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
 
     class Media:
         js = (
-            'dashboard/js/admin.js',
+            'dashboard/js/lead_admin.js',
         )
 
 
@@ -111,9 +110,21 @@ class CourseAdmin(admin.ModelAdmin):
     @staticmethod
     def send_lessons(lessons, tg_id):
         for lesson in lessons:
-            url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/" \
-                  f"sendMessage?chat_id={tg_id}&text={lesson.title}"
-            requests.get(url)
+            kb = {
+                'inline_keyboard': [
+                    [{
+                        'text': 'Посмотреть урок',
+                        'callback_data': f'lesson|{lesson.id}'
+                    }],
+                ]
+            }
+            d = {
+                'chat_id': tg_id,
+                'text': lesson.title,
+                'reply_markup': json.dumps(kb)
+            }
+            url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage"
+            requests.post(url, data=d)
 
     @staticmethod
     def send_students(students, lessons):
@@ -162,14 +173,31 @@ class LessonAdmin(admin.ModelAdmin):
     @staticmethod
     def send_students(students, lesson):
         for student in students:
-            url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}" \
-                  f"/sendMessage?chat_id={student.tg_id}&text={lesson.title}"
-            requests.get(url)
+            kb = {
+                'inline_keyboard': [
+                    [{
+                        'text': 'Посмотреть урок',
+                        'callback_data': f'lesson|{lesson.id}'
+                    }],
+                ]
+            }
+            d = {
+                'chat_id': student.tg_id,
+                'text': lesson.title,
+                'reply_markup': json.dumps(kb)
+            }
+            url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage"
+            requests.post(url, data=d)
 
     def send_lesson_block(self, request, qs):
         [LessonAdmin.send_students(lesson.course.student_set.all(), lesson) for lesson in qs]
 
     send_lesson_block.short_description = 'Послать уроки'
+
+    class Media:
+        js = (
+            'dashboard/js/lesson_admin.js',
+        )
 
 
 admin.site.register(models.User, UserAdmin)

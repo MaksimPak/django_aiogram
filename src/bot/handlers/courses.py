@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 from bot import config
 from bot.misc import dp, bot
 from bot.models.db import SessionLocal
-from bot.models.dashboard import StudentTable, StudentCourse, CourseTable, LessonTable, LessonUrlTable
+from bot.models.dashboard import StudentTable, StudentCourse, StudentLesson, CourseTable, LessonTable, LessonUrlTable
 
 
 @dp.callback_query_handler(lambda x: 'courses|' in x.data)
@@ -87,12 +87,44 @@ async def get_lesson(cb: types.callback_query):
             )
             session.add(lesson_url)
         await session.commit()
-
     kb = InlineKeyboardMarkup()
-    kb.add(InlineKeyboardButton('Watch video', url=f'{config.DOMAIN}/dashboard/watch/{lesson_url.hash}'))
-    await bot.send_message(
+    kb.add(InlineKeyboardButton('Watched', callback_data=f'watched|{client.id}|{lesson.id}'))
+    await bot.edit_message_text(
+        cb.message.text,
         cb.from_user.id,
-        f'{lesson.title}\n\n'
-        f'{lesson.info}',
+        cb.message.message_id,
         reply_markup=kb
     )
+
+    await bot.send_message(
+        cb.from_user.id,
+        f'{config.DOMAIN}/dashboard/watch/{lesson_url.hash}',
+    )
+
+
+@dp.callback_query_handler(lambda x: 'watched|' in x.data, state='*')
+async def send_link(cb: types.callback_query):
+    await bot.answer_callback_query(cb.id)
+    _, student_id, lesson_id = cb.data.split('|')
+    async with SessionLocal() as session:
+        student_lesson = StudentLesson(
+            student_id=student_id,
+            lesson_id=lesson_id
+        )
+        session.add(student_lesson)
+        await session.commit()
+        await session.refresh(student_lesson)
+
+        has_homework = (await session.execute(select(StudentLesson).where(
+            StudentLesson.id == student_lesson.id
+        ).options(selectinload(StudentLesson.lesson)))).scalar().lesson.has_homework
+
+        if has_homework:
+            kb = InlineKeyboardMarkup()
+            kb.add(InlineKeyboardButton('submit homework', callback_data='submit_homework'))
+            await bot.edit_message_text(
+                cb.message.text,
+                cb.from_user.id,
+                cb.message.message_id,
+                reply_markup=kb
+            )

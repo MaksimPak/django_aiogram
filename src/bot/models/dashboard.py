@@ -43,6 +43,7 @@ class StudentTable(Base):
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
 
     courses = relationship('StudentCourse', back_populates='students')
+    lessons = relationship('StudentLesson', back_populates='student')
 
 
 class StreamTable(Base):
@@ -93,6 +94,7 @@ class LessonTable(Base):
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
 
     lesson_course = relationship('CourseTable', back_populates='lessons')
+    students = relationship('StudentLesson', back_populates='lesson')
 
 
 class LessonUrlTable(Base):
@@ -120,3 +122,16 @@ class StudentCourse(Base):
     courses = relationship('CourseTable', back_populates='students')
     students = relationship('StudentTable', back_populates='courses')
 
+
+class StudentLesson(Base):
+    __tablename__ = 'dashboard_studentlesson'
+
+    id = Column(BIGINT, primary_key=True)
+    student_id = Column(BIGINT, ForeignKey('dashboard_student.id'))
+    lesson_id = Column(BIGINT, ForeignKey('dashboard_lesson.id'))
+
+    created_at = Column(DateTime, default=datetime.datetime.now)
+    updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
+
+    lesson = relationship('LessonTable', back_populates='students')
+    student = relationship('StudentTable', back_populates='lessons')

@@ -47,6 +47,7 @@ class Student(models.Model):
     checkout_date = models.DateTimeField(blank=True, null=True, verbose_name='Дата чекаута')
     invite_link = models.CharField(max_length=255, editable=False, null=True, blank=True, verbose_name='Инвайт ссылка')
     courses = models.ManyToManyField('Course', through='StudentCourse')
+    lessons = models.ManyToManyField('Lesson', through='StudentLesson')
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
@@ -120,6 +121,7 @@ class Lesson(models.Model):
     video = models.FileField(verbose_name='Видео к уроку')
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     has_homework = models.BooleanField(verbose_name='Есть домашнее задание', default=False)
+    homework_desc = models.TextField(verbose_name='Homework description', null=True, blank=True)
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
@@ -152,6 +154,14 @@ class StudentCourse(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     stream = models.ForeignKey(Stream, on_delete=models.PROTECT, blank=True, null=True)
+
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
+
+
+class StudentLesson(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
