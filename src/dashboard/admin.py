@@ -12,10 +12,6 @@ import requests
 
 from dashboard import models
 from dashboard.scheduler import SCHEDULER
-import logging
-
-logging.basicConfig()
-logging.getLogger('apscheduler').setLevel(logging.DEBUG)
 
 
 class TelegramBroadcastMixin:
@@ -160,7 +156,20 @@ class LessonAdmin(admin.ModelAdmin):
     search_fields = ('id', 'title', 'course')
     list_filter = ('course',)
     ordering = ('id',)
+    actions = ('send_lesson_block',)
     date_hierarchy = 'created_at'
+
+    @staticmethod
+    def send_students(students, lesson):
+        for student in students:
+            url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}" \
+                  f"/sendMessage?chat_id={student.tg_id}&text={lesson.title}"
+            requests.get(url)
+
+    def send_lesson_block(self, request, qs):
+        [LessonAdmin.send_students(lesson.course.student_set.all(), lesson) for lesson in qs]
+
+    send_lesson_block.short_description = 'Послать уроки'
 
 
 admin.site.register(models.User, UserAdmin)
