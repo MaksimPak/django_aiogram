@@ -7,3 +7,5 @@ class DashboardConfig(AppConfig):
 
     def ready(self):
         from .signals import send_course_add_message
+        from . import scheduler
+        scheduler.start()
