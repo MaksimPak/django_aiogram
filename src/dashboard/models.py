@@ -97,7 +97,7 @@ class Course(models.Model):
     is_free = models.BooleanField(verbose_name='Бесплатный курс', default=False)
     week_size = models.IntegerField(verbose_name='Количество уроков в неделю')
     last_lesson_index = models.IntegerField(verbose_name='Последний посланный урок')
-    is_started = models.BooleanField(verbose_name='Урок начат', default=False)
+    is_started = models.BooleanField(verbose_name='Курс начат', default=False)
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)

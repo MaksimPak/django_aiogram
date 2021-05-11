@@ -12,6 +12,10 @@ import requests
 
 from dashboard import models
 from dashboard.scheduler import SCHEDULER
+import logging
+
+logging.basicConfig()
+logging.getLogger('apscheduler').setLevel(logging.DEBUG)
 
 
 class TelegramBroadcastMixin:
@@ -124,10 +128,13 @@ class CourseAdmin(admin.ModelAdmin):
         students = obj.student_set.all()
         lessons = obj.lesson_set.all()[obj.last_lesson_index: obj.last_lesson_index + obj.week_size]
         obj.last_lesson_index += obj.week_size
-        obj.save()
         if lessons:
+            obj.save()
             CourseAdmin.send_students(students, lessons)
         else:
+            obj.last_lesson_index = 0
+            obj.is_started = False
+            obj.save()
             SCHEDULER.pause_job(f'course_{obj.id}')
             SCHEDULER.remove_job(f'course_{obj.id}')
 
