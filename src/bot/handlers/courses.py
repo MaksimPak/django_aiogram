@@ -92,7 +92,7 @@ async def get_lesson(cb: types.callback_query):
                 student_id=client.id,
                 lesson_id=lesson.id
             )
-        session.add(lesson_url)
+            session.add(lesson_url)
         await session.commit()
     kb = InlineKeyboardMarkup()
 
