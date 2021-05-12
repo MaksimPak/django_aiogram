@@ -92,7 +92,7 @@ async def get_lesson(cb: types.callback_query):
                 student_id=client.id,
                 lesson_id=lesson.id
             )
-            session.add(lesson_url)
+        session.add(lesson_url)
         await session.commit()
     kb = InlineKeyboardMarkup()
 
@@ -105,7 +105,8 @@ async def get_lesson(cb: types.callback_query):
         template.render(lesson=lesson),
         cb.from_user.id,
         cb.message.message_id,
-        reply_markup=kb
+        reply_markup=kb,
+        parse_mode='html'
     )
 
     await bot.send_message(
