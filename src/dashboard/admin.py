@@ -7,9 +7,12 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
+from django_apscheduler.models import DjangoJob, DjangoJobExecution
+
 import requests
 
 from dashboard import models
+from dashboard.models import Stream
 from dashboard.scheduler import SCHEDULER
 
 
@@ -41,6 +44,8 @@ class StudentCourseList(admin.TabularInline):
     classes = ('collapse',)
     extra = 1
 
+    verbose_name_plural = 'Студенты'
+
 
 class LessonList(admin.StackedInline):
     model = models.Lesson
@@ -48,6 +53,14 @@ class LessonList(admin.StackedInline):
     extra = 1
 
 
+class ClientList(admin.StackedInline):
+    model = models.Client.stream.through
+    classes = ('collapse',)
+    verbose_name_plural = 'Студенты'
+    verbose_name = 'Студент'
+
+
+@admin.register(models.Lead)
 class LeadAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     list_display = ('id', '__str__', 'tg_id', 'application_type', 'phone', 'language_type', 'is_client', 'chosen_field')
     list_editable = ('is_client',)
@@ -75,6 +88,7 @@ class LeadAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
         )
 
 
+@admin.register(models.Client)
 class ClientAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     list_display = ('id', '__str__', 'tg_id', 'application_type', 'phone', 'language_type', 'is_client',)
     list_editable = ('is_client',)
@@ -97,6 +111,7 @@ class ClientAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     send_checkout.short_description = 'Рассылка чекаута'
 
 
+@admin.register(models.Course)
 class CourseAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__', 'short_info', 'is_started', 'category', 'difficulty', 'price')
     list_display_links = ('__str__',)
@@ -160,6 +175,7 @@ class CourseAdmin(admin.ModelAdmin):
         return super().response_change(request, obj)
 
 
+@admin.register(models.Lesson)
 class LessonAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__', 'short_info', 'video', 'course')
     list_display_links = ('__str__',)
@@ -200,8 +216,12 @@ class LessonAdmin(admin.ModelAdmin):
         )
 
 
+@admin.register(Stream)
+class Stream(admin.ModelAdmin):
+    list_display = ('id', 'name', 'course',)
+    inlines = (ClientList,)
+
+
 admin.site.register(models.User, UserAdmin)
-admin.site.register(models.Lead, LeadAdmin)
-admin.site.register(models.Client, ClientAdmin)
-admin.site.register(models.Course, CourseAdmin)
-admin.site.register(models.Lesson, LessonAdmin)
+admin.site.unregister(DjangoJob)
+admin.site.unregister(DjangoJobExecution)
