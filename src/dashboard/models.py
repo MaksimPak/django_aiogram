@@ -101,6 +101,7 @@ class Course(models.Model):
     week_size = models.IntegerField(verbose_name='Количество уроков в неделю')
     last_lesson_index = models.IntegerField(verbose_name='Последний посланный урок')
     is_started = models.BooleanField(verbose_name='Курс начат', default=False)
+    chat_id = models.BigIntegerField(verbose_name='Chat ID группы', null=True, blank=True)
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
@@ -164,6 +165,7 @@ class StudentCourse(models.Model):
 class StudentLesson(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
+    homework_sent = models.DateTimeField(verbose_name='Дата отправки дз', null=True, blank=True)
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)

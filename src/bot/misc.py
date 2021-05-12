@@ -3,6 +3,7 @@ import os
 
 from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.redis import RedisStorage2
+from jinja2 import Environment, PackageLoader, select_autoescape
 
 from bot import config
 
@@ -13,6 +14,10 @@ os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"  # Remove?
 bot = Bot(token=config.BOT_TOKEN)
 storage = RedisStorage2(host=config.REDIS_HOST, port=config.REDIS_PORT, db=1)
 dp = Dispatcher(bot, storage=storage)
+jinja_env = Environment(
+    loader=PackageLoader('bot'),
+    autoescape=select_autoescape()
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

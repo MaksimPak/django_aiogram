@@ -2,7 +2,7 @@ import datetime
 import enum
 import uuid
 
-from sqlalchemy import Column, String, Enum, Boolean, ForeignKey, DateTime
+from sqlalchemy import Column, String, Enum, Boolean, ForeignKey, DateTime, Integer
 from sqlalchemy.dialects.mssql import TINYINT
 from sqlalchemy.dialects.mysql import BIGINT, LONGTEXT, CHAR
 from sqlalchemy.orm import relationship
@@ -72,6 +72,10 @@ class CourseTable(Base):
     difficulty = Column(Enum(DifficultyType, values_callable=lambda x: [e.value for e in x]))
     price = Column(BIGINT)
     is_free = Column(TINYINT, default=0)
+    week_size = Column(Integer)
+    last_lesson_index = Column(Integer)
+    is_started = Column(Boolean, default=False)
+    chat_id = Column(BIGINT, nullable=True)
 
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
@@ -89,6 +93,7 @@ class LessonTable(Base):
     video = Column(String(100))
     course_id = Column(BIGINT, ForeignKey('dashboard_course.id'))
     has_homework = Column(Boolean, default=False)
+    homework_desc = Column(LONGTEXT, nullable=True)
 
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
@@ -129,6 +134,7 @@ class StudentLesson(Base):
     id = Column(BIGINT, primary_key=True)
     student_id = Column(BIGINT, ForeignKey('dashboard_student.id'))
     lesson_id = Column(BIGINT, ForeignKey('dashboard_lesson.id'))
+    homework_sent = Column(DateTime, nullable=True)
 
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)

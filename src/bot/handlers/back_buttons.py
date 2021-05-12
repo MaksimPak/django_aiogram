@@ -4,7 +4,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
 from bot.misc import bot, dp
-from bot.models.dashboard import StudentTable, StudentCourse
+from bot.models.dashboard import StudentTable, StudentCourse, CourseTable
 from bot.models.db import SessionLocal
 
 
@@ -45,6 +45,29 @@ async def to_courses(cb: types.callback_query):
     kb.add(InlineKeyboardButton('Назад', callback_data=f'back|{client.id}'))
 
     msg = 'Ваши курсы' if client.courses else 'Вы не записаны ни на один курс'
+    await bot.edit_message_text(
+        msg,
+        cb.from_user.id,
+        cb.message.message_id,
+        reply_markup=kb
+    )
+
+
+@dp.callback_query_handler(lambda x: 'to_lessons|' in x.data)
+async def to_lessons(cb: types.callback_query):
+    await bot.answer_callback_query(cb.id)
+    _, course_id, client_id = cb.data.split('|')
+
+    async with SessionLocal() as session:
+        course = (await session.execute(
+                select(CourseTable).where(CourseTable.id == course_id).options(
+                    selectinload(CourseTable.lessons)
+                ))).scalar()
+    kb = InlineKeyboardMarkup().add(
+        *[InlineKeyboardButton(x.title, callback_data=f'lesson|{x.id}') for x in course.lessons[:course.last_lesson_index]]
+    )
+    kb.add(InlineKeyboardButton('Назад', callback_data=f'to_courses|{client_id}'))
+    msg = 'Уроки курса' if course.lessons else 'У курса не уроков'
     await bot.edit_message_text(
         msg,
         cb.from_user.id,
