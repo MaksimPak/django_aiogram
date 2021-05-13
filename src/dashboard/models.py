@@ -3,6 +3,7 @@ import random
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.template.loader import render_to_string
 
 from django.template.defaultfilters import truncatewords
 from dashboard.misc import LeadManager, ClientManager
@@ -101,7 +102,7 @@ class Course(models.Model):
     week_size = models.IntegerField(verbose_name='Количество уроков в неделю')
     last_lesson_index = models.IntegerField(verbose_name='Последний посланный урок')
     is_started = models.BooleanField(verbose_name='Курс начат', default=False)
-    chat_id = models.BigIntegerField(verbose_name='Chat ID группы', null=True, blank=True)
+    chat_id = models.BigIntegerField(verbose_name='Telegram ID', null=True, blank=True, help_text=render_to_string('dashboard/course_helptext.html'))
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)

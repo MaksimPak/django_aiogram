@@ -102,16 +102,11 @@ async def get_lesson(cb: types.callback_query):
     template = jinja_env.get_template('lesson_info.html')
 
     await bot.edit_message_text(
-        template.render(lesson=lesson),
+        template.render(lesson=lesson, url=f'{config.DOMAIN}/dashboard/watch/{lesson_url.hash}'),
         cb.from_user.id,
         cb.message.message_id,
         reply_markup=kb,
         parse_mode='html'
-    )
-
-    await bot.send_message(
-        cb.from_user.id,
-        f'{config.DOMAIN}/dashboard/watch/{lesson_url.hash}',
     )
 
 
