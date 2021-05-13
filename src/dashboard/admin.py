@@ -116,6 +116,7 @@ class ClientAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
 class CourseAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__', 'short_info', 'is_started', 'category', 'difficulty', 'price')
     list_display_links = ('__str__',)
+    list_editable = ('is_started',)
     list_per_page = 20
     search_fields = ('id', 'name')
     list_filter = ('category', 'price',)
@@ -179,11 +180,8 @@ class CourseAdmin(admin.ModelAdmin):
     def change_view(self, request, object_id, form_url='', extra_context=None):
         extra_context = extra_context or {}
         course = Course.objects.get(pk=object_id)
-        lessons = course.lesson_set.all()
+        extra_context['lessons'] = course.lesson_set.all()
 
-        extra_context = {
-            'lessons': lessons
-        }
         return super().change_view(
             request, object_id, form_url, extra_context=extra_context,
         )

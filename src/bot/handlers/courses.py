@@ -163,11 +163,20 @@ async def get_homework(message: types.Message, state: FSMContext):
     data = await state.get_data()
 
     async with SessionLocal() as session:
-        record = (await session.execute(select(StudentLesson).where(
-            StudentLesson.id == data['student_lesson']
-        ).options(selectinload(StudentLesson.lesson).selectinload(LessonTable.lesson_course)))).scalar()
+        record = (await session.execute(
+            select(StudentLesson).where(StudentLesson.id == data['student_lesson']).options(
+              selectinload(StudentLesson.lesson).selectinload(LessonTable.lesson_course)).options(
+                selectinload(StudentLesson.student)))).scalar()
+
         record.homework_sent = datetime.datetime.now()
         await session.commit()
+        await session.refresh(record)
+
+    template = jinja_env.get_template('new_homework.html')
+    await bot.send_message(
+        data['course_tg'],
+        template.render(student=record.student)
+    )
 
     await bot.forward_message(
         data['course_tg'],
