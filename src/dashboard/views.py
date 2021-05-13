@@ -7,13 +7,14 @@ from dashboard.forms import ClientForm
 
 
 def watch_video(request, uuid):
-    lesson_url = get_object_or_404(LessonUrl, hash=uuid)
-    context = {'lesson': lesson_url.lesson}
-    if lesson_url:
-        lesson_url.delete()
-        return render(request, 'dashboard/watch_lesson.html', context)
-    else:
-        return HttpResponseNotFound('<h1>Page not found</h1>')
+    if request.GET['HTTP_USER_AGENT'] != 'TelegramBot (like TwitterBot)':
+        lesson_url = get_object_or_404(LessonUrl, hash=uuid)
+        context = {'lesson': lesson_url.lesson}
+        if lesson_url:
+            lesson_url.delete()
+            return render(request, 'dashboard/watch_lesson.html', context)
+        else:
+            return HttpResponseNotFound('<h1>Page not found</h1>')
 
 
 def signup(request):
