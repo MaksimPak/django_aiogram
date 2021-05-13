@@ -21,13 +21,13 @@
             <tr>
                 <td>{{lesson.title}}</td>
                 <td>{% for record in lesson.studentlesson_set.all %}
-                        {{record.student.first_name|slice:":1"}}.{{record.student.last_name}}
+                    <a href="{% url 'admin:dashboard_client_change' record.student.id %}">{{record.student.first_name|slice:":1"}}.{{record.student.last_name}}</a>
                     {% endfor %}
                 </td>
                 <td>{{lesson.studentlesson_set.all.count}}</td>
                 <td>{% for record in lesson.studentlesson_set.all %}
                         {% if record.homework_sent %}
-                            {{record.student.first_name|slice:":1"}}.{{record.student.last_name}}
+                        <a href="{% url 'admin:dashboard_client_change' record.student.id %}">{{record.student.first_name|slice:":1"}}.{{record.student.last_name}}</a>
                         {% endif %}
                     {% endfor %}
                 </td>
