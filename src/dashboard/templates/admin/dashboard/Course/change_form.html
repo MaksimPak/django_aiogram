@@ -20,19 +20,19 @@
         {% for lesson in lessons %}
             <tr>
                 <td>{{lesson.title}}</td>
-                <td>{% for record in lesson.studentlesson_set.all %}
-                    <a href="{% url 'admin:dashboard_client_change' record.student.id %}">{{record.student.first_name|slice:":1"}}.{{record.student.last_name}}</a>
+                <td>{% for student in lesson|students %}
+                    <a href="{% url 'admin:dashboard_client_change' student.id %}">{{student.first_name|slice:":1"}}.{{student.last_name}}</a>
                     {% endfor %}
                 </td>
-                <td>{{lesson.studentlesson_set.all.count}}</td>
-                <td>{% for record in lesson.studentlesson_set.all %}
-                        {% if record.homework_sent %}
-                        <a href="{% url 'admin:dashboard_client_change' record.student.id %}">{{record.student.first_name|slice:":1"}}.{{record.student.last_name}}</a>
-                        {% endif %}
+                <td>{{lesson|students|length}}</td>
+                <!-- this part needs to be finished -->
+                <td>
+                    {% for student in lesson|students_hw_submitted %}
+                        <a href="{% url 'admin:dashboard_client_change' student.id %}">{{student.first_name|slice:":1"}}.{{student.last_name}}</a>
                     {% endfor %}
                 </td>
                 <td>
-                    {{ lesson|homework_count}}
+                    {{ lesson|students_hw_submitted|length}}
                 </td>
             </tr>
         {% endfor %}
