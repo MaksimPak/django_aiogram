@@ -6,6 +6,7 @@ from aiogram.dispatcher.filters import CommandStart, Text
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from bot.misc import dp, bot
 from bot.models.db import SessionLocal
@@ -38,16 +39,19 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
 @dp.message_handler(CommandStart(re.compile(r'\d+')))
 async def register_deep_link(message: types.Message):
-    async with SessionLocal() as session:
-        student = (await session.execute(
-            select(StudentTable).where(StudentTable.unique_code == message.get_args())
-        )).scalar()
-        if student:
-            student.tg_id = message.from_user.id
-            await session.commit()
-            await message.reply('Вы были успешно зарегистрированы')
-        else:
-            await message.reply('Неверный инвайт код')
+    try:
+        async with SessionLocal() as session:
+            student = (await session.execute(
+                select(StudentTable).where(StudentTable.unique_code == message.get_args())
+            )).scalar()
+            if student:
+                student.tg_id = message.from_user.id
+                await session.commit()
+                await message.reply('Вы были успешно зарегистрированы')
+            else:
+                await message.reply('Неверный инвайт код')
+    except IntegrityError:
+        await message.reply('Вы уже зарегистрированы. Отправьте /start чтобы начать взаимодействие')
 
 
 @dp.message_handler(CommandStart())

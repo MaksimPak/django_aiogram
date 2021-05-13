@@ -1,14 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <meta charset="utf-8">
+    <title>Зарегистрироваться</title>
+    <link rel="stylesheet" href="https://unpkg.com/spectre.css/dist/spectre.min.css">
 </head>
 <body>
-<form action="" method="post" class="form">
-   {% csrf_token %}
-    {{form.as_p}}
-    <input type="submit" value="Зарегистрироваться">
-</form>
+<div class="container">
+    <div class="columns">
+        <div class="column col-auto col-mx-auto" class="form">
+            <div class="form-group">
+                <form action="" id="bootstrapForm" method="POST">
+                    <fieldset>
+                        <h2>Форма регистрации</h2>
+                    </fieldset>
+                        {% csrf_token %}
+                        {{form.as_p}}
+                        <input type="submit" value="Зарегистрироваться" class="btn btn-lg">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.form/4.2.2/jquery.form.min.js" integrity="sha256-2Pjr1OlpZMY6qesJM68t2v39t+lMLvxwpa8QlRjJroA=" crossorigin="anonymous"></script>
+
 </body>
 </html>
