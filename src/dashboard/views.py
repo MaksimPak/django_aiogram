@@ -7,7 +7,7 @@ from dashboard.forms import ClientForm
 
 
 def watch_video(request, uuid):
-    if request.GET.get('HTTP_USER_AGENT', '') != 'TelegramBot (like TwitterBot)':
+    if request.META.get('HTTP_USER_AGENT') != 'TelegramBot (like TwitterBot)':
         lesson_url = get_object_or_404(LessonUrl, hash=uuid)
         context = {'lesson': lesson_url.lesson}
         if lesson_url:
