@@ -1,8 +1,42 @@
 {% extends 'admin/change_form.html' %}
+{% load helpers %}
 
 {% block submit_buttons_bottom %}
     {{ block.super }}
 <!--    <div class="submit-row">-->
 <!--            <input type="submit" value="Start course" name="_start_course">-->
 <!--    </div>-->
+<table>
+    <thead>
+        <tr>
+            <th>Lesson Name</th>
+            <th>Students Viewed Vid</th>
+            <th>Count students viewed</th>
+            <th>Students submitted hw</th>
+            <th>Count students submitted hw</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for lesson in lessons %}
+            <tr>
+                <td>{{lesson.title}}</td>
+                <td>{% for record in lesson.studentlesson_set.all %}
+                        {{record.student.first_name|slice:":1"}}.{{record.student.last_name}}
+                    {% endfor %}
+                </td>
+                <td>{{lesson.studentlesson_set.all.count}}</td>
+                <td>{% for record in lesson.studentlesson_set.all %}
+                        {% if record.homework_sent %}
+                            {{record.student.first_name|slice:":1"}}.{{record.student.last_name}}
+                        {% endif %}
+                    {% endfor %}
+                </td>
+                <td>
+                    {{ lesson|homework_count}}
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% endblock %}
+

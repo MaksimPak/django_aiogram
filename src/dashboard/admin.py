@@ -14,6 +14,7 @@ import requests
 from dashboard import models
 from dashboard.models import Stream
 from dashboard.scheduler import SCHEDULER
+from dashboard.models import Course
 
 
 class TelegramBroadcastMixin:
@@ -121,6 +122,7 @@ class CourseAdmin(admin.ModelAdmin):
     inlines = (StudentCourseList, LessonList)
     ordering = ('id',)
     date_hierarchy = 'created_at'
+    change_form_template = 'admin/dashboard/Course/change_form.html'
 
     @staticmethod
     def send_lessons(lessons, tg_id):
@@ -173,6 +175,18 @@ class CourseAdmin(admin.ModelAdmin):
             obj.is_started = True
             obj.save()
         return super().response_change(request, obj)
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        course = Course.objects.get(pk=object_id)
+        lessons = course.lesson_set.all()
+
+        extra_context = {
+            'lessons': lessons
+        }
+        return super().change_view(
+            request, object_id, form_url, extra_context=extra_context,
+        )
 
 
 @admin.register(models.Lesson)
