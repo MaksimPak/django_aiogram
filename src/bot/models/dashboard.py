@@ -134,6 +134,8 @@ class StudentLesson(Base):
     id = Column(BIGINT, primary_key=True)
     student_id = Column(BIGINT, ForeignKey('dashboard_student.id'))
     lesson_id = Column(BIGINT, ForeignKey('dashboard_lesson.id'))
+    date_received = Column(DateTime, nullable=True)
+    date_watched = Column(DateTime, nullable=True)
     homework_sent = Column(DateTime, nullable=True)
 
     created_at = Column(DateTime, default=datetime.datetime.now)

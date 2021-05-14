@@ -170,7 +170,7 @@ async def create_record(cb: types.callback_query, state: FSMContext):
         courses = (await session.execute(
             select(CourseTable).where(CourseTable.is_free == 1))).scalars()
         session.add(lead)
-        await session.commit()
+        await session.flush()
         session.add_all([StudentCourse(course_id=course.id, student_id=lead.id) for course in courses])
         await session.commit()
 

@@ -92,11 +92,17 @@ async def get_lesson(cb: types.callback_query):
                 student_id=client.id,
                 lesson_id=lesson.id
             )
-            session.add(lesson_url)
+
+        student_lesson = StudentLesson(
+            student_id=client.id,
+            lesson_id=lesson_id,
+            date_received=datetime.datetime.now()
+        )
+        session.add_all([lesson_url, student_lesson])
         await session.commit()
     kb = InlineKeyboardMarkup()
 
-    kb.add(InlineKeyboardButton('Отметить как просмотренное', callback_data=f'watched|{client.id}|{lesson.id}'))
+    kb.add(InlineKeyboardButton('Отметить как просмотренное', callback_data=f'watched|{student_lesson.id}'))
     kb.add(InlineKeyboardButton('Назад', callback_data=f'to_lessons|{lesson.course_id}|{client.id}'))
 
     template = jinja_env.get_template('lesson_info.html')
@@ -111,21 +117,19 @@ async def get_lesson(cb: types.callback_query):
 
 
 @dp.callback_query_handler(lambda x: 'watched|' in x.data, state='*')
-async def send_link(cb: types.callback_query, state: FSMContext):
+async def check_homework(cb: types.callback_query):
     await bot.answer_callback_query(cb.id)
-    _, student_id, lesson_id = cb.data.split('|')
-    async with SessionLocal() as session:
-        student_lesson = StudentLesson(
-            student_id=student_id,
-            lesson_id=lesson_id
-        )
-        session.add(student_lesson)
-        await session.commit()
-        await session.refresh(student_lesson)
+    _, studentlesson_id = cb.data.split('|')
 
+    async with SessionLocal() as session:
         record = (await session.execute(select(StudentLesson).where(
-            StudentLesson.id == student_lesson.id
+            StudentLesson.id == studentlesson_id
         ).options(selectinload(StudentLesson.lesson).selectinload(LessonTable.lesson_course)))).scalar()
+        record.date_watched = datetime.datetime.now()
+
+        await session.commit()
+        await session.refresh(record)
+
         if record.lesson.has_homework:
             kb = InlineKeyboardMarkup()
             kb.add(InlineKeyboardButton(
@@ -142,7 +146,7 @@ async def send_link(cb: types.callback_query, state: FSMContext):
 
 
 @dp.callback_query_handler(lambda x: 'submit|' in x.data, state='*')
-async def send_homework(cb: types.callback_query, state: FSMContext):
+async def request_homework(cb: types.callback_query, state: FSMContext):
     await bot.answer_callback_query(cb.id)
     _, course_tg, student_lesson = cb.data.split('|')
 

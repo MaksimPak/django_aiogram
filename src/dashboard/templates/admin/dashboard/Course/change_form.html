@@ -1,42 +1,78 @@
 {% extends 'admin/change_form.html' %}
 {% load helpers %}
 
-{% block submit_buttons_bottom %}
-    {{ block.super }}
-<!--    <div class="submit-row">-->
-<!--            <input type="submit" value="Start course" name="_start_course">-->
-<!--    </div>-->
-<table>
-    <thead>
-        <tr>
-            <th>Lesson Name</th>
-            <th>Students Viewed Vid</th>
-            <th>Count students viewed</th>
-            <th>Students submitted hw</th>
-            <th>Count students submitted hw</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for lesson in lessons %}
-            <tr>
-                <td>{{lesson.title}}</td>
-                <td>{% for student in lesson|students %}
-                    <a href="{% url 'admin:dashboard_client_change' student.id %}">{{student.first_name|slice:":1"}}.{{student.last_name}}</a>
-                    {% endfor %}
-                </td>
-                <td>{{lesson|students|length}}</td>
-                <!-- this part needs to be finished -->
-                <td>
-                    {% for student in lesson|students_hw_submitted %}
-                        <a href="{% url 'admin:dashboard_client_change' student.id %}">{{student.first_name|slice:":1"}}.{{student.last_name}}</a>
-                    {% endfor %}
-                </td>
-                <td>
-                    {{ lesson|students_hw_submitted|length}}
-                </td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% endblock %}
+{#
+    {% block submit_buttons_bottom %}
+        {{ block.super }}
+        <div class="submit-row">
+                <input type="submit" value="Start course" name="_start_course">
+        </div>
+    {% endblock %}
+#}
 
+{% block footer %}
+    {{ block.super }}
+    <div id="content">
+    <table>
+        <thead>
+            <tr>
+                <th>Lesson Name</th>
+                <th>Students Received Vid</th>
+                <th>Students Viewed Vid</th>
+                <th>Count students viewed</th>
+                <th>Students submitted hw</th>
+                <th>Count students submitted hw</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lesson in lessons %}
+                <tr>
+                    <td>{{lesson.title}}</td>
+                    <td>
+                        <form action="{% url 'dashboard:send_message' %}" method="post">
+                            {% csrf_token %}
+                            {% for student in lesson|students_received %}
+                                <input type="hidden" name="_student_received" value="{{student.id}}">
+                                <a href="{% url 'admin:dashboard_client_change' student.id %}">{{student.first_name|slice:":1"}}.{{student.last_name}}</a>
+                            {% endfor %}
+                            {%  if lesson|students_received %}
+                            <button type="submit" style="font-size:10px;">Отправить сообщение</button>
+                            {% endif %}
+                        </form>
+                    </td>
+
+                    <td>
+                        <form action="{% url 'dashboard:send_message' %}" method="post">
+                            {% csrf_token %}
+                            {% for student in lesson|students_watched %}
+                                <input type="hidden" name="_student_received" value="{{student.id}}">
+                                <a href="{% url 'admin:dashboard_client_change' student.id %}">{{student.first_name|slice:":1"}}.{{student.last_name}}</a>
+                            {% endfor %}
+                            {% if lesson|students_watched %}
+                                <button type="submit" style="font-size:10px;">Отправить сообщение</button>
+                            {% endif %}
+                        </form>
+                    </td>
+
+                    <td>{{lesson|students_watched|length}}</td>
+                    <td>
+                        <form action="{% url 'dashboard:send_message' %}" method="post">
+                            {% csrf_token %}
+                            {% for student in lesson|students_hw_submitted %}
+                                <input type="hidden" name="_student_received" value="{{student.id}}">
+                                <a href="{% url 'admin:dashboard_client_change' student.id %}">{{student.first_name|slice:":1"}}.{{student.last_name}}</a>
+                            {% endfor %}
+                            {% if lesson|students_hw_submitted %}
+                                <button type="submit" style="font-size:10px;">Отправить сообщение</button>
+                            {% endif %}
+                        </form>
+                    </td>
+                    <td>
+                        {{ lesson|students_hw_submitted|length}}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+{% endblock %}

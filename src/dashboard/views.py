@@ -1,9 +1,14 @@
+import os
+
+import requests
 from django.db import IntegrityError
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponseNotFound, HttpResponse
+from django.http import HttpResponseNotFound, HttpResponse, HttpResponseRedirect
 
 # Create your views here.
-from dashboard.models import LessonUrl, Lead
+from django.urls import reverse
+
+from dashboard.models import LessonUrl, Lead, Student
 from dashboard.forms import ClientForm
 
 
@@ -36,3 +41,18 @@ def signup(request):
     else:
         form = ClientForm()
         return render(request, 'dashboard/signup.html', {'form': form})
+
+
+# todo: problematic code
+def message_to_students(request):
+    clients = [Student.objects.get(pk=x) for x in request.POST.getlist('_student_received')]
+    if 'send' in request.POST:
+        students = [Student.objects.get(pk=x) for x in request.POST.getlist('_selected_action')]
+
+        for student in students:
+            url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage?chat_id={student.tg_id}&text={request.POST['message']}"
+            requests.get(url)
+
+        return HttpResponseRedirect(reverse('admin:dashboard_course_changelist'))
+
+    return render(request, 'dashboard/send_intermediate.html', context={'entities': clients})
