@@ -1,15 +1,15 @@
 import datetime
-import os
 import json
+import os
 
+import requests
 from apscheduler.triggers.cron import CronTrigger
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.http import HttpResponseRedirect
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.urls import reverse
 from django_apscheduler.models import DjangoJob, DjangoJobExecution
-import requests
 
 from dashboard import models
 from dashboard.scheduler import SCHEDULER

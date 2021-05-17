@@ -4,13 +4,13 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import CommandStart, Text, ChatTypeFilter
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from bot.misc import dp, bot
-from bot.models.db import SessionLocal
 from bot.models.dashboard import StudentTable, CourseTable, StudentCourse, CategoryType
+from bot.models.db import SessionLocal
 
 
 class RegistrationState(StatesGroup):

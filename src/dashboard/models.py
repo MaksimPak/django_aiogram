@@ -1,11 +1,11 @@
-import uuid
 import random
+import uuid
 
-from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db import models
+from django.template.defaultfilters import truncatewords
 from django.template.loader import render_to_string
 
-from django.template.defaultfilters import truncatewords
 from dashboard.misc import LeadManager, ClientManager
 
 
@@ -19,7 +19,6 @@ class CategoryType(models.TextChoices):
 
 
 class User(AbstractUser):
-    pass
 
     class Meta:
         verbose_name = 'Админ'

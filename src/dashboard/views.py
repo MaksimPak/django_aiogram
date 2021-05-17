@@ -2,14 +2,12 @@ import os
 
 import requests
 from django.db import IntegrityError
-from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponseNotFound, HttpResponse, HttpResponseRedirect
-
-# Create your views here.
+from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 
-from dashboard.models import LessonUrl, Lead, Student
 from dashboard.forms import ClientForm
+from dashboard.models import LessonUrl, Lead, Student
 
 
 def watch_video(request, uuid):

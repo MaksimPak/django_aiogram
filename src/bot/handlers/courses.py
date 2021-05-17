@@ -4,15 +4,14 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ContentType
-
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
 from bot import config
 from bot.misc import dp, bot
-from bot.models.db import SessionLocal
-from bot.models.dashboard import StudentTable, StudentCourse, StudentLesson, CourseTable, LessonTable, LessonUrlTable
 from bot.misc import jinja_env
+from bot.models.dashboard import StudentTable, StudentCourse, StudentLesson, CourseTable, LessonTable, LessonUrlTable
+from bot.models.db import SessionLocal
 
 
 class Homework(StatesGroup):

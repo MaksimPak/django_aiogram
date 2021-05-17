@@ -6,6 +6,7 @@ class DashboardConfig(AppConfig):
     name = 'dashboard'
 
     def ready(self):
+        # noinspection PyUnresolvedReferences
         from . import signals
         # from . import scheduler
         # scheduler.start()
