@@ -2,7 +2,7 @@ import re
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters import CommandStart, Text
+from aiogram.dispatcher.filters import CommandStart, Text, ChatTypeFilter
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from sqlalchemy import select
@@ -21,8 +21,8 @@ class RegistrationState(StatesGroup):
     selected_field = State()
 
 
-@dp.message_handler(state='*', commands='cancel')
-@dp.message_handler(Text(equals='cancel', ignore_case=True), state='*')
+@dp.message_handler(ChatTypeFilter(types.ChatType.PRIVATE), state='*', commands='cancel')
+@dp.message_handler(ChatTypeFilter(types.ChatType.PRIVATE), Text(equals='cancel', ignore_case=True), state='*')
 async def cancel_handler(message: types.Message, state: FSMContext):
     """
     Allow user to cancel any action
@@ -37,7 +37,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     await message.reply('Cancelled.', reply_markup=types.ReplyKeyboardRemove())
 
 
-@dp.message_handler(CommandStart(re.compile(r'\d+')))
+@dp.message_handler(CommandStart(re.compile(r'\d+')), ChatTypeFilter(types.ChatType.PRIVATE))
 async def register_deep_link(message: types.Message):
     try:
         async with SessionLocal() as session:
@@ -54,7 +54,7 @@ async def register_deep_link(message: types.Message):
         await message.reply('Вы уже зарегистрированы. Отправьте /start чтобы начать взаимодействие')
 
 
-@dp.message_handler(CommandStart())
+@dp.message_handler(CommandStart(), ChatTypeFilter(types.ChatType.PRIVATE))
 async def start_reg(message: types.Message):
     async with SessionLocal() as session:
         student = (await session.execute(
@@ -76,13 +76,13 @@ async def start_reg(message: types.Message):
                                reply_markup=reply_kb)
 
 
-@dp.callback_query_handler(lambda x: x.data == 'invite_reg')
+@dp.callback_query_handler(ChatTypeFilter(types.ChatType.PRIVATE), lambda x: x.data == 'invite_reg')
 async def invite_reg(cb: types.callback_query):
     await bot.answer_callback_query(cb.id)
     await bot.send_message(cb.from_user.id, 'Введите инвайт код')
 
 
-@dp.message_handler()
+@dp.message_handler(ChatTypeFilter(types.ChatType.PRIVATE))
 async def check_invite_code(message: types.Message):
     async with SessionLocal() as session:
         student = (await session.execute(
