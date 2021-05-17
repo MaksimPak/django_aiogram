@@ -6,37 +6,41 @@ from apscheduler.triggers.cron import CronTrigger
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.http import HttpResponseRedirect
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.urls import reverse
 from django_apscheduler.models import DjangoJob, DjangoJobExecution
-
 import requests
 
 from dashboard import models
-from dashboard.models import Stream
 from dashboard.scheduler import SCHEDULER
-from dashboard.models import Course
 
 
 class TelegramBroadcastMixin:
     @staticmethod
-    def send_single_message(tg_id, message):
-        url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage?chat_id={tg_id}&text={message}"
-        requests.get(url)
+    def send_single_message(data):
+        url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage"
+        return requests.post(url, data=data).json()
 
     def send_message(self, request, qs):
         if 'send' in request.POST:
             for record in qs:
-                self.send_single_message(record.tg_id, request.POST['message'])
+                data = {
+                    'chat_id': record.tg_id,
+                    'text': request.POST['message']
+                }
+                self.send_single_message(data=data)
             return HttpResponseRedirect(request.get_full_path())
 
         return render(request, 'dashboard/send_intermediate.html', context={'entities': qs})
 
     def send_checkout(self, request, qs):
         for record in qs:
-            url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage?chat_id={record.tg_id}&text=https://paynet.uz/checkout_test"
-            resp = requests.get(url).json()
+            data = {
+                'chat_id': record.tg_id,
+                'text': 'https://paynet.uz/checkout_test'
+            }
+            resp = self.send_single_message(data=data)
             resp['ok'] and models.Student.objects.filter(pk=record.id).update(checkout_date=datetime.datetime.now())
-
         return HttpResponseRedirect(request.get_full_path())
 
 
@@ -179,7 +183,7 @@ class CourseAdmin(admin.ModelAdmin):
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         extra_context = extra_context or {}
-        course = Course.objects.get(pk=object_id)
+        course = models.Course.objects.get(pk=object_id)
         extra_context['lessons'] = course.lesson_set.all()
 
         return super().change_view(
@@ -193,7 +197,7 @@ class CourseAdmin(admin.ModelAdmin):
 
 
 @admin.register(models.Lesson)
-class LessonAdmin(admin.ModelAdmin):
+class LessonAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     list_display = ('id', '__str__', 'short_info', 'video', 'course')
     list_display_links = ('__str__',)
     list_per_page = 20
@@ -204,7 +208,7 @@ class LessonAdmin(admin.ModelAdmin):
     date_hierarchy = 'created_at'
 
     @staticmethod
-    def send_students(students, lesson):
+    def prepare_data(students, lesson):
         for student in students:
             kb = {
                 'inline_keyboard': [
@@ -214,16 +218,15 @@ class LessonAdmin(admin.ModelAdmin):
                     }],
                 ]
             }
-            d = {
+            data = {
                 'chat_id': student.tg_id,
                 'text': lesson.title,
                 'reply_markup': json.dumps(kb)
             }
-            url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage"
-            requests.post(url, data=d)
+            LessonAdmin.send_single_message(data=data)
 
     def send_lesson_block(self, request, qs):
-        [LessonAdmin.send_students(lesson.course.student_set.all(), lesson) for lesson in qs]
+        [LessonAdmin.prepare_data(lesson.course.student_set.all(), lesson) for lesson in qs]
 
     send_lesson_block.short_description = 'Послать уроки'
 
@@ -233,10 +236,22 @@ class LessonAdmin(admin.ModelAdmin):
         )
 
 
-@admin.register(Stream)
+@admin.register(models.Stream)
 class Stream(admin.ModelAdmin):
     list_display = ('id', 'name', 'course',)
     inlines = (ClientList,)
+
+
+@admin.register(models.Student)
+class Student(admin.ModelAdmin):
+    def response_change(self, request, obj):
+        return HttpResponseRedirect(reverse('admin:dashboard_course_changelist'))
+
+    def get_model_perms(self, request):
+        """
+        Return empty perms dict thus hiding the model from admin index.
+        """
+        return {}
 
 
 admin.site.register(models.User, UserAdmin)
