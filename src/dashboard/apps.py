@@ -6,6 +6,6 @@ class DashboardConfig(AppConfig):
     name = 'dashboard'
 
     def ready(self):
-        from .signals import send_course_add_message
+        from . import signals
         # from . import scheduler
         # scheduler.start()

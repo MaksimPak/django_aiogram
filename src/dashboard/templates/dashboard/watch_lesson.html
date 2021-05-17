@@ -3,11 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <title>{{lesson.title}}</title>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@clappr/player@latest/dist/clappr.min.js"></script>
 </head>
 <body>
 {{lesson.info}}
-<video controls autoplay>
-    <source src="{{lesson.video.url}}" type="video/mp4">
-</video>
+<div id="player"></div>
+ <script>
+    var player = new Clappr.Player(
+        {
+            source: '{{request.scheme}}://{{request.META.HTTP_HOST}}{{lesson.video.url}}', parentId: "#player"
+        }
+    );
+  </script>
 </body>
 </html>
