@@ -186,6 +186,11 @@ class CourseAdmin(admin.ModelAdmin):
             request, object_id, form_url, extra_context=extra_context,
         )
 
+    class Media:
+        js = (
+            'dashboard/js/course_admin.js',
+        )
+
 
 @admin.register(models.Lesson)
 class LessonAdmin(admin.ModelAdmin):
