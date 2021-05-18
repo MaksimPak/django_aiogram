@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 
@@ -15,7 +16,6 @@ def set_is_started_copy(sender, instance, *args, **kwargs):
 
 @receiver(post_save, sender=Course)
 def send_course_add_message(sender, instance, created, **kwargs):
-
     if instance._is_started is not True:
         for student in instance.student_set.all():
             kb = {
@@ -35,6 +35,9 @@ def send_course_add_message(sender, instance, created, **kwargs):
             requests.post(url, data=d)
 
         instance._is_started = instance.is_started
+        instance.date_started = datetime.datetime.now()
+
+        instance.save()
 
 
 @receiver(post_save, sender=Client)

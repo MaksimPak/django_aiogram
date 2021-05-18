@@ -23,9 +23,6 @@ async def my_courses(cb: types.CallbackQuery, state: FSMContext):
     await bot.answer_callback_query(cb.id)
     _, client_id = cb.data.split('|')
 
-    async with state.proxy() as data:
-        data['client_id'] = client_id
-
     async with SessionLocal() as session:
         client = (await session.execute(
             select(StudentTable).where(StudentTable.id == client_id).options(
@@ -52,17 +49,17 @@ async def my_courses(cb: types.CallbackQuery, state: FSMContext):
 async def course_lessons(cb: types.callback_query, state: FSMContext):
     await bot.answer_callback_query(cb.id)
     _, course_id = cb.data.split('|')
-    data = await state.get_data()
     async with SessionLocal() as session:
         course = (await session.execute(
                 select(CourseTable).where(CourseTable.id == course_id).options(
                     selectinload(CourseTable.lessons)
                 ))).scalar()
+        client = (await session.execute(select(StudentTable).where(StudentTable.tg_id == cb.from_user.id))).scalar()
+
     kb = InlineKeyboardMarkup().add(
         *[InlineKeyboardButton(x.title, callback_data=f'lesson|{x.id}') for x in course.lessons[:course.last_lesson_index]]
     )
-
-    kb.add(InlineKeyboardButton('Назад', callback_data=f'to_courses|{data["client_id"]}'))
+    kb.add(InlineKeyboardButton('Назад', callback_data=f'to_courses|{client.id}'))
 
     msg = 'Уроки курса' if course.lessons[:course.last_lesson_index] else 'У курса не уроков'
     await bot.edit_message_text(

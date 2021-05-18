@@ -46,7 +46,6 @@ class Student(models.Model):
     is_client = models.BooleanField(verbose_name='Клиент', default=False)
     checkout_date = models.DateTimeField(blank=True, null=True, verbose_name='Дата чекаута')
     invite_link = models.CharField(max_length=255, editable=False, null=True, blank=True, verbose_name='Инвайт ссылка')
-    stream = models.ManyToManyField('Stream')
     courses = models.ManyToManyField('Course', through='StudentCourse')
     lessons = models.ManyToManyField('Lesson', through='StudentLesson')
 
@@ -81,14 +80,6 @@ class Client(Student):
         verbose_name_plural = 'Клиенты'
 
 
-class Stream(models.Model):
-    name = models.CharField(max_length=50)
-    course = models.ForeignKey('Course', on_delete=models.CASCADE, null=True, blank=True)
-
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
-    updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
-
-
 class Course(models.Model):
     class DifficultyType(models.TextChoices):
         easy = '1', 'Beginner',
@@ -107,6 +98,9 @@ class Course(models.Model):
     is_started = models.BooleanField(verbose_name='Курс начат', default=False)
     is_finished = models.BooleanField(verbose_name='Курс закончен', default=False)
     chat_id = models.BigIntegerField(verbose_name='Telegram ID', null=True, blank=True, help_text=render_to_string('dashboard/course_helptext.html'))
+
+    date_started = models.DateTimeField(verbose_name='Дата начала курса', null=True, blank=True)
+    date_finished = models.DateTimeField(verbose_name='Дата окончания курса', null=True, blank=True)
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
@@ -161,7 +155,6 @@ class LessonUrl(models.Model):
 class StudentCourse(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    stream = models.ForeignKey(Stream, on_delete=models.PROTECT, blank=True, null=True)
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)

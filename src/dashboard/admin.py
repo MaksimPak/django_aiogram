@@ -12,6 +12,7 @@ from django.urls import reverse
 from django_apscheduler.models import DjangoJob, DjangoJobExecution
 
 from dashboard import models
+from dashboard.forms import StudentAdmin
 from dashboard.scheduler import SCHEDULER
 
 
@@ -58,13 +59,6 @@ class LessonList(admin.StackedInline):
     extra = 1
 
 
-class ClientList(admin.StackedInline):
-    model = models.Client.stream.through
-    classes = ('collapse',)
-    verbose_name_plural = 'Студенты'
-    verbose_name = 'Студент'
-
-
 @admin.register(models.Lead)
 class LeadAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     list_display = ('id', '__str__', 'tg_id', 'application_type', 'phone', 'language_type', 'is_client', 'chosen_field')
@@ -77,6 +71,7 @@ class LeadAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     search_fields = ('id', 'first_name', 'last_name')
     ordering = ('id',)
     date_hierarchy = 'created_at'
+    form = StudentAdmin
 
     def send_message(self, request, qs):
         return super().send_message(request, qs)
@@ -105,6 +100,7 @@ class ClientAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     search_fields = ('id', 'first_name', 'last_name')
     ordering = ('id',)
     date_hierarchy = 'created_at'
+    form = StudentAdmin
 
     def send_message(self, request, qs):
         return super().send_message(request, qs)
@@ -234,12 +230,6 @@ class LessonAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
         js = (
             'dashboard/js/lesson_admin.js',
         )
-
-
-@admin.register(models.Stream)
-class Stream(admin.ModelAdmin):
-    list_display = ('id', 'name', 'course',)
-    inlines = (ClientList,)
 
 
 @admin.register(models.Student)
