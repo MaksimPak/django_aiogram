@@ -1,3 +1,4 @@
+import json
 import os
 
 import requests
@@ -7,7 +8,7 @@ from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 
 from dashboard.forms import ClientForm
-from dashboard.models import LessonUrl, Lead, Student
+from dashboard.models import LessonUrl, Lead, Student, Course, Lesson
 
 
 def watch_video(request, uuid):
@@ -54,3 +55,26 @@ def message_to_students(request):
         return HttpResponseRedirect(reverse('admin:dashboard_course_changelist'))
 
     return render(request, 'dashboard/send_intermediate.html', context={'entities': clients})
+
+
+def send_lesson(request, course_id, lesson_id):
+    course = Course.objects.get(pk=course_id)
+    lesson = Lesson.objects.get(pk=lesson_id)
+    students = course.student_set.all()
+    url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage"
+    for student in students:
+        kb = {
+            'inline_keyboard': [
+                [{
+                    'text': 'Посмотреть урок',
+                    'callback_data': f'lesson|{lesson.id}'
+                }],
+            ]
+        }
+        data = {
+            'chat_id': student.tg_id,
+            'text': lesson.title,
+            'reply_markup': json.dumps(kb)
+        }
+        requests.post(url, data=data).json()
+    return HttpResponseRedirect(reverse('admin:dashboard_course_change', args=(course_id,)))

@@ -23,6 +23,7 @@
                 <th>Count students viewed</th>
                 <th>Students submitted hw</th>
                 <th>Count students submitted hw</th>
+                <th>send lessons</th>
             </tr>
         </thead>
         <tbody>
@@ -81,6 +82,7 @@
                     <td>
                         {{ lesson|students_hw_submitted|length}}
                     </td>
+                    <td><a href="{% url 'dashboard:send_lesson' object_id lesson.id %}">Выслать</a></td>
                 </tr>
             {% endfor %}
         </tbody>
