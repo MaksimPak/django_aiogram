@@ -1,8 +1,9 @@
+import datetime
 import json
 import os
 
 import requests
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.http import HttpResponseNotFound, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
@@ -57,6 +58,7 @@ def message_to_students(request):
     return render(request, 'dashboard/send_intermediate.html', context={'entities': clients})
 
 
+@transaction.atomic
 def send_lesson(request, course_id, lesson_id):
     course = Course.objects.get(pk=course_id)
     lesson = Lesson.objects.get(pk=lesson_id)
@@ -77,4 +79,10 @@ def send_lesson(request, course_id, lesson_id):
             'reply_markup': json.dumps(kb)
         }
         requests.post(url, data=data).json()
+
+    course.lesson_count = list(course.lesson_set.all()).index(lesson) + 1
+    lesson.date_sent = datetime.datetime.now()
+
+    lesson.save()
+    course.save()
     return HttpResponseRedirect(reverse('admin:dashboard_course_change', args=(course_id,)))

@@ -46,16 +46,6 @@ class StudentTable(Base):
     lessons = relationship('StudentLesson', back_populates='student')
 
 
-class StreamTable(Base):
-    __tablename__ = 'dashboard_stream'
-
-    id = Column(BIGINT, primary_key=True)
-    name = Column(String(50))
-
-    created_at = Column(DateTime, default=datetime.datetime.now)
-    updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
-
-
 class CourseTable(Base):
     class DifficultyType(enum.Enum):
         beginner = '1'
@@ -73,9 +63,13 @@ class CourseTable(Base):
     price = Column(BIGINT)
     is_free = Column(TINYINT, default=0)
     week_size = Column(Integer)
-    last_lesson_index = Column(Integer)
+    lesson_count = Column(Integer, nullable=True)
     is_started = Column(Boolean, default=False)
+    is_finished = Column(Boolean, default=False)
     chat_id = Column(BIGINT, nullable=True)
+
+    date_started = Column(DateTime, nullable=True)
+    date_finished = Column(DateTime, nullable=True)
 
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
@@ -118,7 +112,6 @@ class StudentCourse(Base):
 
     id = Column(BIGINT, primary_key=True)
     course_id = Column(BIGINT, ForeignKey('dashboard_course.id'), nullable=False)
-    stream_id = Column(BIGINT, ForeignKey('dashboard_stream.id'))
     student_id = Column(BIGINT, ForeignKey('dashboard_student.id'), nullable=False)
 
     created_at = Column(DateTime, default=datetime.datetime.now)

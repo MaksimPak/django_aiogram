@@ -44,7 +44,7 @@ class Student(models.Model):
     application_type = models.CharField(verbose_name='Как заполнил форму', max_length=20, choices=ApplicationType.choices, default=ApplicationType.admin)
     unique_code = models.CharField(max_length=255, verbose_name='Инвайт код', unique=True, null=True, blank=True)
     is_client = models.BooleanField(verbose_name='Клиент', default=False)
-    checkout_date = models.DateTimeField(blank=True, null=True, verbose_name='Дата чекаута')
+    checkout_date = models.DateTimeField(blank=True, null=True, verbose_name='Дата чекаута',)
     invite_link = models.CharField(max_length=255, editable=False, null=True, blank=True, verbose_name='Инвайт ссылка')
     courses = models.ManyToManyField('Course', through='StudentCourse')
     lessons = models.ManyToManyField('Lesson', through='StudentLesson')
@@ -93,8 +93,8 @@ class Course(models.Model):
     difficulty = models.CharField(max_length=20, choices=DifficultyType.choices, verbose_name='Сложность')
     price = models.BigIntegerField(verbose_name='Цена')
     is_free = models.BooleanField(verbose_name='Бесплатный курс', default=False)
-    week_size = models.IntegerField(verbose_name='Количество уроков в неделю')
-    last_lesson_index = models.IntegerField(verbose_name='Последний посланный урок')
+    week_size = models.IntegerField(verbose_name='Количество уроков в неделю', default=0)
+    lesson_count = models.IntegerField(verbose_name='Сколько уроков отправлять сразу при старте курса', null=True, blank=True, default=0)
     is_started = models.BooleanField(verbose_name='Курс начат', default=False)
     is_finished = models.BooleanField(verbose_name='Курс закончен', default=False)
     chat_id = models.BigIntegerField(verbose_name='Telegram ID', null=True, blank=True, help_text=render_to_string('dashboard/course_helptext.html'))
@@ -112,6 +112,10 @@ class Course(models.Model):
     def short_info(self):
         return truncatewords(self.info, 5)
 
+    @property
+    def total_lesson_count(self):
+        return self.lesson_set.count()
+
     class Meta:
         verbose_name = 'Курс'
         verbose_name_plural = 'Курсы'
@@ -124,6 +128,7 @@ class Lesson(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     has_homework = models.BooleanField(verbose_name='Есть домашнее задание', default=False)
     homework_desc = models.TextField(verbose_name='Homework description', null=True, blank=True)
+    date_sent = models.DateTimeField(verbose_name='Дата отсылки урока', null=True, blank=True)
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)

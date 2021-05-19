@@ -28,15 +28,16 @@ async def my_courses(cb: types.CallbackQuery, state: FSMContext):
             select(StudentTable).where(StudentTable.id == client_id).options(
                 selectinload(StudentTable.courses).selectinload(StudentCourse.courses)
             ))).scalar()
+        courses = (await session.execute(select(CourseTable).where(CourseTable.is_free == True))).scalars()
 
     kb = InlineKeyboardMarkup()
     btn_list = [
         InlineKeyboardButton(x.courses.name, callback_data=f'get_course|{x.courses.id}') for x in client.courses
-    ]
+    ] + [InlineKeyboardButton(x.name, callback_data=f'get_course|{x.id}') for x in courses]
     kb.add(*btn_list)
     kb.add(InlineKeyboardButton('Назад', callback_data=f'back|{client.id}'))
 
-    msg = 'Ваши курсы' if client.courses else 'Вы не записаны ни на один курс'
+    msg = 'Ваши курсы' if btn_list else 'Вы не записаны ни на один курс'
     await bot.edit_message_text(
         msg,
         cb.from_user.id,
@@ -56,12 +57,16 @@ async def course_lessons(cb: types.callback_query, state: FSMContext):
                 ))).scalar()
         client = (await session.execute(select(StudentTable).where(StudentTable.tg_id == cb.from_user.id))).scalar()
 
+    lessons = course.lessons
+    if not course.is_free:
+        lessons = course.lessons[:course.lesson_count]
+
     kb = InlineKeyboardMarkup().add(
-        *[InlineKeyboardButton(x.title, callback_data=f'lesson|{x.id}') for x in course.lessons[:course.last_lesson_index]]
+        *[InlineKeyboardButton(x.title, callback_data=f'lesson|{x.id}') for x in lessons]
     )
     kb.add(InlineKeyboardButton('Назад', callback_data=f'to_courses|{client.id}'))
 
-    msg = 'Уроки курса' if course.lessons[:course.last_lesson_index] else 'У курса не уроков'
+    msg = 'Уроки курса' if lessons else 'У курса не уроков'
     await bot.edit_message_text(
         msg,
         cb.from_user.id,

@@ -35,24 +35,7 @@ def send_course_add_message(sender, instance, created, **kwargs):
             requests.post(url, data=d)
 
         instance._is_started = instance.is_started
-        instance.date_started = datetime.datetime.now()
-
-        instance.save()
-
-
-@receiver(post_save, sender=Client)
-@receiver(post_save, sender=Lead)
-def add_free_courses(sender, instance, created, **kwargs):
-    if created:
-        courses = Course.objects.filter(is_free=True)
-        StudentCourse.objects.bulk_create([StudentCourse(course=course, student=instance) for course in courses])
-
-
-@receiver(post_save, sender=Course)
-def add_students_to_free_course(sender, instance, created, **kwargs):
-    if created and instance.is_free:
-        students = Student.objects.all()
-        StudentCourse.objects.bulk_create([StudentCourse(course=instance, student=student) for student in students])
+        Course.objects.filter(pk=instance.id).update(date_started=datetime.datetime.now())
 
 
 @receiver(post_save, sender=Lead)

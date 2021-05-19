@@ -63,10 +63,16 @@ async def to_lessons(cb: types.callback_query):
                 select(CourseTable).where(CourseTable.id == course_id).options(
                     selectinload(CourseTable.lessons)
                 ))).scalar()
+
+    lessons = course.lessons
+    if not course.is_free:
+        lessons = course.lessons[:course.lesson_count]
+
     kb = InlineKeyboardMarkup().add(
-        *[InlineKeyboardButton(x.title, callback_data=f'lesson|{x.id}') for x in course.lessons[:course.last_lesson_index]]
+        *[InlineKeyboardButton(x.title, callback_data=f'lesson|{x.id}') for x in lessons]
     )
     kb.add(InlineKeyboardButton('Назад', callback_data=f'to_courses|{client_id}'))
+
     msg = 'Уроки курса' if course.lessons else 'У курса не уроков'
     await bot.edit_message_text(
         msg,

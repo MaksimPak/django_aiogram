@@ -9,6 +9,7 @@ from django.contrib.auth.admin import UserAdmin
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils.html import format_html
 from django_apscheduler.models import DjangoJob, DjangoJobExecution
 
 from dashboard import models
@@ -47,8 +48,14 @@ class TelegramBroadcastMixin:
 
 class StudentCourseList(admin.TabularInline):
     model = models.StudentCourse
+    # todo remove link in course admin for inline students table
+    readonly_fields = ('student',)
+    can_delete = False
+    extra = 0
     classes = ('collapse',)
-    extra = 1
+
+    def has_add_permission(self, request, obj):
+        return False
 
     verbose_name_plural = 'Студенты'
 
@@ -61,7 +68,7 @@ class LessonList(admin.StackedInline):
 
 @admin.register(models.Lead)
 class LeadAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
-    list_display = ('id', '__str__', 'tg_id', 'application_type', 'phone', 'language_type', 'is_client', 'chosen_field')
+    list_display = ('id', '__str__', 'tg_id', 'application_type', 'phone', 'language_type', 'is_client', 'chosen_field', 'checkout_date')
     list_editable = ('is_client',)
     list_per_page = 20
     list_filter = ('chosen_field', 'application_type')
@@ -90,8 +97,7 @@ class LeadAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
 
 @admin.register(models.Client)
 class ClientAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
-    list_display = ('id', '__str__', 'tg_id', 'application_type', 'phone', 'language_type', 'is_client',)
-    list_editable = ('is_client',)
+    list_display = ('id', '__str__', 'phone', 'language_type', 'get_courses',)
     list_per_page = 20
     list_filter = ('studentcourse__course__name',)
     list_display_links = ('__str__',)
@@ -108,8 +114,12 @@ class ClientAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     def send_checkout(self, request, qs):
         return super().send_checkout(request, qs)
 
+    def get_courses(self, obj):
+        return ',\n'.join([x.name for x in obj.courses.all()])
+
     send_message.short_description = 'Массовая рассылка'
     send_checkout.short_description = 'Рассылка чекаута'
+    get_courses.short_description = 'Курсы'
 
 
 @admin.register(models.Course)
@@ -117,10 +127,12 @@ class CourseAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__', 'short_info', 'is_started', 'category', 'difficulty', 'price')
     list_display_links = ('__str__',)
     list_editable = ('is_started',)
+    readonly_fields = ('date_started', 'date_finished')
+    exclude = ('week_size', 'lesson_count',)
     list_per_page = 20
     search_fields = ('id', 'name')
     list_filter = ('category', 'price',)
-    inlines = (StudentCourseList, LessonList)
+    inlines = (StudentCourseList, LessonList,)
     ordering = ('id',)
     date_hierarchy = 'created_at'
     change_form_template = 'admin/dashboard/Course/change_form.html'
@@ -190,6 +202,9 @@ class CourseAdmin(admin.ModelAdmin):
         js = (
             'dashboard/js/course_admin.js',
         )
+        css = {
+            'all': ('dashboard/css/course_admin.css',)
+        }
 
 
 @admin.register(models.Lesson)

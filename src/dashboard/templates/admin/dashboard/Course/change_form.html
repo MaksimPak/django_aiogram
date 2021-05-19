@@ -23,7 +23,8 @@
                 <th>Count students viewed</th>
                 <th>Students submitted hw</th>
                 <th>Count students submitted hw</th>
-                <th>send lessons</th>
+                <th>Date sent</th>
+                <th>Send lessons</th>
             </tr>
         </thead>
         <tbody>
@@ -82,7 +83,17 @@
                     <td>
                         {{ lesson|students_hw_submitted|length}}
                     </td>
-                    <td><a href="{% url 'dashboard:send_lesson' object_id lesson.id %}">Выслать</a></td>
+
+                     <td>
+                         {% if lesson.date_sent  %}
+                            {{ lesson.date_sent }}
+                         {% else %}
+                            Не выслан
+                         {% endif %}
+                    </td>
+
+                    <td><a href="{% url 'dashboard:send_lesson' object_id lesson.id %}" {% if lesson.date_sent %} class="btn-disabled" disabled="disabled" {% endif %}>Выслать</a></td>
+
                 </tr>
             {% endfor %}
         </tbody>

@@ -23,7 +23,7 @@ class StudentAdmin(forms.ModelForm):
             return super().get_initial_for_field(field, field_name)
 
     def save(self, commit=True):
-        instance = super(LeadAdmin, self).save(commit=False)
+        instance = super().save(commit=False)
         instance.courses.set(self.cleaned_data['course'])
         if commit:
             instance.save()
