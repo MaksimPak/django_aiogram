@@ -164,6 +164,9 @@ class StudentCourse(models.Model):
     created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
 
+    class Meta:
+        unique_together = [['student', 'course']]
+
 
 class StudentLesson(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)

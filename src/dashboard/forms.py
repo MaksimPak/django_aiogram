@@ -11,8 +11,9 @@ class ClientForm(forms.ModelForm):
 
 class StudentAdmin(forms.ModelForm):
     course = forms.ModelMultipleChoiceField(
-        queryset=models.Course.objects.all(),
-        widget=forms.SelectMultiple
+        queryset=models.Course.objects.filter(is_free=False),
+        widget=forms.SelectMultiple,
+        required=False
     )
 
     def get_initial_for_field(self, field, field_name):
@@ -23,10 +24,11 @@ class StudentAdmin(forms.ModelForm):
             return super().get_initial_for_field(field, field_name)
 
     def save(self, commit=True):
-        instance = super().save(commit=False)
+        instance = super().save()
         instance.courses.set(self.cleaned_data['course'])
-        if commit:
-            instance.save()
+        # Add a method to the form to allow deferred
+        # saving of m2m data.
+        self.save_m2m = self._save_m2m
         return instance
 
     class Meta:

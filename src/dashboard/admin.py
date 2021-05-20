@@ -9,11 +9,13 @@ from django.contrib.auth.admin import UserAdmin
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
+from django.utils.safestring import mark_safe
 from django_apscheduler.models import DjangoJob, DjangoJobExecution
 
 from dashboard import models
 from dashboard.forms import StudentAdmin
+from dashboard.models import Course
 from dashboard.scheduler import SCHEDULER
 
 
@@ -48,14 +50,23 @@ class TelegramBroadcastMixin:
 
 class StudentCourseList(admin.TabularInline):
     model = models.StudentCourse
-    # todo remove link in course admin for inline students table
-    readonly_fields = ('student',)
+    fields = ('student_display', )
+    readonly_fields = ('student_display', )
     can_delete = False
     extra = 0
     classes = ('collapse',)
+    template = 'admin/dashboard/Course/tabular_studentcourse.html'
 
     def has_add_permission(self, request, obj):
         return False
+
+    @admin.display(description='Student')
+    def student_display(self, instance):
+        print(self.template)
+        return format_html(
+            '<p>{0}</p>',
+            instance.student,
+        )
 
     verbose_name_plural = 'Студенты'
 
@@ -73,8 +84,8 @@ class LeadAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     list_per_page = 20
     list_filter = ('chosen_field', 'application_type')
     list_display_links = ('__str__',)
-    readonly_fields = ('unique_code', 'checkout_date', 'invite_link')
-    actions = ('send_message', 'send_checkout',)
+    readonly_fields = ('unique_code', 'checkout_date', 'invite_link', 'created_at',)
+    actions = ('send_message', 'send_checkout', 'assign_to_course')
     search_fields = ('id', 'first_name', 'last_name')
     ordering = ('id',)
     date_hierarchy = 'created_at'
@@ -86,8 +97,21 @@ class LeadAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     def send_checkout(self, request, qs):
         return super().send_checkout(request, qs)
 
+    def assign_to_course(self, request, qs):
+        courses = Course.objects.filter(is_free=False)
+        if 'assign' in request.POST:
+            courses = [Course.objects.get(pk=x) for x in request.POST.getlist('course')]
+            for client in qs:
+                client.courses.set(courses)
+            qs.update(is_client=True)
+            return HttpResponseRedirect(request.get_full_path())
+
+        return render(request, 'dashboard/assign_to_course.html',
+                      context={'entities': qs, 'courses': courses})
+
     send_message.short_description = 'Массовая рассылка'
     send_checkout.short_description = 'Рассылка чекаута'
+    assign_to_course.short_description = 'Приписать к курсу'
 
     class Media:
         js = (
@@ -102,7 +126,7 @@ class ClientAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     list_filter = ('studentcourse__course__name',)
     list_display_links = ('__str__',)
     actions = ('send_message', 'send_checkout')
-    readonly_fields = ('unique_code', 'checkout_date', 'invite_link')
+    readonly_fields = ('unique_code', 'checkout_date', 'invite_link', 'created_at',)
     search_fields = ('id', 'first_name', 'last_name')
     ordering = ('id',)
     date_hierarchy = 'created_at'
@@ -127,12 +151,12 @@ class CourseAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__', 'short_info', 'is_started', 'category', 'difficulty', 'price')
     list_display_links = ('__str__',)
     list_editable = ('is_started',)
-    readonly_fields = ('date_started', 'date_finished')
+    readonly_fields = ('date_started', 'date_finished', 'created_at',)
     exclude = ('week_size', 'lesson_count',)
     list_per_page = 20
     search_fields = ('id', 'name')
     list_filter = ('category', 'price',)
-    inlines = (StudentCourseList, LessonList,)
+    inlines = (LessonList, StudentCourseList, )
     ordering = ('id',)
     date_hierarchy = 'created_at'
     change_form_template = 'admin/dashboard/Course/change_form.html'
@@ -193,7 +217,7 @@ class CourseAdmin(admin.ModelAdmin):
         extra_context = extra_context or {}
         course = models.Course.objects.get(pk=object_id)
         extra_context['lessons'] = course.lesson_set.all()
-
+        extra_context['studentcourse'] = course.studentcourse_set.all()
         return super().change_view(
             request, object_id, form_url, extra_context=extra_context,
         )

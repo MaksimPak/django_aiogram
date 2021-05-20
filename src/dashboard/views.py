@@ -43,7 +43,7 @@ def signup(request):
         return render(request, 'dashboard/signup.html', {'form': form})
 
 
-# todo: problematic code
+# todo: accept get/post requests
 def message_to_students(request):
     clients = [Student.objects.get(pk=x) for x in request.POST.getlist('_student_received')]
     if 'send' in request.POST:
