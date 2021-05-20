@@ -110,7 +110,7 @@
                          {% endif %}
                     </td>
 
-                    <td><a href="{% url 'dashboard:send_lesson' object_id lesson.id %}" {% if lesson.date_sent %} class="btn-disabled" disabled="disabled" {% endif %}>Выслать</a></td>
+                    <td><a href="{% url 'dashboard:send_lesson' object_id lesson.id %}" {% if lesson.date_sent %} class="btn-disabled" disabled="disabled" {% endif %}>📨</a></td>
 
                 </tr>
             {% endfor %}
