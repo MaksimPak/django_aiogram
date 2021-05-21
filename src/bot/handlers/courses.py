@@ -18,8 +18,31 @@ class Homework(StatesGroup):
     homework_start = State()
 
 
+async def post_photo(*args, **kwargs):
+    if kwargs['lesson'].image_file_id:
+        await bot.send_photo(
+            kwargs['cb'].from_user.id,
+            kwargs['lesson'].image_file_id,
+            caption=kwargs['template'].render(lesson=kwargs['lesson'],
+                                              url=f'{config.DOMAIN}/dashboard/watch/{kwargs["lesson_url"].hash}'),
+            parse_mode='html',
+            reply_markup=kwargs['kb']
+        )
+    else:
+        with open('../media/' + kwargs['lesson'].image, 'br') as file:
+            file_id = (await bot.send_photo(
+                kwargs['cb'].from_user.id,
+                file.read(),
+                caption=kwargs['template'].render(lesson=kwargs['lesson'],
+                                                  url=f'{config.DOMAIN}/dashboard/watch/{kwargs["lesson_url"].hash}'),
+                parse_mode='html',
+                reply_markup=kwargs['kb']
+            )).photo[-1].file_id
+            kwargs['lesson'].image_file_id = file_id
+
+
 @dp.callback_query_handler(lambda x: 'courses|' in x.data)
-async def my_courses(cb: types.CallbackQuery, state: FSMContext):
+async def my_courses(cb: types.CallbackQuery):
     await bot.answer_callback_query(cb.id)
     _, client_id = cb.data.split('|')
 
@@ -100,23 +123,34 @@ async def get_lesson(cb: types.callback_query):
             date_received=datetime.datetime.now()
         )
         session.add_all([lesson_url, student_lesson])
+        await session.flush()
+
+        kb = InlineKeyboardMarkup()
+
+        kb.add(InlineKeyboardButton('Отметить как просмотренное', callback_data=f'watched|{student_lesson.id}'))
+        template = jinja_env.get_template('lesson_info.html')
+
+        await bot.delete_message(cb.from_user.id, cb.message.message_id)
+
+        if lesson.image:
+            await post_photo(
+                lesson=lesson,
+                cb=cb,
+                lesson_url=lesson_url,
+                kb=kb,
+                template=template
+            )
+        else:
+            await bot.send_message(
+                cb.from_user.id,
+                template.render(lesson=lesson, url=f'{config.DOMAIN}/dashboard/watch/{lesson_url.hash}'),
+                parse_mode='html',
+                reply_markup=kb
+            )
         await session.commit()
-    kb = InlineKeyboardMarkup()
-
-    kb.add(InlineKeyboardButton('Отметить как просмотренное', callback_data=f'watched|{student_lesson.id}'))
-    kb.add(InlineKeyboardButton('Назад', callback_data=f'to_lessons|{lesson.course_id}|{client.id}'))
-
-    template = jinja_env.get_template('lesson_info.html')
-
-    await bot.edit_message_text(
-        template.render(lesson=lesson, url=f'{config.DOMAIN}/dashboard/watch/{lesson_url.hash}'),
-        cb.from_user.id,
-        cb.message.message_id,
-        reply_markup=kb,
-        parse_mode='html'
-    )
 
 
+# todo govnokod
 @dp.callback_query_handler(lambda x: 'watched|' in x.data, state='*')
 async def check_homework(cb: types.callback_query):
     await bot.answer_callback_query(cb.id)
@@ -136,12 +170,20 @@ async def check_homework(cb: types.callback_query):
             kb.add(InlineKeyboardButton(
                 'Сдать дз', callback_data=f'submit|{record.lesson.lesson_course.chat_id}|{record.id}')
             )
-            await bot.edit_message_text(
-                cb.message.text,
-                cb.from_user.id,
-                cb.message.message_id,
-                reply_markup=kb
-            )
+            if cb.message.photo:
+                await bot.edit_message_caption(
+                    cb.from_user.id,
+                    cb.message.message_id,
+                    caption=cb.message.caption,
+                    reply_markup=kb
+                )
+            else:
+                await bot.edit_message_text(
+                    cb.message.text,
+                    cb.from_user.id,
+                    cb.message.message_id,
+                    reply_markup=kb
+                )
         else:
             await bot.delete_message(cb.message.chat.id, cb.message.message_id)
 

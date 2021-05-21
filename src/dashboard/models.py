@@ -124,6 +124,8 @@ class Course(models.Model):
 class Lesson(models.Model):
     title = models.CharField(max_length=50, verbose_name='Название урока')
     info = models.TextField(blank=True, null=True, verbose_name='Описание')
+    image = models.ImageField(verbose_name='Картинка', null=True, blank=True)
+    image_file_id = models.CharField(verbose_name='Photo file ID', null=True, blank=True, editable=False, max_length=255)
     video = models.FileField(verbose_name='Видео к уроку')
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     has_homework = models.BooleanField(verbose_name='Есть домашнее задание', default=False)

@@ -8,9 +8,9 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
+from django.template.loader import render_to_string
 from django.urls import reverse
-from django.utils.html import format_html, format_html_join
-from django.utils.safestring import mark_safe
+from django.utils.html import format_html
 from django_apscheduler.models import DjangoJob, DjangoJobExecution
 
 from dashboard import models
@@ -50,25 +50,46 @@ class TelegramBroadcastMixin:
 
 class StudentCourseList(admin.TabularInline):
     model = models.StudentCourse
-    fields = ('student_display', )
-    readonly_fields = ('student_display', )
+    fields = ('student_display', 'created_at', 'message_student')
+    readonly_fields = ('student_display', 'created_at', 'message_student')
     can_delete = False
     extra = 0
     classes = ('collapse',)
-    template = 'admin/dashboard/Course/tabular_studentcourse.html'
+    # template = 'admin/dashboard/Course/tabular_studentcourse.html'
 
     def has_add_permission(self, request, obj):
         return False
 
     @admin.display(description='Student')
     def student_display(self, instance):
-        print(self.template)
         return format_html(
-            '<p>{0}</p>',
+            '{0}',
             instance.student,
         )
 
+    @admin.display(description='created_at')
+    def created_at(self, instance):
+        return format_html(
+            '{0}',
+            instance.created_at,
+        )
+
+    @admin.display(description='message')
+    def message_student(self, instance):
+        return render_to_string(
+            'dashboard/message_form.html',
+            {
+                'data': instance
+            }
+        )
+
     verbose_name_plural = 'Студенты'
+
+    class Media:
+        css = {
+            'all': ('dashboard/css/studentcourse.css',)
+        }
+
 
 
 class LessonList(admin.StackedInline):
@@ -91,12 +112,15 @@ class LeadAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     date_hierarchy = 'created_at'
     form = StudentAdmin
 
+    @admin.display(description='Массовая рассылка')
     def send_message(self, request, qs):
         return super().send_message(request, qs)
 
+    @admin.display(description='Рассылка чекаута')
     def send_checkout(self, request, qs):
         return super().send_checkout(request, qs)
 
+    @admin.display(description='Приписать к курсу')
     def assign_to_course(self, request, qs):
         courses = Course.objects.filter(is_free=False)
         if 'assign' in request.POST:
@@ -108,10 +132,6 @@ class LeadAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
 
         return render(request, 'dashboard/assign_to_course.html',
                       context={'entities': qs, 'courses': courses})
-
-    send_message.short_description = 'Массовая рассылка'
-    send_checkout.short_description = 'Рассылка чекаута'
-    assign_to_course.short_description = 'Приписать к курсу'
 
     class Media:
         js = (
@@ -132,18 +152,17 @@ class ClientAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     date_hierarchy = 'created_at'
     form = StudentAdmin
 
+    @admin.display(description='Массовая рассылка')
     def send_message(self, request, qs):
         return super().send_message(request, qs)
 
+    @admin.display(description='Рассылка чекаута')
     def send_checkout(self, request, qs):
         return super().send_checkout(request, qs)
 
+    @admin.display(description='Курсы')
     def get_courses(self, obj):
         return ',\n'.join([x.name for x in obj.courses.all()])
-
-    send_message.short_description = 'Массовая рассылка'
-    send_checkout.short_description = 'Рассылка чекаута'
-    get_courses.short_description = 'Курсы'
 
 
 @admin.register(models.Course)
@@ -236,6 +255,7 @@ class LessonAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     list_display = ('id', '__str__', 'short_info', 'video', 'course')
     list_display_links = ('__str__',)
     list_per_page = 20
+    readonly_fields = ('date_sent',)
     search_fields = ('id', 'title', 'course')
     list_filter = ('course',)
     ordering = ('id',)

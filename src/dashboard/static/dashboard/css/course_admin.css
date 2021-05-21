@@ -4,3 +4,8 @@
   cursor: default !important;
   pointer-events: none;
 }
+
+.clear-space {
+    margin-top:1em;
+    margin-bottom:1.5em;
+}

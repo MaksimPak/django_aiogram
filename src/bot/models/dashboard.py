@@ -85,6 +85,8 @@ class LessonTable(Base):
     title = Column(String(50))
     info = Column(LONGTEXT, nullable=True)
     video = Column(String(100))
+    image = Column(String(255), nullable=True)
+    image_file_id = Column(String(255), nullable=True)
     course_id = Column(BIGINT, ForeignKey('dashboard_course.id'))
     has_homework = Column(Boolean, default=False)
     homework_desc = Column(LONGTEXT, nullable=True)

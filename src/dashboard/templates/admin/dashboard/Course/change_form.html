@@ -3,6 +3,7 @@
 
 
 {% block submit_buttons_bottom %}
+    <h3 class="clear-space">Students total: {{studentcourse.count}}</h3>
     {{ block.super }}
 <!--        <div class="submit-row">-->
 <!--                <input type="submit" value="Start course" name="_start_course">-->
@@ -42,21 +43,21 @@
                             {% csrf_token %}
                             {% for student in lesson|students_received %}
                                 {% if student not in lesson|students_watched %}
-                                    <input type="hidden" name="_student_received" value="{{student.id}}">
+                                    <input type="hidden" name="_selected_action " value="{{student.id}}">
                                     {% if student.is_client %}
                                     <a href="{% url 'admin:dashboard_client_change' student.id %}" style="font-size:11px;">
-                                        {{student.first_name|slice:":1"}}.{{student.last_name}},
+                                        {{student.first_name|slice:":1"}}.{{student.last_name}}{% if not forloop.last%},{% endif %}
                                     </a>
                                     {% else %}
                                     <a href="{% url 'admin:dashboard_lead_change' student.id %}" style="font-size:11px;">
-                                        {{student.first_name|slice:":1"}}.{{student.last_name}},
+                                        {{student.first_name|slice:":1"}}.{{student.last_name}}{% if not forloop.last%},{% endif %}
                                     </a>
                                     {% endif %}
                                 {% endif %}
                             {% endfor %}
                             {%  if lesson|students_received %}
                             <button type="submit" style="font-size:13px; background-color: transparent;
-                                                         border-color: transparent;">📨</button>
+                                                         border-color: transparent;">💬</button>
                             {% endif %}
                         </form>
                     </td>
@@ -66,21 +67,21 @@
                             {% csrf_token %}
                             {% for student in lesson|students_watched %}
                                 {% if student not in lesson|students_hw_submitted %}
-                                <input type="hidden" name="_student_received" value="{{student.id}}">
+                                <input type="hidden" name="_selected_action" value="{{student.id}}">
                                 {% if student.is_client %}
                                     <a href="{% url 'admin:dashboard_client_change' student.id %}" style="font-size:11px;">
-                                        {{student.first_name|slice:":1"}}.{{student.last_name}},
+                                        {{student.first_name|slice:":1"}}.{{student.last_name}}{% if not forloop.last%},{% endif %}
                                     </a>
                                     {% else %}
                                     <a href="{% url 'admin:dashboard_lead_change' student.id %}" style="font-size:11px;">
-                                        {{student.first_name|slice:":1"}}.{{student.last_name}},
+                                        {{student.first_name|slice:":1"}}.{{student.last_name}}{% if not forloop.last%},{% endif %}
                                     </a>
                                     {% endif %}
                                 {% endif %}
                             {% endfor %}
                             {% if lesson|students_watched %}
                                 <button type="submit" style="font-size:13px; background-color: transparent;
-                                                         border-color: transparent;">📨</button>
+                                                         border-color: transparent;">💬</button>
                             {% endif %}
                         </form>
                     </td>
@@ -90,20 +91,20 @@
                         <form action="{% url 'dashboard:send_message' %}" method="post" class="hwSubmitted">
                             {% csrf_token %}
                             {% for student in lesson|students_hw_submitted %}
-                                <input type="hidden" name="_student_received" value="{{student.id}}">
+                                <input type="hidden" name="_selected_action" value="{{student.id}}">
                                 {% if student.is_client %}
                                     <a href="{% url 'admin:dashboard_client_change' student.id %}" style="font-size:11px;">
-                                        {{student.first_name|slice:":1"}}.{{student.last_name}},
+                                        {{student.first_name|slice:":1"}}.{{student.last_name}}{% if not forloop.last%},{% endif %}
                                     </a>
                                     {% else %}
                                     <a href="{% url 'admin:dashboard_lead_change' student.id %}" style="font-size:11px;">
-                                        {{student.first_name|slice:":1"}}.{{student.last_name}},
+                                        {{student.first_name|slice:":1"}}.{{student.last_name}}{% if not forloop.last%},{% endif %}
                                     </a>
                                     {% endif %}
                             {% endfor %}
                             {% if lesson|students_hw_submitted %}
                                 <button type="submit" style="font-size:13px; background-color: transparent;
-                                                         border-color: transparent;">📨</button>
+                                                         border-color: transparent;">💬</button>
                             {% endif %}
                         </form>
                         {% else %}
