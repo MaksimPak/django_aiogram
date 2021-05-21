@@ -12,17 +12,20 @@
 
 {% block footer %}
     {{ block.super }}
-    <div id="content">
-    <table>
+    <div id="content" style="padding-top: 0;">
+    <table style="margin-bottom: 2em;">
+        <caption style="text-align:left; margin-bottom:1em;"><strong>Progress table</strong></caption>
         <thead>
             <tr>
                 <th>Lesson Name</th>
-                <th>Students Received Vid</th>
-                <th>Count Students Received</th>
-                <th>Students Viewed Vid</th>
-                <th>Count students viewed</th>
-                <th>Students submitted hw</th>
-                <th>Count students submitted hw</th>
+                <th>LESSON RECEIVED</th>
+                <th>VIDEO VIEWED</th>
+                <th>HW SUBMITTED</th>
+
+                <th>LESSON RECEIVED</th>
+                <th>VIDEO VIEWED</th>
+                <th>HW SUBMITTED</th>
+
                 <th>Date sent</th>
                 <th>Send lessons</th>
             </tr>
@@ -30,7 +33,10 @@
         <tbody>
             {% for lesson in lessons %}
                 <tr>
-                    <td>{{lesson.title}}</td>
+                    <td nowrap>{{lesson.title}}</td>
+                    <td>{{lesson|students_received|length}}</td>
+                    <td>{{lesson|students_watched|length}}</td>
+                    <td> {% if lesson.has_homework %}{{ lesson|students_hw_submitted|length}} {% else %} - {% endif %}</td>
                     <td>
                         <form action="{% url 'dashboard:send_message' %}" method="post" class="receivedVid">
                             {% csrf_token %}
@@ -38,22 +44,23 @@
                                 {% if student not in lesson|students_watched %}
                                     <input type="hidden" name="_student_received" value="{{student.id}}">
                                     {% if student.is_client %}
-                                    <a href="{% url 'admin:dashboard_client_change' student.id %}">
-                                        {{student.first_name|slice:":1"}}.{{student.last_name}}
+                                    <a href="{% url 'admin:dashboard_client_change' student.id %}" style="font-size:11px;">
+                                        {{student.first_name|slice:":1"}}.{{student.last_name}},
                                     </a>
                                     {% else %}
-                                    <a href="{% url 'admin:dashboard_lead_change' student.id %}">
-                                        {{student.first_name|slice:":1"}}.{{student.last_name}}
+                                    <a href="{% url 'admin:dashboard_lead_change' student.id %}" style="font-size:11px;">
+                                        {{student.first_name|slice:":1"}}.{{student.last_name}},
                                     </a>
                                     {% endif %}
                                 {% endif %}
                             {% endfor %}
                             {%  if lesson|students_received %}
-                            <button type="submit" style="font-size:10px;">Отправить сообщение</button>
+                            <button type="submit" style="font-size:13px; background-color: transparent;
+                                                         border-color: transparent;">📨</button>
                             {% endif %}
                         </form>
                     </td>
-                    <td>{{lesson|students_received|length}}</td>
+
                     <td>
                         <form action="{% url 'dashboard:send_message' %}" method="post" class="viewedVid">
                             {% csrf_token %}
@@ -61,46 +68,49 @@
                                 {% if student not in lesson|students_hw_submitted %}
                                 <input type="hidden" name="_student_received" value="{{student.id}}">
                                 {% if student.is_client %}
-                                    <a href="{% url 'admin:dashboard_client_change' student.id %}">
-                                        {{student.first_name|slice:":1"}}.{{student.last_name}}
+                                    <a href="{% url 'admin:dashboard_client_change' student.id %}" style="font-size:11px;">
+                                        {{student.first_name|slice:":1"}}.{{student.last_name}},
                                     </a>
                                     {% else %}
-                                    <a href="{% url 'admin:dashboard_lead_change' student.id %}">
-                                        {{student.first_name|slice:":1"}}.{{student.last_name}}
+                                    <a href="{% url 'admin:dashboard_lead_change' student.id %}" style="font-size:11px;">
+                                        {{student.first_name|slice:":1"}}.{{student.last_name}},
                                     </a>
                                     {% endif %}
                                 {% endif %}
                             {% endfor %}
                             {% if lesson|students_watched %}
-                                <button type="submit" style="font-size:10px;">Отправить сообщение</button>
+                                <button type="submit" style="font-size:13px; background-color: transparent;
+                                                         border-color: transparent;">📨</button>
                             {% endif %}
                         </form>
                     </td>
 
-                    <td>{{lesson|students_watched|length}}</td>
                     <td>
+                        {% if lesson.has_homework %}
                         <form action="{% url 'dashboard:send_message' %}" method="post" class="hwSubmitted">
                             {% csrf_token %}
                             {% for student in lesson|students_hw_submitted %}
                                 <input type="hidden" name="_student_received" value="{{student.id}}">
                                 {% if student.is_client %}
-                                    <a href="{% url 'admin:dashboard_client_change' student.id %}">
-                                        {{student.first_name|slice:":1"}}.{{student.last_name}}
+                                    <a href="{% url 'admin:dashboard_client_change' student.id %}" style="font-size:11px;">
+                                        {{student.first_name|slice:":1"}}.{{student.last_name}},
                                     </a>
                                     {% else %}
-                                    <a href="{% url 'admin:dashboard_lead_change' student.id %}">
-                                        {{student.first_name|slice:":1"}}.{{student.last_name}}
+                                    <a href="{% url 'admin:dashboard_lead_change' student.id %}" style="font-size:11px;">
+                                        {{student.first_name|slice:":1"}}.{{student.last_name}},
                                     </a>
                                     {% endif %}
                             {% endfor %}
                             {% if lesson|students_hw_submitted %}
-                                <button type="submit" style="font-size:10px;">Отправить сообщение</button>
+                                <button type="submit" style="font-size:13px; background-color: transparent;
+                                                         border-color: transparent;">📨</button>
                             {% endif %}
                         </form>
+                        {% else %}
+                        -
+                        {% endif %}
                     </td>
-                    <td>
-                        {{ lesson|students_hw_submitted|length}}
-                    </td>
+
 
                      <td>
                          {% if lesson.date_sent  %}
