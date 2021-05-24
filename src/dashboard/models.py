@@ -9,7 +9,9 @@ from django.template.loader import render_to_string
 from dashboard.misc import LeadManager, ClientManager
 
 
-def random_int():
+# todo course help text here as constant
+
+def random_int():  # todo move to signals module
     return str(random.randint(100, 999))
 
 
@@ -17,6 +19,7 @@ class CategoryType(models.TextChoices):
     game_dev = '1', 'Game Development'
     web = '2', 'Web Development',
 
+# todo check all null true
 
 class User(AbstractUser):
 
@@ -101,7 +104,7 @@ class Course(models.Model):
     lesson_count = models.IntegerField(verbose_name='Сколько уроков отправлять сразу при старте курса', null=True, blank=True, default=0)
     is_started = models.BooleanField(verbose_name='Курс начат', default=False)
     is_finished = models.BooleanField(verbose_name='Курс закончен', default=False)
-    chat_id = models.BigIntegerField(verbose_name='Telegram ID', null=True, blank=True, help_text=render_to_string('dashboard/course_helptext.html'))
+    chat_id = models.BigIntegerField(verbose_name='Telegram ID', null=True, blank=True, help_text=render_to_string('dashboard/course_helptext.html'))  # todo render to string delete
 
     date_started = models.DateTimeField(verbose_name='Дата начала курса', null=True, blank=True)
     date_finished = models.DateTimeField(verbose_name='Дата окончания курса', null=True, blank=True)
@@ -130,7 +133,7 @@ class Lesson(models.Model):
     info = models.TextField(blank=True, null=True, verbose_name='Описание')
     image = models.ImageField(verbose_name='Картинка', null=True, blank=True)
     image_file_id = models.CharField(verbose_name='Photo file ID', null=True, blank=True, editable=False, max_length=255)
-    video = models.FileField(verbose_name='Видео к уроку')
+    video = models.FileField(verbose_name='Видео к уроку')  # todo create path dynamically
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     has_homework = models.BooleanField(verbose_name='Есть домашнее задание', default=False)
     homework_desc = models.TextField(verbose_name='Homework description', null=True, blank=True)

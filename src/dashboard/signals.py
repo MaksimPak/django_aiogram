@@ -22,14 +22,14 @@ def send_course_add_message(sender, instance, created, **kwargs):
                 'inline_keyboard': [
                     [{
                         'text': 'Начать Курс',
-                        'callback_data': f'get_course|{instance.id}'
+                        'callback_data': f'get_course|{instance.id}'  # instance id out of cycle
                     }],
                 ]
             }
-            d = {
+            d = {  # todo naming
                 'chat_id': student.tg_id,
                 'text': instance.add_message,
-                'reply_markup': json.dumps(kb)
+                'reply_markup': json.dumps(kb)  # todo out of cycle
             }
             url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage"
             requests.post(url, data=d)

@@ -8,7 +8,7 @@ from sqlalchemy.future import select
 
 
 @dataclass
-class IsClientFilter(BoundFilter):
+class IsClientFilter(BoundFilter):  # todo delete
     key = 'is_client'
 
     is_client: bool

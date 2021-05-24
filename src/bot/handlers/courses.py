@@ -18,7 +18,7 @@ class Homework(StatesGroup):
     homework_start = State()
 
 
-async def post_photo(*args, **kwargs):
+async def post_photo(*args, **kwargs): # todo use named args / naming lesson post photo
     if kwargs['lesson'].image_file_id:
         await bot.send_photo(
             kwargs['cb'].from_user.id,
@@ -51,9 +51,9 @@ async def my_courses(cb: types.CallbackQuery):
             select(StudentTable).where(StudentTable.id == client_id).options(
                 selectinload(StudentTable.courses).selectinload(StudentCourse.courses)
             ))).scalar()
-        courses = (await session.execute(select(CourseTable).where(CourseTable.is_free == True))).scalars()
+        courses = (await session.execute(select(CourseTable).where(CourseTable.is_free == True))).scalars()  # todo free courses naming
 
-    kb = InlineKeyboardMarkup()
+    kb = InlineKeyboardMarkup()  # todo make func
     btn_list = [
         InlineKeyboardButton(x.courses.name, callback_data=f'get_course|{x.courses.id}') for x in client.courses
     ] + [InlineKeyboardButton(x.name, callback_data=f'get_course|{x.id}') for x in courses]
@@ -174,7 +174,7 @@ async def check_homework(cb: types.callback_query):
             kb.add(InlineKeyboardButton(
                 'Сдать дз', callback_data=f'submit|{record.lesson.lesson_course.chat_id}|{record.id}')
             )
-            if cb.message.photo:
+            if cb.message.photo:  # todo check this code
                 await bot.edit_message_caption(
                     cb.from_user.id,
                     cb.message.message_id,

@@ -19,7 +19,7 @@ from dashboard.models import Course
 from dashboard.scheduler import SCHEDULER
 
 
-class TelegramBroadcastMixin:
+class TelegramBroadcastMixin:  # todo to separate module
     @staticmethod
     def send_single_message(data):
         url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage"
@@ -50,7 +50,7 @@ class TelegramBroadcastMixin:
 
 class StudentCourseList(admin.TabularInline):
     model = models.StudentCourse
-    fields = ('student_display', 'created_at', 'message_student')
+    fields = ('student_display', 'created_at', 'message_student')  # todo studentcourse__student
     readonly_fields = ('student_display', 'created_at', 'message_student')
     can_delete = False
     extra = 0
@@ -59,14 +59,14 @@ class StudentCourseList(admin.TabularInline):
     def has_add_permission(self, request, obj):
         return False
 
-    @admin.display(description='Student')
+    @admin.display(description='Student') # todo delete method
     def student_display(self, instance):
         return format_html(
             '{0}',
             instance.student,
         )
 
-    @admin.display(description='created_at')
+    @admin.display(description='created_at')  # todo delete method
     def created_at(self, instance):
         return format_html(
             '{0}',
@@ -100,7 +100,7 @@ class LessonList(admin.StackedInline):
 @admin.register(models.Lead)
 class LeadAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     list_display = ('id', '__str__', 'tg_id', 'application_type', 'phone', 'language_type', 'is_client', 'chosen_field', 'checkout_date')
-    list_editable = ('is_client',)
+    list_editable = ('is_client',)  # todo remove
     list_per_page = 20
     list_filter = ('chosen_field', 'application_type')
     list_display_links = ('__str__',)
@@ -115,20 +115,20 @@ class LeadAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     def send_message(self, request, qs):
         return super().send_message(request, qs)
 
-    @admin.display(description='Рассылка чекаута')
+    @admin.display(description='Рассылка чекаута')  #todo make separate method
     def send_checkout(self, request, qs):
         return super().send_checkout(request, qs)
 
     @admin.display(description='Приписать к курсу')
-    def assign_to_course(self, request, qs):
-        courses = Course.objects.filter(is_free=False)
+    def assign_to_course(self, request, qs):  # todo naming
         if 'assign' in request.POST:
-            courses = [Course.objects.get(pk=x) for x in request.POST.getlist('course')]
+            courses = [Course.objects.get(pk=x) for x in request.POST.getlist('course')]  #todo use in
             for client in qs:
-                client.courses.set(courses)
+                client.courses.set(courses) # todo use transaction atomic / take it to model method
             qs.update(is_client=True)
             return HttpResponseRedirect(request.get_full_path())
 
+        courses = Course.objects.filter(is_free=False)
         return render(request, 'dashboard/assign_to_course.html',
                       context={'entities': qs, 'courses': courses})
 
@@ -161,7 +161,7 @@ class ClientAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
 
     @admin.display(description='Курсы')
     def get_courses(self, obj):
-        return ',\n'.join([x.name for x in obj.courses.all()])
+        return ',\n'.join([x.name for x in obj.courses.all()])  # todo use li / use values flat true
 
 
 @admin.register(models.Course)
@@ -235,7 +235,7 @@ class CourseAdmin(admin.ModelAdmin):
         extra_context = extra_context or {}
         course = models.Course.objects.get(pk=object_id)
         extra_context['lessons'] = course.lesson_set.all()
-        extra_context['studentcourse'] = course.studentcourse_set.all()
+        extra_context['studentcourse'] = course.studentcourse_set.all()  # todo templates Course with lower
         return super().change_view(
             request, object_id, form_url, extra_context=extra_context,
         )
@@ -262,7 +262,7 @@ class LessonAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     date_hierarchy = 'created_at'
 
     @staticmethod
-    def prepare_data(students, lesson):
+    def prepare_data(students, lesson):  # todo remove
         for student in students:
             kb = {
                 'inline_keyboard': [
@@ -290,7 +290,7 @@ class LessonAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
         )
 
 
-@admin.register(models.Student)
+@admin.register(models.Student)  # todo delete
 class Student(admin.ModelAdmin):
     def response_change(self, request, obj):
         return HttpResponseRedirect(reverse('admin:dashboard_course_changelist'))

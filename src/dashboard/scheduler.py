@@ -7,7 +7,7 @@ from django_apscheduler.models import DjangoJobExecution
 SCHEDULER = BackgroundScheduler(daemon=True, timezone=settings.TIME_ZONE)
 SCHEDULER.add_jobstore(DjangoJobStore(), "default")
 
-
+# todo remove scheduler
 def delete_old_job_executions(max_age=604_800):
     """This job deletes all apscheduler job executions older than `max_age` from the database."""
     DjangoJobExecution.objects.delete_old_job_executions(max_age)

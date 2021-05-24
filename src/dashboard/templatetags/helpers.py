@@ -6,7 +6,7 @@ register = template.Library()
 
 
 @register.filter(name='students_received')
-def students(qs):
+def students(qs):  # todo qs to lesson naming
     student_lesson = qs.studentlesson_set.filter(date_received__isnull=False).values('student').distinct()
     clients = [Student.objects.get(pk=x['student']) for x in student_lesson]
     return clients
