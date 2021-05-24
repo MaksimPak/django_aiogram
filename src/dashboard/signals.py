@@ -41,7 +41,6 @@ def send_course_add_message(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Lead)
 def lead_invite_data(sender, instance, created, **kwargs):
     if created and not instance.unique_code:
-        lead = Lead.objects.get(pk=instance.id)
-        lead.unique_code = str(instance.id) + random_int()
-        lead.invite_link = f'https://t.me/{os.getenv("BOT_NAME")}?start={lead.unique_code}'
-        lead.save()
+        instance.unique_code = str(instance.id) + random_int()
+        instance.invite_link = f'https://t.me/{os.getenv("BOT_NAME")}?start={instance.unique_code}'
+        instance.save()
