@@ -55,7 +55,6 @@ class StudentCourseList(admin.TabularInline):
     can_delete = False
     extra = 0
     classes = ('collapse',)
-    # template = 'admin/dashboard/Course/tabular_studentcourse.html'
 
     def has_add_permission(self, request, obj):
         return False

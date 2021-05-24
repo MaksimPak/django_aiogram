@@ -46,11 +46,11 @@
                                     <input type="hidden" name="_selected_action " value="{{student.id}}">
                                     {% if student.is_client %}
                                     <a href="{% url 'admin:dashboard_client_change' student.id %}" style="font-size:11px;">
-                                        {{student.first_name|slice:":1"}}.{{student.last_name}}{% if not forloop.last%},{% endif %}
+                                        {{student.short_name}}{% if not forloop.last%},{% endif %}
                                     </a>
                                     {% else %}
                                     <a href="{% url 'admin:dashboard_lead_change' student.id %}" style="font-size:11px;">
-                                        {{student.first_name|slice:":1"}}.{{student.last_name}}{% if not forloop.last%},{% endif %}
+                                        {{student.short_name}}{% if not forloop.last%},{% endif %}
                                     </a>
                                     {% endif %}
                                 {% endif %}
@@ -70,11 +70,11 @@
                                 <input type="hidden" name="_selected_action" value="{{student.id}}">
                                 {% if student.is_client %}
                                     <a href="{% url 'admin:dashboard_client_change' student.id %}" style="font-size:11px;">
-                                        {{student.first_name|slice:":1"}}.{{student.last_name}}{% if not forloop.last%},{% endif %}
+                                        {{student.short_name}}{% if not forloop.last%},{% endif %}
                                     </a>
                                     {% else %}
                                     <a href="{% url 'admin:dashboard_lead_change' student.id %}" style="font-size:11px;">
-                                        {{student.first_name|slice:":1"}}.{{student.last_name}}{% if not forloop.last%},{% endif %}
+                                        {{student.short_name}}{% if not forloop.last%},{% endif %}
                                     </a>
                                     {% endif %}
                                 {% endif %}
@@ -94,11 +94,11 @@
                                 <input type="hidden" name="_selected_action" value="{{student.id}}">
                                 {% if student.is_client %}
                                     <a href="{% url 'admin:dashboard_client_change' student.id %}" style="font-size:11px;">
-                                        {{student.first_name|slice:":1"}}.{{student.last_name}}{% if not forloop.last%},{% endif %}
+                                        {{student.short_name}}{% if not forloop.last%},{% endif %}
                                     </a>
                                     {% else %}
                                     <a href="{% url 'admin:dashboard_lead_change' student.id %}" style="font-size:11px;">
-                                        {{student.first_name|slice:":1"}}.{{student.last_name}}{% if not forloop.last%},{% endif %}
+                                        {{student.short_name}}{% if not forloop.last%},{% endif %}
                                     </a>
                                     {% endif %}
                             {% endfor %}

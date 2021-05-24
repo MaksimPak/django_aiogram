@@ -90,6 +90,7 @@ class LessonTable(Base):
     course_id = Column(BIGINT, ForeignKey('dashboard_course.id'))
     has_homework = Column(Boolean, default=False)
     homework_desc = Column(LONGTEXT, nullable=True)
+    date_sent = Column(DateTime, nullable=True)
 
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)

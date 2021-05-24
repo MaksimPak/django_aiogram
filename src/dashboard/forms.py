@@ -3,9 +3,9 @@ from django import forms
 from dashboard import models
 
 
-class ClientForm(forms.ModelForm):
+class LeadForm(forms.ModelForm):
     class Meta:
-        model = models.Client
+        model = models.Lead
         fields = ['first_name', 'last_name', 'language_type', 'phone', 'chosen_field']
 
 

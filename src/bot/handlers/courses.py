@@ -5,7 +5,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ContentType
 from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, with_parent
 
 from bot import config
 from bot.misc import dp, bot
@@ -70,19 +70,23 @@ async def my_courses(cb: types.CallbackQuery):
 
 
 @dp.callback_query_handler(lambda x: 'get_course|' in x.data, state='*')
-async def course_lessons(cb: types.callback_query, state: FSMContext):
+async def course_lessons(cb: types.callback_query):
     await bot.answer_callback_query(cb.id)
     _, course_id = cb.data.split('|')
     async with SessionLocal() as session:
         course = (await session.execute(
-                select(CourseTable).where(CourseTable.id == course_id).options(
+                select(CourseTable).where(
+                    CourseTable.id == course_id
+                ).options(
                     selectinload(CourseTable.lessons)
                 ))).scalar()
         client = (await session.execute(select(StudentTable).where(StudentTable.tg_id == cb.from_user.id))).scalar()
 
-    lessons = course.lessons
-    if not course.is_free:
-        lessons = course.lessons[:course.lesson_count]
+        lessons = (await session.execute(select(LessonTable).where(
+            with_parent(course, CourseTable.lessons)
+        ).filter(LessonTable.date_sent != None))).scalars()
+    if course.is_free:
+        lessons = course.lessons
 
     kb = InlineKeyboardMarkup().add(
         *[InlineKeyboardButton(x.title, callback_data=f'lesson|{x.id}') for x in lessons]

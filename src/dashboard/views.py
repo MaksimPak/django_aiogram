@@ -9,7 +9,7 @@ from django.shortcuts import render, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse
 
-from dashboard.forms import ClientForm
+from dashboard.forms import LeadForm
 from dashboard.models import LessonUrl, Lead, Student, Course, Lesson
 
 
@@ -40,16 +40,12 @@ def signup(request):
         except IntegrityError:
             return HttpResponse('Invalid phone number. Number is already used')
     else:
-        form = ClientForm()
+        form = LeadForm()
         return render(request, 'dashboard/signup.html', {'form': form})
 
 
-# todo: accept get/post requests
 def message_to_students(request):
-    if request.POST:
-        students = [Student.objects.get(pk=x) for x in request.POST.getlist('_selected_action')]
-    else:
-        students = Student.objects.filter(pk=request.GET['student_id'])
+    students = Student.objects.filter(pk__in=getattr(request, request.method).getlist('_selected_action'))
 
     if 'send' in request.POST:
 
