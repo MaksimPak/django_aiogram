@@ -94,7 +94,7 @@ def send_lesson(request, course_id, lesson_id):
         data = {
             'chat_id': student.tg_id,
             'parse_mode': 'html',
-            'text': render_to_string('dashboard/lesson_info.html', {'lesson': lesson}),
+            'text': render_to_string('dashboard/tg_lesson_info.html', {'lesson': lesson}),
             'reply_markup': json.dumps(kb)
         }
 
@@ -102,7 +102,7 @@ def send_lesson(request, course_id, lesson_id):
         if lesson.image:
             url = PHOTO_URL
             data.pop('text')
-            data['caption'] = render_to_string('dashboard/lesson_info.html', {'lesson': lesson})
+            data['caption'] = render_to_string('dashboard/tg_lesson_info.html', {'lesson': lesson})
             if lesson.image_file_id:
                 data['photo'] = lesson.image_file_id
             else:

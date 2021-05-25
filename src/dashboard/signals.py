@@ -3,11 +3,11 @@ import json
 import os
 import random
 
-import requests
 from django.db.models.signals import post_save, post_init
 from django.dispatch import receiver
 
 from dashboard.models import Lead, Course
+from dashboard.telegram import Telegram
 
 
 def random_int():
@@ -30,15 +30,8 @@ def send_course_add_message(sender, instance, created, **kwargs):
     if instance._is_started is not True:
         course_id = instance.id
         kb = json.dumps({'inline_keyboard': [[{'text': 'Начать Курс', 'callback_data': f'get_course|{course_id}'}]]})
-        url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage"
-        for student in instance.student_set.all():
-            data = {
-                'chat_id': student.tg_id,
-                'text': instance.add_message,
-                'reply_markup': kb
-            }
-
-            requests.post(url, data=data)
+        people = instance.student_set.all()
+        Telegram.send_messages(people, instance.add_message, kb)
 
         instance._is_started = instance.is_started
         Course.objects.filter(pk=instance.id).update(date_started=datetime.datetime.now())

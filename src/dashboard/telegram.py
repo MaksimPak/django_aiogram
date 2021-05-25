@@ -10,10 +10,12 @@ class Telegram:
         return requests.post(url, data=data).json()
 
     @staticmethod
-    def send_messages(people, message):
+    def send_messages(people, message, kb=None):
         for person in people:
             data = {
                 'chat_id': person.tg_id,
-                'text': message
+                'text': message,
             }
+            if kb:
+                data['reply_markup'] = kb
             Telegram.send_single_message(data=data)

@@ -34,7 +34,7 @@ class StudentCourseList(admin.TabularInline):
     @admin.display(description='message')
     def message_student(self, instance):
         return render_to_string(
-            'dashboard/message_form.html',
+            'dashboard/message_link.html',
             {
                 'data': instance
             }
