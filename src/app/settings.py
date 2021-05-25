@@ -46,8 +46,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'django_apscheduler',
     'dashboard.apps.DashboardConfig',
+
+    'bootstrap4',
 
 ]
 
@@ -170,9 +171,6 @@ LOGGING = {
         },
     },
 }
-
-APSCHEDULER_DATETIME_FORMAT = 'd m Y, H:m'
-APSCHEDULER_RUN_NOW_TIMEOUT = 25  # Seconds
 
 if APP_ENVIRONMENT != 'development':
     sentry_sdk.init(

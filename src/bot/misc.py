@@ -28,5 +28,4 @@ def setup():
     # noinspection PyUnresolvedReferences
     import bot.handlers
 
-
     executor.setup()

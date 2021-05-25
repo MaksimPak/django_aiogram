@@ -17,6 +17,9 @@ class StudentAdmin(forms.ModelForm):
     )
 
     def get_initial_for_field(self, field, field_name):
+        """
+        Mark current courses of student in Admin panel
+        """
         if self.instance and self.instance.id and hasattr(self.instance, 'courses'):
             courses = tuple([x.id for x in self.instance.courses.all()])
             self.fields['course'].initial = courses
@@ -24,6 +27,9 @@ class StudentAdmin(forms.ModelForm):
             return super().get_initial_for_field(field, field_name)
 
     def save(self, commit=True):
+        """
+        Redefined save method to support Multiple Choice of courses in Admin panel
+        """
         instance = super().save()
         instance.courses.set(self.cleaned_data['course'])
         # Add a method to the form to allow deferred

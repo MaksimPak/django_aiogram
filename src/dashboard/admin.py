@@ -1,56 +1,21 @@
 import datetime
-import json
-import os
 
-import requests
-from apscheduler.triggers.cron import CronTrigger
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.template.loader import render_to_string
-from django.urls import reverse
 from django.utils.html import format_html
-from django_apscheduler.models import DjangoJob, DjangoJobExecution
 
 from dashboard import models
 from dashboard.forms import StudentAdmin
 from dashboard.models import Course
-from dashboard.scheduler import SCHEDULER
-
-
-class TelegramBroadcastMixin:  # todo to separate module
-    @staticmethod
-    def send_single_message(data):
-        url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage"
-        return requests.post(url, data=data).json()
-
-    def send_message(self, request, qs):
-        if 'send' in request.POST:
-            for record in qs:
-                data = {
-                    'chat_id': record.tg_id,
-                    'text': request.POST['message']
-                }
-                self.send_single_message(data=data)
-            return HttpResponseRedirect(request.get_full_path())
-
-        return render(request, 'dashboard/send_intermediate.html', context={'entities': qs})
-
-    def send_checkout(self, request, qs):
-        for record in qs:
-            data = {
-                'chat_id': record.tg_id,
-                'text': 'https://paynet.uz/checkout_test'
-            }
-            resp = self.send_single_message(data=data)
-            resp['ok'] and models.Student.objects.filter(pk=record.id).update(checkout_date=datetime.datetime.now())
-        return HttpResponseRedirect(request.get_full_path())
+from dashboard.telegram import Telegram
 
 
 class StudentCourseList(admin.TabularInline):
     model = models.StudentCourse
-    fields = ('student_display', 'created_at', 'message_student')  # todo studentcourse__student
+    fields = ('student_display', 'created_at', 'message_student')
     readonly_fields = ('student_display', 'created_at', 'message_student')
     can_delete = False
     extra = 0
@@ -59,18 +24,11 @@ class StudentCourseList(admin.TabularInline):
     def has_add_permission(self, request, obj):
         return False
 
-    @admin.display(description='Student') # todo delete method
+    @admin.display(description='Студент')
     def student_display(self, instance):
         return format_html(
             '{0}',
             instance.student,
-        )
-
-    @admin.display(description='created_at')  # todo delete method
-    def created_at(self, instance):
-        return format_html(
-            '{0}',
-            instance.created_at,
         )
 
     @admin.display(description='message')
@@ -90,17 +48,16 @@ class StudentCourseList(admin.TabularInline):
         }
 
 
-
 class LessonList(admin.StackedInline):
     model = models.Lesson
     classes = ('collapse',)
+    readonly_fields = ('date_sent',)
     extra = 1
 
 
 @admin.register(models.Lead)
-class LeadAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
-    list_display = ('id', '__str__', 'tg_id', 'application_type', 'phone', 'language_type', 'is_client', 'chosen_field', 'checkout_date')
-    list_editable = ('is_client',)  # todo remove
+class LeadAdmin(admin.ModelAdmin):
+    list_display = ('id', '__str__', 'tg_id', 'application_type', 'phone', 'language_type', 'chosen_field', 'checkout_date')
     list_per_page = 20
     list_filter = ('chosen_field', 'application_type')
     list_display_links = ('__str__',)
@@ -112,34 +69,39 @@ class LeadAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     form = StudentAdmin
 
     @admin.display(description='Массовая рассылка')
-    def send_message(self, request, qs):
-        return super().send_message(request, qs)
+    def send_message(self, request, leads):
+        if 'send' in request.POST:
+            Telegram.send_messages(leads, request.POST['message'])
+            return HttpResponseRedirect(request.get_full_path())
 
-    @admin.display(description='Рассылка чекаута')  #todo make separate method
-    def send_checkout(self, request, qs):
-        return super().send_checkout(request, qs)
+        return render(request, 'dashboard/send_intermediate.html', context={'entities': leads})
+
+    @admin.display(description='Рассылка чекаута')
+    def send_checkout(self, request, leads):
+        for lead in leads:
+            data = {
+                'chat_id': lead.tg_id,
+                'text': 'https://paynet.uz/checkout_test'
+            }
+            resp = self.send_single_message(data=data)
+            resp['ok'] and models.Student.objects.filter(pk=lead.id).update(checkout_date=datetime.datetime.now())
+        return HttpResponseRedirect(request.get_full_path())
 
     @admin.display(description='Приписать к курсу')
-    def assign_to_course(self, request, qs):  # todo naming
+    def assign_to_course(self, request, leads):
         if 'assign' in request.POST:
-            courses = [Course.objects.get(pk=x) for x in request.POST.getlist('course')]  #todo use in
-            for client in qs:
-                client.courses.set(courses) # todo use transaction atomic / take it to model method
-            qs.update(is_client=True)
+            courses = Course.objects.filter(pk__in=request.POST.getlist('course'))
+            for lead in leads:
+                lead.make_client(courses)
             return HttpResponseRedirect(request.get_full_path())
 
         courses = Course.objects.filter(is_free=False)
         return render(request, 'dashboard/assign_to_course.html',
-                      context={'entities': qs, 'courses': courses})
-
-    class Media:
-        js = (
-            'dashboard/js/lead_admin.js',
-        )
+                      context={'entities': leads, 'courses': courses})
 
 
 @admin.register(models.Client)
-class ClientAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
+class ClientAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__', 'phone', 'language_type', 'get_courses',)
     list_per_page = 20
     list_filter = ('studentcourse__course__name',)
@@ -152,21 +114,37 @@ class ClientAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
     form = StudentAdmin
 
     @admin.display(description='Массовая рассылка')
-    def send_message(self, request, qs):
-        return super().send_message(request, qs)
+    def send_message(self, request, clients):
+        if 'send' in request.POST:
+            Telegram.send_messages(clients, request.POST['message'])
+            return HttpResponseRedirect(request.get_full_path())
 
-    @admin.display(description='Рассылка чекаута')
-    def send_checkout(self, request, qs):
-        return super().send_checkout(request, qs)
+        return render(request, 'dashboard/send_intermediate.html', context={'entities': clients})
+
+    @admin.display(description='Выслать чекаут')
+    def send_checkout(self, request, clients):
+        for client in clients:
+            data = {
+                'chat_id': client.tg_id,
+                'text': 'https://paynet.uz/checkout_test'
+            }
+            resp = self.send_single_message(data=data)
+            resp['ok'] and models.Student.objects.filter(pk=client.id).update(checkout_date=datetime.datetime.now())
+        return HttpResponseRedirect(request.get_full_path())
 
     @admin.display(description='Курсы')
-    def get_courses(self, obj):
-        return ',\n'.join([x.name for x in obj.courses.all()])  # todo use li / use values flat true
+    def get_courses(self, client):
+        return render_to_string(
+            'dashboard/display_courses.html',
+            {
+                'courses': client.courses.values_list('name', flat=True)
+            }
+        )
 
 
 @admin.register(models.Course)
 class CourseAdmin(admin.ModelAdmin):
-    list_display = ('id', '__str__', 'short_info', 'is_started', 'category', 'difficulty', 'price')
+    list_display = ('id', '__str__', 'course_info', 'is_started', 'category', 'difficulty', 'price')
     list_display_links = ('__str__',)
     list_editable = ('is_started',)
     readonly_fields = ('date_started', 'date_finished', 'created_at',)
@@ -177,65 +155,32 @@ class CourseAdmin(admin.ModelAdmin):
     inlines = (LessonList, StudentCourseList, )
     ordering = ('id',)
     date_hierarchy = 'created_at'
-    change_form_template = 'admin/dashboard/Course/change_form.html'
-
-    @staticmethod
-    def send_lessons(lessons, tg_id):
-        for lesson in lessons:
-            kb = {
-                'inline_keyboard': [
-                    [{
-                        'text': 'Посмотреть урок',
-                        'callback_data': f'lesson|{lesson.id}'
-                    }],
-                ]
-            }
-            d = {
-                'chat_id': tg_id,
-                'text': lesson.title,
-                'reply_markup': json.dumps(kb)
-            }
-            url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage"
-            requests.post(url, data=d)
-
-    @staticmethod
-    def send_students(students, lessons):
-        [CourseAdmin.send_lessons(lessons, x.tg_id) for x in students]
-
-    @staticmethod
-    def set_schedule(obj):
-        students = obj.student_set.all()
-        lessons = obj.lesson_set.all()[obj.last_lesson_index: obj.last_lesson_index + obj.week_size]
-        obj.last_lesson_index += obj.week_size
-        if lessons:
-            obj.save()
-            CourseAdmin.send_students(students, lessons)
-        else:
-            obj.last_lesson_index = 0
-            obj.is_started = False
-            obj.save()
-            SCHEDULER.pause_job(f'course_{obj.id}')
-            SCHEDULER.remove_job(f'course_{obj.id}')
-
-    def response_change(self, request, obj):
-        if '_start_course' in request.POST:
-            SCHEDULER.add_job(
-                self.set_schedule,
-                trigger=CronTrigger(second='*/10'),
-                args=(obj,),
-                id=f'course_{obj.id}',
-                max_instances=1,
-                replace_existing=True,
-            )
-            obj.is_started = True
-            obj.save()
-        return super().response_change(request, obj)
+    change_form_template = 'admin/dashboard/course/change_form.html'
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         extra_context = extra_context or {}
         course = models.Course.objects.get(pk=object_id)
-        extra_context['lessons'] = course.lesson_set.all()
-        extra_context['studentcourse'] = course.studentcourse_set.all()  # todo templates Course with lower
+
+        lessons = course.lesson_set.all()
+        lessons_stat = []
+        for lesson in lessons:
+            data = {
+                'lesson': lesson,
+                'received': set(),
+                'viewed': set(),
+                'hw': set(),
+            }
+            for record in lesson.studentlesson_set.all():
+                if record.date_received:
+                    data['received'].add(record.student)
+                if record.date_watched:
+                    data['viewed'].add(record.student)
+                if record.homework_sent:
+                    data['hw'].add(record.student)
+            lessons_stat.append(data)
+
+        extra_context['lessons_stat'] = lessons_stat
+        extra_context['studentcourse'] = course.studentcourse_set.all()
         return super().change_view(
             request, object_id, form_url, extra_context=extra_context,
         )
@@ -250,39 +195,15 @@ class CourseAdmin(admin.ModelAdmin):
 
 
 @admin.register(models.Lesson)
-class LessonAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
-    list_display = ('id', '__str__', 'short_info', 'video', 'course')
+class LessonAdmin(admin.ModelAdmin):
+    list_display = ('id', '__str__', 'lesson_info', 'video', 'course')
     list_display_links = ('__str__',)
     list_per_page = 20
     readonly_fields = ('date_sent',)
     search_fields = ('id', 'title', 'course')
     list_filter = ('course',)
     ordering = ('id',)
-    actions = ('send_lesson_block',)
     date_hierarchy = 'created_at'
-
-    @staticmethod
-    def prepare_data(students, lesson):  # todo remove
-        for student in students:
-            kb = {
-                'inline_keyboard': [
-                    [{
-                        'text': 'Посмотреть урок',
-                        'callback_data': f'lesson|{lesson.id}'
-                    }],
-                ]
-            }
-            data = {
-                'chat_id': student.tg_id,
-                'text': lesson.title,
-                'reply_markup': json.dumps(kb)
-            }
-            LessonAdmin.send_single_message(data=data)
-
-    def send_lesson_block(self, request, qs):
-        [LessonAdmin.prepare_data(lesson.course.student_set.all(), lesson) for lesson in qs]
-
-    send_lesson_block.short_description = 'Послать уроки'
 
     class Media:
         js = (
@@ -290,18 +211,4 @@ class LessonAdmin(TelegramBroadcastMixin, admin.ModelAdmin):
         )
 
 
-@admin.register(models.Student)  # todo delete
-class Student(admin.ModelAdmin):
-    def response_change(self, request, obj):
-        return HttpResponseRedirect(reverse('admin:dashboard_course_changelist'))
-
-    def get_model_perms(self, request):
-        """
-        Return empty perms dict thus hiding the model from admin index.
-        """
-        return {}
-
-
 admin.site.register(models.User, UserAdmin)
-admin.site.unregister(DjangoJob)
-admin.site.unregister(DjangoJobExecution)

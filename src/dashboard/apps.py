@@ -8,5 +8,4 @@ class DashboardConfig(AppConfig):
     def ready(self):
         # noinspection PyUnresolvedReferences
         from . import signals
-        # from . import scheduler
-        # scheduler.start()
+

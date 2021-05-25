@@ -1,15 +1,9 @@
 {% extends 'admin/change_form.html' %}
-{% load helpers %}
-
 
 {% block submit_buttons_bottom %}
     <h3 class="clear-space">Students total: {{studentcourse.count}}</h3>
     {{ block.super }}
-<!--        <div class="submit-row">-->
-<!--                <input type="submit" value="Start course" name="_start_course">-->
-<!--        </div>-->
 {% endblock %}
-
 
 {% block footer %}
     {{ block.super }}
@@ -32,17 +26,17 @@
             </tr>
         </thead>
         <tbody>
-            {% for lesson in lessons %}
+            {% for data in lessons_stat %}
                 <tr>
-                    <td nowrap>{{lesson.title}}</td>
-                    <td>{{lesson|students_received|length}}</td>
-                    <td>{{lesson|students_watched|length}}</td>
-                    <td> {% if lesson.has_homework %}{{ lesson|students_hw_submitted|length}} {% else %} - {% endif %}</td>
+                    <td nowrap>{{data.lesson.title}}</td>
+                    <td>{{data.received|length}}</td>
+                    <td>{{data.viewed|length}}</td>
+                    <td> {% if data.lesson.has_homework %}{{ data.hw|length}} {% else %} - {% endif %}</td>
                     <td>
                         <form action="{% url 'dashboard:send_message' %}" method="post" class="receivedVid">
                             {% csrf_token %}
-                            {% for student in lesson|students_received %}
-                                {% if student not in lesson|students_watched %}
+                            {% for student in data.received %}
+                                {% if student not in data.viewed %}
                                     <input type="hidden" name="_selected_action " value="{{student.id}}">
                                     {% if student.is_client %}
                                     <a href="{% url 'admin:dashboard_client_change' student.id %}" style="font-size:11px;">
@@ -55,7 +49,7 @@
                                     {% endif %}
                                 {% endif %}
                             {% endfor %}
-                            {%  if lesson|students_received %}
+                            {%  if data.received %}
                             <button type="submit" style="font-size:13px; background-color: transparent;
                                                          border-color: transparent;">💬</button>
                             {% endif %}
@@ -65,8 +59,8 @@
                     <td>
                         <form action="{% url 'dashboard:send_message' %}" method="post" class="viewedVid">
                             {% csrf_token %}
-                            {% for student in lesson|students_watched %}
-                                {% if student not in lesson|students_hw_submitted %}
+                            {% for student in data.viewed %}
+                                {% if student not in data.hw %}
                                 <input type="hidden" name="_selected_action" value="{{student.id}}">
                                 {% if student.is_client %}
                                     <a href="{% url 'admin:dashboard_client_change' student.id %}" style="font-size:11px;">
@@ -79,7 +73,7 @@
                                     {% endif %}
                                 {% endif %}
                             {% endfor %}
-                            {% if lesson|students_watched %}
+                            {% if data.viewed %}
                                 <button type="submit" style="font-size:13px; background-color: transparent;
                                                          border-color: transparent;">💬</button>
                             {% endif %}
@@ -87,10 +81,10 @@
                     </td>
 
                     <td>
-                        {% if lesson.has_homework %}
+                        {% if data.lesson.has_homework %}
                         <form action="{% url 'dashboard:send_message' %}" method="post" class="hwSubmitted">
                             {% csrf_token %}
-                            {% for student in lesson|students_hw_submitted %}
+                            {% for student in data.hw %}
                                 <input type="hidden" name="_selected_action" value="{{student.id}}">
                                 {% if student.is_client %}
                                     <a href="{% url 'admin:dashboard_client_change' student.id %}" style="font-size:11px;">
@@ -102,7 +96,7 @@
                                     </a>
                                     {% endif %}
                             {% endfor %}
-                            {% if lesson|students_hw_submitted %}
+                            {% if lesson.hw %}
                                 <button type="submit" style="font-size:13px; background-color: transparent;
                                                          border-color: transparent;">💬</button>
                             {% endif %}
@@ -121,7 +115,7 @@
                          {% endif %}
                     </td>
 
-                    <td><a href="{% url 'dashboard:send_lesson' object_id lesson.id %}" {% if lesson.date_sent %} class="btn-disabled" disabled="disabled" {% endif %}>📨</a></td>
+                    <td><a href="{% url 'dashboard:send_lesson' object_id data.lesson.id %}" {% if data.lesson.date_sent %} class="btn-disabled" disabled="disabled" {% endif %}>📨</a></td>
 
                 </tr>
             {% endfor %}

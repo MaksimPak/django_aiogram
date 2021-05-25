@@ -1,13 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{lesson.title}}</title>
+{% extends 'dashboard/base.html' %}
+{% block title %}{{lesson.title}}{% endblock %}
+{% block extra_links %}
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@clappr/player@latest/dist/clappr.min.js"></script>
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
+
 {{lesson.info}}
 <div id="player"></div>
+
+{% endblock %}
+
+{% block extra_scripts %}
  <script>
     var player = new Clappr.Player(
         {
@@ -15,5 +19,4 @@
         }
     );
   </script>
-</body>
-</html>
+{% endblock %}

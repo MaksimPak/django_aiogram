@@ -2,17 +2,35 @@
 
 {% block content %}
 
-<form action="" method="POST">
-    <p>Are you sure you want to execute this action ?</p>
+<h1>Отправить сообщение</h1>
+<table>
+    <tbody>
+    <tr>
+        <td style="border: none; padding: 0;">
+            <form action="" method="POST">
+                <div>
+                    {% csrf_token %}
+                    {% for entity in entities %}
+                    <input type="hidden" name="_selected_action" value="{{ entity.pk }}" />
+                    {% endfor %}
+                    <textarea name="message" cols="50" rows="10"></textarea>
+                    <input type="hidden" name="action" value="send_message" />
+                </div>
+                <div>
+                    <input type="submit" name="send" value="Send message" style="margin-top:1em;"/>
+                </div>
 
-    {% csrf_token %}
-{% for entity in entities %}
-    <input type="hidden" name="_selected_action" value="{{ entity.pk }}" />
-{% endfor %}
-    <textarea name="message" id="" cols="30" rows="10"></textarea>
-    <input type="hidden" name="action" value="send_message" />
-    <input type="submit" name="send" value="Send message"/>
-</form>
+            </form>
+        </td>
+        <td style="border: none; padding: 0 0 0 1em;" >
+            <p><strong>Вы собираетесь отпрваить сообщение следующим людям:</strong></p>
+            <div>
+                {% for entity in entities %}
+                {{ entity }}
+                {% endfor %}
+            </div>
+        </td>
+    </tr>
+    </tbody>
+</table>
 {% endblock %}
-
-<!--todo display entities + button br-->

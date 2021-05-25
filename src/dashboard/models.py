@@ -1,25 +1,32 @@
-import random
 import uuid
 
 from django.contrib.auth.models import AbstractUser
-from django.db import models
+from django.db import models, transaction
 from django.template.defaultfilters import truncatewords
-from django.template.loader import render_to_string
 
-from dashboard.misc import LeadManager, ClientManager
+from dashboard.validators import validate_video_extension, validate_photo_extension
+
+COURSE_HELP_TEXT = 'Если вводится Chatid группы вам нужно создать группу, добавить туда бота, узнать её чат айди, и ввести его здесь. Боту надо дать админ права в группе чтобы он мог форвардить сообщения'
 
 
-# todo course help text here as constant
+class LeadManager(models.Manager):
+    def get_queryset(self):
+        return super(LeadManager, self).get_queryset().filter(is_client=False)
 
-def random_int():  # todo move to signals module
-    return str(random.randint(100, 999))
+
+class ClientManager(models.Manager):
+    def get_queryset(self):
+        return super(ClientManager, self).get_queryset().filter(is_client=True)
+
+
+def lesson_upload_directory(instance, filename):
+    return f'{instance.course.name}/{instance.title}/{filename}'
 
 
 class CategoryType(models.TextChoices):
     game_dev = '1', 'Game Development'
     web = '2', 'Web Development',
 
-# todo check all null true
 
 class User(AbstractUser):
 
@@ -71,6 +78,12 @@ class Lead(Student):
 
     objects = LeadManager()
 
+    @transaction.atomic
+    def make_client(self, courses):
+        self.courses.set(courses)
+        self.is_client = True
+        self.save()
+
     class Meta:
         proxy = True
         verbose_name = 'Лид'
@@ -101,10 +114,9 @@ class Course(models.Model):
     price = models.BigIntegerField(verbose_name='Цена')
     is_free = models.BooleanField(verbose_name='Бесплатный курс', default=False)
     week_size = models.IntegerField(verbose_name='Количество уроков в неделю', default=0)
-    lesson_count = models.IntegerField(verbose_name='Сколько уроков отправлять сразу при старте курса', null=True, blank=True, default=0)
     is_started = models.BooleanField(verbose_name='Курс начат', default=False)
     is_finished = models.BooleanField(verbose_name='Курс закончен', default=False)
-    chat_id = models.BigIntegerField(verbose_name='Telegram ID', null=True, blank=True, help_text=render_to_string('dashboard/course_helptext.html'))  # todo render to string delete
+    chat_id = models.BigIntegerField(verbose_name='Telegram ID', null=True, blank=True, help_text=COURSE_HELP_TEXT)
 
     date_started = models.DateTimeField(verbose_name='Дата начала курса', null=True, blank=True)
     date_finished = models.DateTimeField(verbose_name='Дата окончания курса', null=True, blank=True)
@@ -116,12 +128,8 @@ class Course(models.Model):
         return self.name
 
     @property
-    def short_info(self):
+    def course_info(self):
         return truncatewords(self.info, 5)
-
-    @property
-    def total_lesson_count(self):
-        return self.lesson_set.count()
 
     class Meta:
         verbose_name = 'Курс'
@@ -131,13 +139,13 @@ class Course(models.Model):
 class Lesson(models.Model):
     title = models.CharField(max_length=50, verbose_name='Название урока')
     info = models.TextField(blank=True, null=True, verbose_name='Описание')
-    image = models.ImageField(verbose_name='Картинка', null=True, blank=True)
+    image = models.ImageField(verbose_name='Картинка', null=True, blank=True, upload_to=lesson_upload_directory, validators=[validate_photo_extension])
     image_file_id = models.CharField(verbose_name='Photo file ID', null=True, blank=True, editable=False, max_length=255)
-    video = models.FileField(verbose_name='Видео к уроку')  # todo create path dynamically
+    video = models.FileField(verbose_name='Видео к уроку', upload_to=lesson_upload_directory, validators=[validate_video_extension])
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     has_homework = models.BooleanField(verbose_name='Есть домашнее задание', default=False)
     homework_desc = models.TextField(verbose_name='Homework description', null=True, blank=True)
-    date_sent = models.DateTimeField(verbose_name='Дата отсылки урока', null=True, blank=True)
+    date_sent = models.DateTimeField(verbose_name='Дата отсылки урока', null=True, blank=True, editable=False)
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
@@ -146,7 +154,7 @@ class Lesson(models.Model):
         return self.title
 
     @property
-    def short_info(self):
+    def lesson_info(self):
         return truncatewords(self.info, 5)
 
     class Meta:
