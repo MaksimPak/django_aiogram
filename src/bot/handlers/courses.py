@@ -84,7 +84,7 @@ async def course_lessons(cb: types.callback_query):
 
         lessons = (await session.execute(select(LessonTable).where(
             with_parent(course, CourseTable.lessons)
-        ).filter(LessonTable.date_sent != None))).scalars()
+        ).filter(LessonTable.date_sent != None))).scalars().all()
     if course.is_free:
         lessons = course.lessons
 
@@ -92,8 +92,7 @@ async def course_lessons(cb: types.callback_query):
         *[InlineKeyboardButton(x.title, callback_data=f'lesson|{x.id}') for x in lessons]
     )
     kb.add(InlineKeyboardButton('Назад', callback_data=f'to_courses|{client.id}'))
-
-    msg = 'Уроки курса' if lessons else 'У курса не уроков'
+    msg = 'Уроки курса' if lessons else 'У курса нет уроков'
     await bot.edit_message_text(
         msg,
         cb.from_user.id,

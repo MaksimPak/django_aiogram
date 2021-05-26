@@ -19,10 +19,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 def setup():
-    from bot import filters
     from bot.utils import executor
-
-    filters.setup(dp)
 
     logging.info("Configuring handlers...")
     # noinspection PyUnresolvedReferences

@@ -63,7 +63,6 @@ class CourseTable(Base):
     price = Column(BIGINT)
     is_free = Column(TINYINT, default=0)
     week_size = Column(Integer)
-    lesson_count = Column(Integer, nullable=True)
     is_started = Column(Boolean, default=False)
     is_finished = Column(Boolean, default=False)
     chat_id = Column(BIGINT, nullable=True)
