@@ -4,16 +4,18 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import CommandStart, Text, ChatTypeFilter
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
+from aiogram.types import InlineKeyboardButton
 
 from bot.misc import dp, bot
-from bot.models.dashboard import StudentTable, CourseTable, StudentCourse, CategoryType
+from bot.models.dashboard import StudentTable, CategoryType
 from bot.models.db import SessionLocal
+from bot import repository as repo
+from bot.decorators import get_db
+from bot.helpers import make_kb
 
 
 class RegistrationState(StatesGroup):
+    invite_link = State()
     lang = State()
     first_name = State()
     last_name = State()
@@ -38,35 +40,30 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
 
 @dp.message_handler(CommandStart(re.compile(r'\d+')), ChatTypeFilter(types.ChatType.PRIVATE))
-async def register_deep_link(message: types.Message):
-    try:
-        async with SessionLocal() as session:
-            student = (await session.execute(
-                select(StudentTable).where(StudentTable.unique_code == message.get_args())
-            )).scalar()
-            if student:
-                student.tg_id = message.from_user.id
-                await session.commit()
-                await message.reply('Вы были успешно зарегистрированы')
-            else:
-                await message.reply('Неверный инвайт код')
-    except IntegrityError:
+@get_db
+async def register_deep_link(message: types.Message, session: SessionLocal, **kwargs):
+    student = await repo.StudentRepository.get_student('unique_code', message.get_args(), session)
+
+    if student and not student.tg_id:
+        await repo.StudentRepository.change_student_params(student, {'tg_id': message.from_user.id}, session)
+        await message.reply('Вы были успешно зарегистрированы')
+    elif not student:
+        await message.reply('Неверный инвайт код')
+    elif student and student.tg_id:
         await message.reply('Вы уже зарегистрированы. Отправьте /start чтобы начать взаимодействие')
 
 
 @dp.message_handler(CommandStart(), ChatTypeFilter(types.ChatType.PRIVATE))
-async def start_reg(message: types.Message):
-    async with SessionLocal() as session:
-        student = (await session.execute(
-            select(StudentTable).where(StudentTable.tg_id == message.from_user.id)
-        )).scalar()
+@get_db
+async def start_reg(message: types.Message, session: SessionLocal, **kwargs):
+    student = await repo.StudentRepository.get_student('tg_id', message.from_user.id, session)
     if not student:
-        kb = InlineKeyboardMarkup().add(*[InlineKeyboardButton('Через бот', callback_data='tg_reg'),
-                                          InlineKeyboardButton('Через инвайт', callback_data='invite_reg')])
+        kb = await make_kb([InlineKeyboardButton('Через бот', callback_data='tg_reg'),
+                            InlineKeyboardButton('Через инвайт', callback_data='invite_reg')])
 
         await bot.send_message(message.from_user.id, 'Выберите способ регистрации', reply_markup=kb)
     else:
-        reply_kb = InlineKeyboardMarkup().add(*[
+        reply_kb = await make_kb([
             InlineKeyboardButton('Курсы', callback_data=f'courses|{student.id}'),
             InlineKeyboardButton('Профиль', callback_data=f'profile|{student.id}'),
             InlineKeyboardButton('Задания', callback_data=f'tasks|{student.id}')
@@ -80,29 +77,27 @@ async def start_reg(message: types.Message):
 async def invite_reg(cb: types.callback_query):
     await bot.answer_callback_query(cb.id)
     await bot.send_message(cb.from_user.id, 'Введите инвайт код')
+    await RegistrationState.invite_link.set()
 
 
-@dp.message_handler(ChatTypeFilter(types.ChatType.PRIVATE))
-async def check_invite_code(message: types.Message):
-    async with SessionLocal() as session:
-        student = (await session.execute(
-            select(StudentTable).where(StudentTable.unique_code == message.text)
-        )).scalar()
-        if student:
-            student.tg_id = message.from_user.id
-            await session.commit()
-            await message.reply('Вы были успешно зарегистрированы')
-        else:
-            await message.reply('Неверный инвайт код')
+@dp.message_handler(ChatTypeFilter(types.ChatType.PRIVATE), state=RegistrationState.invite_link)
+@get_db
+async def check_invite_code(message: types.Message, state: FSMContext, session: SessionLocal, **kwargs):
+    student = await repo.StudentRepository.get_student('unique_code', message.text, session)
+    if student:
+        await repo.StudentRepository.change_student_params(student, {'tg_id': message.from_user.id}, session)
+        await message.reply('Вы были успешно зарегистрированы')
+        await state.finish()
+    else:
+        await message.reply('Неверный инвайт код')
 
 
 @dp.callback_query_handler(lambda x: x.data == 'tg_reg')
 async def tg_reg(cb: types.callback_query):
     await bot.answer_callback_query(cb.id)
 
-    kb = InlineKeyboardMarkup().add(
-        *[InlineKeyboardButton(name.capitalize(), callback_data=f'lang|{member.value}')
-          for name, member in StudentTable.LanguageType.__members__.items()])
+    kb = await make_kb([InlineKeyboardButton(name.capitalize(), callback_data=f'lang|{member.value}')
+                        for name, member in StudentTable.LanguageType.__members__.items()])
 
     await bot.send_message(cb.from_user.id, 'Привет! Выбери язык', reply_markup=kb)
     await RegistrationState.lang.set()
@@ -142,39 +137,34 @@ async def set_phone(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['phone'] = message.text
 
-    kb = InlineKeyboardMarkup().add(
-        *[InlineKeyboardButton(name.capitalize(), callback_data=f'field|{member.value}')
-          for name, member in CategoryType.__members__.items()])
+    kb = await make_kb([InlineKeyboardButton(name.capitalize(), callback_data=f'field|{member.value}')
+                        for name, member in CategoryType.__members__.items()])
 
     await bot.send_message(message.chat.id, 'В каком направлении вы хотите учиться?', reply_markup=kb)
     await RegistrationState.selected_field.set()
 
 
 @dp.callback_query_handler(lambda x: 'field|' in x.data, state=RegistrationState.selected_field)
-async def create_record(cb: types.callback_query, state: FSMContext):
+@get_db
+async def create_record(cb: types.callback_query, state: FSMContext, session: SessionLocal, **kwargs):
     await bot.answer_callback_query(cb.id)
 
     _, field = cb.data.split('|')
     data = await state.get_data()
-    async with SessionLocal() as session:
-        lead = StudentTable(
-            first_name=data['first_name'],
-            last_name=data['last_name'],
-            tg_id=cb.from_user.id,
-            language_type=data['lang'],
-            phone=data['phone'],
-            chosen_field=field,
-            application_type=StudentTable.ApplicationType.telegram,
-            is_client=False
-        )
-        courses = (await session.execute(
-            select(CourseTable).where(CourseTable.is_free == 1))).scalars()
-        session.add(lead)
-        await session.flush()
-        session.add_all([StudentCourse(course_id=course.id, student_id=lead.id) for course in courses])
-        await session.commit()
+    lead_data = {
+        'first_name': data['first_name'],
+        'last_name': data['last_name'],
+        'tg_id': cb.from_user.id,
+        'language_type': data['lang'],
+        'phone': data['phone'],
+        'chosen_field': field,
+        'application_type': StudentTable.ApplicationType.telegram,
+        'is_client': False
+    }
 
-    reply_kb = InlineKeyboardMarkup().add(*[
+    lead = await repo.StudentRepository.create_student(lead_data, session)
+
+    reply_kb = await make_kb([
         InlineKeyboardButton('Курсы', callback_data=f'courses|{lead.id}'),
         InlineKeyboardButton('Профиль', callback_data=f'profile|{lead.id}'),
         InlineKeyboardButton('Задания', callback_data=f'tasks|{lead.id}')
