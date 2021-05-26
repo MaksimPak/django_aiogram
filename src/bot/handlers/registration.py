@@ -42,10 +42,10 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 @dp.message_handler(CommandStart(re.compile(r'\d+')), ChatTypeFilter(types.ChatType.PRIVATE))
 @create_session
 async def register_deep_link(message: types.Message, session: SessionLocal, **kwargs):
-    student = await repo.StudentRepository.get_student('unique_code', message.get_args(), session)
+    student = await repo.StudentRepository.get('unique_code', message.get_args(), session)
 
     if student and not student.tg_id:
-        await repo.StudentRepository.change_student_params(student, {'tg_id': message.from_user.id}, session)
+        await repo.StudentRepository.edit(student, {'tg_id': message.from_user.id}, session)
         await message.reply('Вы были успешно зарегистрированы')
     elif not student:
         await message.reply('Неверный инвайт код')
@@ -56,7 +56,7 @@ async def register_deep_link(message: types.Message, session: SessionLocal, **kw
 @dp.message_handler(CommandStart(), ChatTypeFilter(types.ChatType.PRIVATE))
 @create_session
 async def start_reg(message: types.Message, session: SessionLocal, **kwargs):
-    student = await repo.StudentRepository.get_student('tg_id', message.from_user.id, session)
+    student = await repo.StudentRepository.get('tg_id', message.from_user.id, session)
     if not student:
         kb = await make_kb([InlineKeyboardButton('Через бот', callback_data='tg_reg'),
                             InlineKeyboardButton('Через инвайт', callback_data='invite_reg')])
@@ -83,9 +83,9 @@ async def invite_reg(cb: types.callback_query):
 @dp.message_handler(ChatTypeFilter(types.ChatType.PRIVATE), state=RegistrationState.invite_link)
 @create_session
 async def check_invite_code(message: types.Message, state: FSMContext, session: SessionLocal, **kwargs):
-    student = await repo.StudentRepository.get_student('unique_code', message.text, session)
+    student = await repo.StudentRepository.get('unique_code', message.text, session)
     if student:
-        await repo.StudentRepository.change_student_params(student, {'tg_id': message.from_user.id}, session)
+        await repo.StudentRepository.edit(student, {'tg_id': message.from_user.id}, session)
         await message.reply('Вы были успешно зарегистрированы')
         await state.finish()
     else:
@@ -162,7 +162,7 @@ async def create_record(cb: types.callback_query, state: FSMContext, session: Se
         'is_client': False
     }
 
-    lead = await repo.StudentRepository.create_student(lead_data, session)
+    lead = await repo.StudentRepository.create(lead_data, session)
 
     reply_kb = await make_kb([
         InlineKeyboardButton('Курсы', callback_data=f'courses|{lead.id}'),

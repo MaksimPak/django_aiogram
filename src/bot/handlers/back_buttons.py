@@ -1,11 +1,11 @@
 from aiogram import types
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload
+from aiogram.types import InlineKeyboardButton
 
 from bot.misc import bot, dp
-from bot.models.dashboard import StudentTable, StudentCourse, CourseTable
 from bot.models.db import SessionLocal
+from bot import repository as repo
+from bot.decorators import create_session
+from bot.helpers import make_kb
 
 
 @dp.callback_query_handler(lambda x: 'back|' in x.data)
@@ -13,14 +13,14 @@ async def to_main(cb: types.callback_query):
     await bot.answer_callback_query(cb.id)
     _, client_id = cb.data.split('|')
 
-    reply_kb = InlineKeyboardMarkup().add(*[
+    reply_kb = await make_kb([
         InlineKeyboardButton('Курсы', callback_data=f'courses|{client_id}'),
         InlineKeyboardButton('Профиль', callback_data=f'profile|{client_id}'),
         InlineKeyboardButton('Задания', callback_data=f'tasks|{client_id}')
     ])
 
     await bot.edit_message_text(
-        'Выбери опцию',
+        'Выберите опцию',
         cb.from_user.id,
         cb.message.message_id,
         reply_markup=reply_kb
@@ -28,17 +28,13 @@ async def to_main(cb: types.callback_query):
 
 
 @dp.callback_query_handler(lambda x: 'to_courses|' in x.data)
-async def to_courses(cb: types.callback_query):
+@create_session
+async def to_courses(cb: types.callback_query, session: SessionLocal, **kwargs):
     await bot.answer_callback_query(cb.id)
     _, client_id = cb.data.split('|')
+    client = await repo.StudentRepository.get_course_inload('id', client_id, session)
 
-    async with SessionLocal() as session:
-        client = (await session.execute(
-            select(StudentTable).where(StudentTable.id == client_id).options(
-                selectinload(StudentTable.courses).selectinload(StudentCourse.courses)
-            ))).scalar()
-
-    kb = InlineKeyboardMarkup().add(*[
+    kb = await make_kb([
         InlineKeyboardButton(x.courses.name, callback_data=f'get_course|{x.courses.id}') for x in client.courses
     ])
 

@@ -39,7 +39,7 @@ PROFILE_FIELDS = (
 
 @create_session
 async def profile_kb(client_id, session):
-    client = await repo.StudentRepository.get_student('id', client_id, session)
+    client = await repo.StudentRepository.get('id', client_id, session)
 
     kb = await make_kb([InlineKeyboardButton(title, callback_data=f'{key}|{client.id}')
                         for title, key, _ in PROFILE_FIELDS], row_width=2)
@@ -89,8 +89,8 @@ async def change_first_name(cb: types.callback_query, state: FSMContext):
 async def set_name(message: types.Message, state: FSMContext, session: SessionLocal, **kwargs):
     data = await state.get_data()
 
-    client = await repo.StudentRepository.get_student('id', data['client_id'], session)
-    await repo.StudentRepository.change_student_params(client, {'first_name': message.text}, session)
+    client = await repo.StudentRepository.get('id', data['client_id'], session)
+    await repo.StudentRepository.edit(client, {'first_name': message.text}, session)
 
     info, kb = await profile_kb(data['client_id'])
 
@@ -125,8 +125,8 @@ async def change_last_name(cb: types.callback_query, state: FSMContext):
 @create_session
 async def set_last_name(message: types.Message, state: FSMContext, session: SessionLocal, **kwargs):
     data = await state.get_data()
-    client = await repo.StudentRepository.get_student('id', data['client_id'], session)
-    await repo.StudentRepository.change_student_params(client, {'last_name': message.text}, session)
+    client = await repo.StudentRepository.get('id', data['client_id'], session)
+    await repo.StudentRepository.edit(client, {'last_name': message.text}, session)
 
     info, kb = await profile_kb(data['client_id'])
 
@@ -167,8 +167,8 @@ async def set_lang(cb: types.callback_query, state: FSMContext, session, **kwarg
     _, lang = cb.data.split('|')
     data = await state.get_data()
 
-    client = await repo.StudentRepository.get_student('id', data['client_id'], session)
-    await repo.StudentRepository.change_student_params(client, {'language_type': lang}, session)
+    client = await repo.StudentRepository.get('id', data['client_id'], session)
+    await repo.StudentRepository.edit(client, {'language_type': lang}, session)
 
     info, kb = await profile_kb(data['client_id'])
     await bot.edit_message_text(
@@ -202,8 +202,8 @@ async def change_phone(cb: types.callback_query, state: FSMContext):
 async def set_phone(message: types.Message, state: FSMContext, session: SessionLocal, **kwargs):
     data = await state.get_data()
 
-    client = await repo.StudentRepository.get_student('id', data['client_id'], session)
-    await repo.StudentRepository.change_student_params(client, {'phone': message.text}, session)
+    client = await repo.StudentRepository.get('id', data['client_id'], session)
+    await repo.StudentRepository.edit(client, {'phone': message.text}, session)
 
     info, kb = await profile_kb(data['client_id'])
 
@@ -244,8 +244,8 @@ async def set_field(cb: types.callback_query, state: FSMContext, session: Sessio
     _, field = cb.data.split('|')
     data = await state.get_data()
 
-    client = await repo.StudentRepository.get_student('id', data['client_id'], session)
-    await repo.StudentRepository.change_student_params(client, {'chosen_field': field}, session)
+    client = await repo.StudentRepository.get('id', data['client_id'], session)
+    await repo.StudentRepository.edit(client, {'chosen_field': field}, session)
 
     info, kb = await profile_kb(data['client_id'])
     await bot.edit_message_text(
