@@ -10,7 +10,7 @@ from bot.misc import dp, bot
 from bot.models.dashboard import StudentTable, CategoryType
 from bot.models.db import SessionLocal
 from bot import repository as repo
-from bot.decorators import get_db
+from bot.decorators import create_session
 from bot.helpers import make_kb
 
 
@@ -40,7 +40,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
 
 @dp.message_handler(CommandStart(re.compile(r'\d+')), ChatTypeFilter(types.ChatType.PRIVATE))
-@get_db
+@create_session
 async def register_deep_link(message: types.Message, session: SessionLocal, **kwargs):
     student = await repo.StudentRepository.get_student('unique_code', message.get_args(), session)
 
@@ -54,7 +54,7 @@ async def register_deep_link(message: types.Message, session: SessionLocal, **kw
 
 
 @dp.message_handler(CommandStart(), ChatTypeFilter(types.ChatType.PRIVATE))
-@get_db
+@create_session
 async def start_reg(message: types.Message, session: SessionLocal, **kwargs):
     student = await repo.StudentRepository.get_student('tg_id', message.from_user.id, session)
     if not student:
@@ -81,7 +81,7 @@ async def invite_reg(cb: types.callback_query):
 
 
 @dp.message_handler(ChatTypeFilter(types.ChatType.PRIVATE), state=RegistrationState.invite_link)
-@get_db
+@create_session
 async def check_invite_code(message: types.Message, state: FSMContext, session: SessionLocal, **kwargs):
     student = await repo.StudentRepository.get_student('unique_code', message.text, session)
     if student:
@@ -145,7 +145,7 @@ async def set_phone(message: types.Message, state: FSMContext):
 
 
 @dp.callback_query_handler(lambda x: 'field|' in x.data, state=RegistrationState.selected_field)
-@get_db
+@create_session
 async def create_record(cb: types.callback_query, state: FSMContext, session: SessionLocal, **kwargs):
     await bot.answer_callback_query(cb.id)
 
