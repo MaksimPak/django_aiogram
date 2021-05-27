@@ -10,6 +10,7 @@
             <form action="" method="POST">
                 <div>
                     {% csrf_token %}
+                    <input type="hidden" name="course_id" value="{{ course_id }}" />
                     {% for entity in entities %}
                     <input type="hidden" name="_selected_action" value="{{ entity.pk }}" />
                     {% endfor %}

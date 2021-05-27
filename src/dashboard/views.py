@@ -61,12 +61,21 @@ def message_to_students(request):
     Handles message sending to students from Course in Admin panel
     """
     students = Student.objects.filter(pk__in=getattr(request, request.method).getlist('_selected_action'))
-
+    course_id = getattr(request, request.method).get('course_id')
+    print(course_id)
     if 'send' in request.POST:
-        Telegram.send_to_people(students, request.POST['message'])
+        for student in students:
+            kb = {'inline_keyboard': [[{'text': 'Ответить', 'callback_data': f'feedback|{course_id}|{student.id}'}]]}
+            data = {
+                'chat_id': student.tg_id,
+                'parse_mode': 'html',
+                'text': request.POST['message'],
+                'reply_markup': json.dumps(kb)
+            }
+            Telegram.send_single_message(data)
         return HttpResponseRedirect(reverse('admin:dashboard_course_changelist'))
 
-    return render(request, 'dashboard/send_intermediate.html', context={'entities': students})
+    return render(request, 'dashboard/send_intermediate.html', context={'entities': students, 'course_id': course_id})
 
 
 def send_lesson(request, course_id, lesson_id):

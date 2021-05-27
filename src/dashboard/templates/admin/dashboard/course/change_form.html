@@ -84,6 +84,7 @@
                         {% if data.lesson.has_homework %}
                         <form action="{% url 'dashboard:send_message' %}" method="post" class="hwSubmitted">
                             {% csrf_token %}
+                            <input type="hidden" name="course_id" value="{{object_id}}">
                             {% for student in data.hw %}
                                 <input type="hidden" name="_selected_action" value="{{student.id}}">
                                 {% if student.is_client %}

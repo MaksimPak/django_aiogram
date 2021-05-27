@@ -18,6 +18,10 @@ class Homework(StatesGroup):
     homework_start = State()
 
 
+class Feedback(StatesGroup):
+    feedback = State()
+
+
 async def send_or_get_file_id(lesson, callback, kb, template):
     if lesson.image_file_id:
         await bot.send_photo(
@@ -205,5 +209,45 @@ async def get_homework(message: types.Message, state: FSMContext, session: Sessi
     )
 
     await message.reply('Спасибо')
+    await state.finish()
+
+
+@dp.callback_query_handler(lambda x: 'feedback' in x.data, state='*')
+async def get_feedback(cb: types.callback_query, state: FSMContext):
+    _, course_id, student_id = cb.data.split('|')
+    await bot.answer_callback_query(cb.id)
+
+    async with state.proxy() as data:
+        data['course_id'] = course_id
+        data['student_id'] = student_id
+
+    await bot.send_message(
+        cb.from_user.id,
+        'Отправьте ваше сообщение'
+       )
+    await Feedback.feedback.set()
+
+
+@dp.message_handler(state='*')
+@create_session
+async def get_feedback(message: types.Message, state: FSMContext, session: SessionLocal, **kwargs):
+    data = await state.get_data()
+
+    course = await repo.CourseRepository.get('id', data['course_id'], session)
+    student = await repo.StudentRepository.get('id', data['student_id'], session)
+
+    template = jinja_env.get_template('feedback.html')
+
+    await bot.send_message(
+        course.chat_id,
+        template.render(student=student, hashtag=course.hashtag)
+    )
+    await bot.forward_message(
+        course.chat_id,
+        message.chat.id,
+        message.message_id
+    )
+
+    await message.reply('Отправлено')
     await state.finish()
 
