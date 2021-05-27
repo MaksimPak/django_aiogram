@@ -4,7 +4,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models, transaction
 from django.template.defaultfilters import truncatewords
 
-from dashboard.validators import validate_video_extension, validate_photo_extension
+from dashboard.validators import validate_video_extension, validate_photo_extension, validate_hashtag
 
 COURSE_HELP_TEXT = 'Если вводится Chatid группы вам нужно создать группу, добавить туда бота, узнать её чат айди, и ввести его здесь. Боту надо дать админ права в группе чтобы он мог форвардить сообщения'
 
@@ -108,6 +108,7 @@ class Course(models.Model):
 
     name = models.CharField(max_length=50, verbose_name='Название курса')
     info = models.TextField(blank=True, null=True, verbose_name='Описание')
+    hashtag = models.CharField(max_length=20, verbose_name='Хештег', null=True, blank=True, validators=[validate_hashtag])
     category = models.CharField(max_length=20, choices=CategoryType.choices, verbose_name='Категория')
     add_message = models.TextField(verbose_name='Сообщение для отправки студенту после добавления', blank=True, null=True)
     difficulty = models.CharField(max_length=20, choices=DifficultyType.choices, verbose_name='Сложность')

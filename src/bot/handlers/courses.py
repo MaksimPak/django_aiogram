@@ -107,10 +107,10 @@ async def get_lesson(cb: types.callback_query, session: SessionLocal, **kwargs):
             'lesson_id': lesson_id,
             'date_received': datetime.datetime.now()
         }, session)
-
     kb = await make_kb([InlineKeyboardButton('Отметить как просмотренное', callback_data=f'watched|{student_lesson.id}')])
     template = jinja_env.get_template('lesson_info.html')
-    text = template.render(lesson=lesson, url=f'{config.DOMAIN}/dashboard/watch/{lesson_url.hash}')
+    url = f'{config.DOMAIN}/dashboard/watch/{lesson_url.hash}'
+    text = template.render(lesson=lesson, url=url, display_hw=False, display_link=True)
     await bot.delete_message(cb.from_user.id, cb.message.message_id)
 
     if lesson.image:
@@ -120,7 +120,7 @@ async def get_lesson(cb: types.callback_query, session: SessionLocal, **kwargs):
     else:
         await bot.send_message(
             cb.from_user.id,
-            template.render(lesson=lesson, url=f'{config.DOMAIN}/dashboard/watch/{lesson_url.hash}'),
+            text,
             parse_mode='html',
             reply_markup=kb
         )
@@ -128,32 +128,39 @@ async def get_lesson(cb: types.callback_query, session: SessionLocal, **kwargs):
 
 @dp.callback_query_handler(lambda x: 'watched|' in x.data, state='*')
 @create_session
-async def check_homework(cb: types.callback_query, session: SessionLocal, **kwargs):
-    await bot.answer_callback_query(cb.id)
+async def check_homework(cb: types.callback_query, state: FSMContext, session: SessionLocal, **kwargs):
     _, studentlesson_id = cb.data.split('|')
 
     record = await repo.StudentLessonRepository.get_lessons_inload('id', studentlesson_id, session)
     await repo.StudentLessonRepository.edit(record, {'date_watched': datetime.datetime.now()}, session)
 
+    async with state.proxy() as data:
+        data['hashtag'] = record.lesson.course.hashtag
+
     if record.lesson.has_homework:
+        await bot.answer_callback_query(cb.id)
+        template = jinja_env.get_template('lesson_info.html')
+        text = template.render(lesson=record.lesson, display_hw=True, display_link=False)
         kb = await make_kb([InlineKeyboardButton(
-            'Сдать дз', callback_data=f'submit|{record.lesson.lesson_course.chat_id}|{record.id}')])
+            'Сдать дз', callback_data=f'submit|{record.lesson.course.chat_id}|{record.id}')])
         if cb.message.photo:
             await bot.edit_message_caption(
                 cb.from_user.id,
                 cb.message.message_id,
-                caption=cb.message.caption,
+                caption=text,
+                parse_mode='html',
                 reply_markup=kb
             )
         else:
             await bot.edit_message_text(
-                cb.message.text,
+                text,
                 cb.from_user.id,
                 cb.message.message_id,
+                parse_mode='html',
                 reply_markup=kb
             )
     else:
-        await bot.delete_message(cb.message.chat.id, cb.message.message_id)
+        await bot.answer_callback_query(cb.id, 'Отмечено')
 
 
 @dp.callback_query_handler(lambda x: 'submit|' in x.data, state='*')
@@ -164,7 +171,6 @@ async def request_homework(cb: types.callback_query, state: FSMContext):
     async with state.proxy() as data:
         data['course_tg'] = course_tg
         data['student_lesson'] = student_lesson
-    await bot.delete_message(cb.message.chat.id, cb.message.message_id)
     await bot.send_message(
         cb.from_user.id,
         'Отправьте вашу работу'
@@ -180,13 +186,11 @@ async def get_homework(message: types.Message, state: FSMContext, session: Sessi
 
     record = await repo.StudentLessonRepository.get_lesson_student_inload('id', data['student_lesson'], session)
     await repo.StudentLessonRepository.edit(record, {'homework_sent': datetime.datetime.now()}, session)
-
     template = jinja_env.get_template('new_homework.html')
     await bot.send_message(
         data['course_tg'],
-        template.render(student=record.student)
+        template.render(student=record.student, hashtag=data['hashtag'])
     )
-
     await bot.forward_message(
         data['course_tg'],
         message.chat.id,

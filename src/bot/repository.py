@@ -109,7 +109,7 @@ class StudentLessonRepository(BaseRepository):
         async with session:
             record = (await session.execute(select(StudentLesson).where(
                 getattr(StudentLesson, attribute) == value
-            ).options(selectinload(StudentLesson.lesson).selectinload(LessonTable.lesson_course)))).scalar()
+            ).options(selectinload(StudentLesson.lesson).selectinload(LessonTable.course)))).scalar()
         return record
 
     @staticmethod
@@ -117,6 +117,6 @@ class StudentLessonRepository(BaseRepository):
         async with session:
             record = (await session.execute(
                 select(StudentLesson).where(getattr(StudentLesson, attribute) == value).options(
-                    selectinload(StudentLesson.lesson).selectinload(LessonTable.lesson_course)).options(
+                    selectinload(StudentLesson.lesson).selectinload(LessonTable.course)).options(
                     selectinload(StudentLesson.student)))).scalar()
         return record

@@ -57,6 +57,7 @@ class CourseTable(Base):
     id = Column(BIGINT, primary_key=True)
     name = Column(String(50))
     info = Column(LONGTEXT, nullable=True)
+    hashtag = Column(String(20), nullable=True)
     category = Column(Enum(CategoryType, values_callable=lambda x: [e.value for e in x]))
     add_message = Column(String(200), nullable=True)
     difficulty = Column(Enum(DifficultyType, values_callable=lambda x: [e.value for e in x]))
@@ -74,7 +75,7 @@ class CourseTable(Base):
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
 
     students = relationship('StudentCourse', back_populates='courses')
-    lessons = relationship('LessonTable', back_populates='lesson_course')
+    lessons = relationship('LessonTable', back_populates='course')
 
 
 class LessonTable(Base):
@@ -94,7 +95,7 @@ class LessonTable(Base):
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
 
-    lesson_course = relationship('CourseTable', back_populates='lessons')
+    course = relationship('CourseTable', back_populates='lessons')
     students = relationship('StudentLesson', back_populates='lesson')
 
 

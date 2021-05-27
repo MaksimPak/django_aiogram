@@ -2,8 +2,10 @@
 
 {{lesson.info}}
 
-{% if lesson.has_homework %}
+{% if display_hw %}
 <strong>{{lesson.homework_desc}}</strong>
 {% endif %}
 
+{% if display_link %}
 <a href="{{url}}">Перейти по ссылке</a>
+{% endif %}

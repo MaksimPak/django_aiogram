@@ -15,3 +15,8 @@ def validate_photo_extension(value):
     valid_extensions = ['.jpg', '.png', '.bmp', '.svg', '.svgz', '.jpeg', '.jpe']
     if not ext.lower() in valid_extensions:
         raise ValidationError('Не поддерживаемый формат')
+
+
+def validate_hashtag(value):
+    if not value.startswith('#'):
+        raise ValidationError('Хештег должен начинаться с #')
