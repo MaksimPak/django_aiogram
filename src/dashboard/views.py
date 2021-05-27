@@ -11,6 +11,7 @@ from django.urls import reverse
 
 from dashboard.forms import LeadForm
 from dashboard.models import LessonUrl, Lead, Student, Course, Lesson
+from dashboard.telegram import Telegram
 
 TELEGRAM_AGENT = 'TelegramBot (like TwitterBot)'
 MESSAGE_URL = f'https://api.telegram.org/bot{os.getenv("BOT_TOKEN")}/sendMessage'
@@ -62,15 +63,7 @@ def message_to_students(request):
     students = Student.objects.filter(pk__in=getattr(request, request.method).getlist('_selected_action'))
 
     if 'send' in request.POST:
-
-        for student in students:
-            data = {
-                'chat_id': student.tg_id,
-                'text': request.POST['message'],
-            }
-            url = MESSAGE_URL
-            requests.post(url, data=data)
-
+        Telegram.send_to_people(students, request.POST['message'])
         return HttpResponseRedirect(reverse('admin:dashboard_course_changelist'))
 
     return render(request, 'dashboard/send_intermediate.html', context={'entities': students})

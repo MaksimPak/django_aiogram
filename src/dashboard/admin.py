@@ -71,7 +71,7 @@ class LeadAdmin(admin.ModelAdmin):
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, leads):
         if 'send' in request.POST:
-            Telegram.send_messages(leads, request.POST['message'])
+            Telegram.send_to_people(leads, request.POST['message'])
             return HttpResponseRedirect(request.get_full_path())
 
         return render(request, 'dashboard/send_intermediate.html', context={'entities': leads})
@@ -83,7 +83,7 @@ class LeadAdmin(admin.ModelAdmin):
                 'chat_id': lead.tg_id,
                 'text': 'https://paynet.uz/checkout_test'
             }
-            resp = self.send_single_message(data=data)
+            resp = Telegram.send_single_message(data=data)
             resp['ok'] and models.Student.objects.filter(pk=lead.id).update(checkout_date=datetime.datetime.now())
         return HttpResponseRedirect(request.get_full_path())
 
@@ -116,7 +116,7 @@ class ClientAdmin(admin.ModelAdmin):
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, clients):
         if 'send' in request.POST:
-            Telegram.send_messages(clients, request.POST['message'])
+            Telegram.send_to_people(clients, request.POST['message'])
             return HttpResponseRedirect(request.get_full_path())
 
         return render(request, 'dashboard/send_intermediate.html', context={'entities': clients})
@@ -128,7 +128,7 @@ class ClientAdmin(admin.ModelAdmin):
                 'chat_id': client.tg_id,
                 'text': 'https://paynet.uz/checkout_test'
             }
-            resp = self.send_single_message(data=data)
+            resp = Telegram.send_single_message(data=data)
             resp['ok'] and models.Student.objects.filter(pk=client.id).update(checkout_date=datetime.datetime.now())
         return HttpResponseRedirect(request.get_full_path())
 

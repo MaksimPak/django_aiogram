@@ -31,7 +31,7 @@ def send_course_add_message(sender, instance, created, **kwargs):
     if instance._is_started is not True:
         kb = json.dumps({'inline_keyboard': [[{'text': 'Начать Курс', 'callback_data': f'get_course|{instance.id}'}]]})
         people = instance.student_set.all()
-        Telegram.send_messages(people, instance.start_message, kb)
+        Telegram.send_to_people(people, instance.start_message, kb)
 
         instance._is_started = instance.is_started
         Course.objects.filter(pk=instance.id).update(date_started=datetime.datetime.now())
@@ -44,7 +44,7 @@ def send_course_finish_message(sender, instance, created, **kwargs):
     """
     if instance._is_finished is not True:
         people = instance.student_set.all()
-        Telegram.send_messages(people, instance.end_message)
+        Telegram.send_to_people(people, instance.end_message)
 
         instance._is_finished = instance.is_finished
         Course.objects.filter(pk=instance.id).update(date_finished=datetime.datetime.now())

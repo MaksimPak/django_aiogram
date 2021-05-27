@@ -10,7 +10,7 @@ class Telegram:
         return requests.post(url, data=data).json()
 
     @staticmethod
-    def send_messages(people, message, kb=None):
+    def send_to_people(people, message, kb=None):
         for person in people:
             data = {
                 'chat_id': person.tg_id,
