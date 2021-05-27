@@ -18,27 +18,27 @@ class Homework(StatesGroup):
     homework_start = State()
 
 
-async def post_photo(*args, **kwargs):  # todo use named args / naming lesson post photo
-    if kwargs['lesson'].image_file_id:
+async def send_or_get_file_id(lesson, callback, kb, template):
+    if lesson.image_file_id:
         await bot.send_photo(
-            kwargs['cb'].from_user.id,
-            kwargs['lesson'].image_file_id,
-            caption=kwargs['template'].render(lesson=kwargs['lesson'],
-                                              url=f'{config.DOMAIN}/dashboard/watch/{kwargs["lesson_url"].hash}'),
+            callback.from_user.id,
+            lesson.image_file_id,
+            caption=template,
             parse_mode='html',
-            reply_markup=kwargs['kb']
+            reply_markup=kb
         )
     else:
-        with open('../media/' + kwargs['lesson'].image, 'br') as file:
+        with open('../media/' + lesson.image, 'br') as file:
+            message = await bot.send_message(callback.from_user.id, 'Идет обработка, пожалуйста, подождите ⌛')
             file_id = (await bot.send_photo(
-                kwargs['cb'].from_user.id,
+                callback.from_user.id,
                 file.read(),
-                caption=kwargs['template'].render(lesson=kwargs['lesson'],
-                                                  url=f'{config.DOMAIN}/dashboard/watch/{kwargs["lesson_url"].hash}'),
+                caption=template,
                 parse_mode='html',
-                reply_markup=kwargs['kb']
+                reply_markup=kb
             )).photo[-1].file_id
-            kwargs['lesson'].image_file_id = file_id
+            await message.delete()
+            return file_id
 
 
 @dp.callback_query_handler(lambda x: 'courses|' in x.data)
@@ -110,17 +110,13 @@ async def get_lesson(cb: types.callback_query, session: SessionLocal, **kwargs):
 
     kb = await make_kb([InlineKeyboardButton('Отметить как просмотренное', callback_data=f'watched|{student_lesson.id}')])
     template = jinja_env.get_template('lesson_info.html')
-
+    text = template.render(lesson=lesson, url=f'{config.DOMAIN}/dashboard/watch/{lesson_url.hash}')
     await bot.delete_message(cb.from_user.id, cb.message.message_id)
 
     if lesson.image:
-        await post_photo(
-            lesson=lesson,
-            cb=cb,
-            lesson_url=lesson_url,
-            kb=kb,
-            template=template
-        )
+        file_id = await send_or_get_file_id(lesson, cb, kb, text)
+        file_id and await repo.LessonRepository.edit(lesson, {'image_file_id': file_id}, session)
+
     else:
         await bot.send_message(
             cb.from_user.id,

@@ -1,11 +1,11 @@
 from aiogram import types
 from aiogram.types import InlineKeyboardButton
 
-from bot.misc import bot, dp
-from bot.models.db import SessionLocal
 from bot import repository as repo
 from bot.decorators import create_session
 from bot.helpers import make_kb
+from bot.misc import bot, dp
+from bot.models.db import SessionLocal
 
 
 @dp.callback_query_handler(lambda x: 'back|' in x.data)

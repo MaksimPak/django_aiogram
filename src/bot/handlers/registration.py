@@ -6,12 +6,12 @@ from aiogram.dispatcher.filters import CommandStart, Text, ChatTypeFilter
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import InlineKeyboardButton
 
-from bot.misc import dp, bot
-from bot.models.dashboard import StudentTable, CategoryType
-from bot.models.db import SessionLocal
 from bot import repository as repo
 from bot.decorators import create_session
 from bot.helpers import make_kb
+from bot.misc import dp, bot
+from bot.models.dashboard import StudentTable, CategoryType
+from bot.models.db import SessionLocal
 
 
 class RegistrationState(StatesGroup):
