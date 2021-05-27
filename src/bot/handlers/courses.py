@@ -68,12 +68,15 @@ async def my_courses(cb: types.CallbackQuery, session: SessionLocal, **kwargs):
 
 @dp.callback_query_handler(lambda x: 'get_course|' in x.data, state='*')
 @create_session
-async def course_lessons(cb: types.callback_query, session: SessionLocal, **kwargs):
+async def course_lessons(cb: types.callback_query, state: FSMContext, session: SessionLocal, **kwargs):
     await bot.answer_callback_query(cb.id)
     _, course_id = cb.data.split('|')
     course = await repo.CourseRepository.get_lesson_inload('id', course_id, session)
     client = await repo.StudentRepository.get('tg_id', cb.from_user.id, session)
     lessons = await repo.LessonRepository.load_unsent_from_course(course, 'lessons', session)
+
+    async with state.proxy() as data:
+        data['is_finished'] = course.is_finished
 
     if course.is_free:
         lessons = course.lessons
@@ -91,13 +94,14 @@ async def course_lessons(cb: types.callback_query, session: SessionLocal, **kwar
 
 @dp.callback_query_handler(lambda x: 'lesson|' in x.data, state='*')
 @create_session
-async def get_lesson(cb: types.callback_query, session: SessionLocal, **kwargs):
+async def get_lesson(cb: types.callback_query, state: FSMContext, session: SessionLocal, **kwargs):
     await bot.answer_callback_query(cb.id)
     _, lesson_id = cb.data.split('|')
     lesson = await repo.LessonRepository.get('id', lesson_id, session)
     client = await repo.StudentRepository.get('tg_id', cb.from_user.id, session)
     lesson_url = await repo.LessonUrlRepository.get_from_lesson_and_student(lesson_id, client.id, session)
-
+    data = await state.get_data()
+    kb = None
     if not lesson_url:
         lesson_url = await repo.LessonUrlRepository.create({'student_id': client.id, 'lesson_id': lesson.id}, session)
 
@@ -107,7 +111,10 @@ async def get_lesson(cb: types.callback_query, session: SessionLocal, **kwargs):
             'lesson_id': lesson_id,
             'date_received': datetime.datetime.now()
         }, session)
-    kb = await make_kb([InlineKeyboardButton('Отметить как просмотренное', callback_data=f'watched|{student_lesson.id}')])
+    if not data['is_finished']:
+        kb = await make_kb([
+            InlineKeyboardButton('Отметить как просмотренное', callback_data=f'watched|{student_lesson.id}')])
+
     template = jinja_env.get_template('lesson_info.html')
     url = f'{config.DOMAIN}/dashboard/watch/{lesson_url.hash}'
     text = template.render(lesson=lesson, url=url, display_hw=False, display_link=True)
