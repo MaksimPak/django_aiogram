@@ -5,6 +5,7 @@ from django.contrib.auth.admin import UserAdmin
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.template.loader import render_to_string
+from django.urls import resolve
 from django.utils.html import format_html
 
 from dashboard import models
@@ -21,6 +22,18 @@ class StudentCourseList(admin.TabularInline):
     extra = 0
     classes = ('collapse',)
 
+    def get_parent_object_from_request(self, request):
+        """
+        Returns the parent object from the request or None.
+
+        Note that this only works for Inlines, because the `parent_model`
+        is not available in the regular admin.ModelAdmin as an attribute.
+        """
+        resolved = resolve(request.path_info)
+        if resolved.args:
+            return self.parent_model.objects.get(pk=resolved.args[0])
+        return None
+
     def has_add_permission(self, request, obj):
         return False
 
@@ -36,7 +49,8 @@ class StudentCourseList(admin.TabularInline):
         return render_to_string(
             'dashboard/message_link.html',
             {
-                'data': instance
+                'data': instance,
+                'course_id': instance.course.id
             }
         )
 
