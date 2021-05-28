@@ -28,8 +28,8 @@ def send_course_add_message(sender, instance, created, **kwargs):
     """
     Check if is_started variable has been set to True after editing. If yes, send start message to all students
     """
-    if instance._is_started is not True:
-        kb = json.dumps({'inline_keyboard': [[{'text': 'Начать Курс', 'callback_data': f'get_course|{instance.id}'}]]})
+    if instance._is_started != instance.is_started and instance.is_started is True:
+        kb = json.dumps({'inline_keyboard': [[{'text': 'Начать Курс', 'callback_data': f'data|get_course|{instance.id}'}]]})
         people = instance.student_set.all()
         Telegram.send_to_people(people, instance.start_message, kb)
 
@@ -42,7 +42,7 @@ def send_course_finish_message(sender, instance, created, **kwargs):
     """
     Check if is_finished variable has been set to True after editing. If yes, send end message to all students
     """
-    if instance._is_finished is not True:
+    if instance._is_finished != instance.is_finished and instance.is_finished is True:
         people = instance.student_set.all()
         Telegram.send_to_people(people, instance.end_message)
 

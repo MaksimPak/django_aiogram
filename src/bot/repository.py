@@ -80,6 +80,15 @@ class LessonRepository(BaseRepository):
     table = LessonTable
 
     @staticmethod
+    async def get_course_inload(attribute: str, value: Any, session: SessionLocal):
+        async with session:
+            lesson = (await session.execute(
+                select(LessonTable).where(getattr(LessonTable, attribute) == value).options(
+                    selectinload(LessonTable.course)
+                ))).scalar()
+        return lesson
+
+    @staticmethod
     async def load_unsent_from_course(course, attribute, session):
         async with session:
             lessons = (await session.execute(select(LessonTable).where(

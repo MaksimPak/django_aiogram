@@ -35,6 +35,8 @@
                     <td>
                         <form action="{% url 'dashboard:send_message' %}" method="post" class="receivedVid">
                             {% csrf_token %}
+                            <input type="hidden" name="course_id" value="{{object_id}}">
+                            <input type="hidden" name="lesson_id" value="{{data.lesson.id}}">
                             {% for student in data.received %}
                                 {% if student not in data.viewed %}
                                     <input type="hidden" name="_selected_action " value="{{student.id}}">
@@ -59,6 +61,8 @@
                     <td>
                         <form action="{% url 'dashboard:send_message' %}" method="post" class="viewedVid">
                             {% csrf_token %}
+                            <input type="hidden" name="course_id" value="{{object_id}}">
+                            <input type="hidden" name="lesson_id" value="{{data.lesson.id}}">
                             {% for student in data.viewed %}
                                 {% if student not in data.hw %}
                                 <input type="hidden" name="_selected_action" value="{{student.id}}">
@@ -85,6 +89,7 @@
                         <form action="{% url 'dashboard:send_message' %}" method="post" class="hwSubmitted">
                             {% csrf_token %}
                             <input type="hidden" name="course_id" value="{{object_id}}">
+                            <input type="hidden" name="lesson_id" value="{{data.lesson.id}}">
                             {% for student in data.hw %}
                                 <input type="hidden" name="_selected_action" value="{{student.id}}">
                                 {% if student.is_client %}

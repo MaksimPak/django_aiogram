@@ -12,7 +12,7 @@ from bot.helpers import make_kb
 from bot.misc import dp, bot
 from bot.misc import jinja_env
 from bot.models.db import SessionLocal
-from bot.utils.callback_settings import short_data, two_valued_data
+from bot.utils.callback_settings import short_data, two_valued_data, three_valued_data
 
 
 class Homework(StatesGroup):
@@ -105,9 +105,6 @@ async def course_lessons(
     client = await repo.StudentRepository.get('tg_id', cb.from_user.id, session)
     lessons = await repo.LessonRepository.load_unsent_from_course(course, 'lessons', session)
 
-    async with state.proxy() as data:
-        data['is_finished'] = course.is_finished
-
     if course.is_free:
         lessons = course.lessons
 
@@ -140,11 +137,9 @@ async def get_lesson(
     await bot.answer_callback_query(cb.id)
     lesson_id = callback_data['value']
 
-    lesson = await repo.LessonRepository.get('id', lesson_id, session)
+    lesson = await repo.LessonRepository.get_course_inload('id', lesson_id, session)
     client = await repo.StudentRepository.get('tg_id', cb.from_user.id, session)
     lesson_url = await repo.LessonUrlRepository.get_from_lesson_and_student(lesson_id, client.id, session)
-
-    data = await state.get_data()
     kb = None
 
     if not lesson_url:
@@ -157,7 +152,7 @@ async def get_lesson(
             'date_received': datetime.datetime.now()
         }, session)
 
-    if not data['is_finished']:
+    if not lesson.course.is_finished:
         kb = await make_kb([
             InlineKeyboardButton(
                 'Отметить как просмотренное',
@@ -243,7 +238,9 @@ async def request_homework(
     Requests homework from student and sets the for homework processing handler
     """
     await bot.answer_callback_query(cb.id)
-
+    await cb.message.edit_reply_markup(
+        reply_markup=None
+    )
     course_tg = callback_data['first_value']
     student_lesson = callback_data['second_value']
 
@@ -260,7 +257,7 @@ async def request_homework(
 
 @dp.message_handler(state=Homework.homework_start, content_types=ContentType.ANY)
 @create_session
-async def get_homework(
+async def forward_homework(
         message: types.Message,
         state: FSMContext,
         session: SessionLocal,
@@ -276,7 +273,7 @@ async def get_homework(
     template = jinja_env.get_template('new_homework.html')
     await bot.send_message(
         data['course_tg'],
-        template.render(student=record.student, hashtag=data['hashtag'])
+        template.render(student=record.student, hashtag=data['hashtag'], lesson=record.lesson)
     )
     await bot.forward_message(
         data['course_tg'],
@@ -288,7 +285,7 @@ async def get_homework(
     await state.finish()
 
 
-@dp.callback_query_handler(two_valued_data.filter(property='feedback'))
+@dp.callback_query_handler(three_valued_data.filter(property='feedback'))
 async def get_feedback(
         cb: types.callback_query,
         state: FSMContext,
@@ -299,12 +296,14 @@ async def get_feedback(
     """
     course_id = callback_data['first_value']
     student_id = callback_data['second_value']
+    lesson_id = callback_data['third_value']
 
     await bot.answer_callback_query(cb.id)
 
     async with state.proxy() as data:
         data['course_id'] = course_id
         data['student_id'] = student_id
+        data['lesson_id'] = lesson_id
 
     await bot.send_message(
         cb.from_user.id,
@@ -328,12 +327,13 @@ async def forward_feedback(
 
     course = await repo.CourseRepository.get('id', data['course_id'], session)
     student = await repo.StudentRepository.get('id', data['student_id'], session)
+    lesson = await repo.LessonRepository.get('id', data['lesson_id'], session)
 
     template = jinja_env.get_template('feedback.html')
 
     await bot.send_message(
         course.chat_id,
-        template.render(student=student, hashtag=course.hashtag)
+        template.render(student=student, course=course, lesson=lesson)
     )
     await bot.forward_message(
         course.chat_id,

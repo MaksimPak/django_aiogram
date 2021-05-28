@@ -15,6 +15,7 @@ class Telegram:
             data = {
                 'chat_id': person.tg_id,
                 'text': message,
+                'parse_mode': 'html',
             }
             if kb:
                 data['reply_markup'] = kb
