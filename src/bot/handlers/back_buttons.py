@@ -6,17 +6,24 @@ from bot.decorators import create_session
 from bot.helpers import make_kb
 from bot.misc import bot, dp
 from bot.models.db import SessionLocal
+from bot.utils.callback_settings import short_data
 
 
-@dp.callback_query_handler(lambda x: 'back|' in x.data)
-async def to_main(cb: types.callback_query):
+@dp.callback_query_handler(short_data.filter(property='back'))
+async def to_main(
+        cb: types.callback_query,
+        callback_data: dict
+):
+    """
+    Handles back button to return to main panel
+    """
     await bot.answer_callback_query(cb.id)
-    _, client_id = cb.data.split('|')
+    client_id = callback_data['value']
 
     reply_kb = await make_kb([
-        InlineKeyboardButton('Курсы', callback_data=f'courses|{client_id}'),
-        InlineKeyboardButton('Профиль', callback_data=f'profile|{client_id}'),
-        InlineKeyboardButton('Задания', callback_data=f'tasks|{client_id}')
+        InlineKeyboardButton('Курсы', callback_data=short_data.new(property='course', value=client_id)),
+        InlineKeyboardButton('Профиль', callback_data=short_data.new(property='student', value=client_id)),
+        InlineKeyboardButton('Задания', callback_data=short_data.new(property='tasks', value=client_id)),
     ])
 
     await bot.edit_message_text(
@@ -27,18 +34,28 @@ async def to_main(cb: types.callback_query):
     )
 
 
-@dp.callback_query_handler(lambda x: 'to_courses|' in x.data)
+@dp.callback_query_handler(short_data.filter(property='to_courses'))
 @create_session
-async def to_courses(cb: types.callback_query, session: SessionLocal, **kwargs):
+async def to_courses(
+        cb: types.callback_query,
+        session: SessionLocal,
+        callback_data: dict,
+        **kwargs
+):
+    """
+    Handles back button to return to course list
+    """
     await bot.answer_callback_query(cb.id)
-    _, client_id = cb.data.split('|')
+    client_id = callback_data['value']
+
     client = await repo.StudentRepository.get_course_inload('id', client_id, session)
 
     kb = await make_kb([
-        InlineKeyboardButton(x.courses.name, callback_data=f'get_course|{x.courses.id}') for x in client.courses
+        InlineKeyboardButton(x.courses.name, callback_data=short_data.new(property='get_course', value=x.courses.id))
+        for x in client.courses
     ])
 
-    kb.add(InlineKeyboardButton('Назад', callback_data=f'back|{client.id}'))
+    kb.add(InlineKeyboardButton('Назад', callback_data=short_data.new(property='back', value=client.id)))
 
     msg = 'Ваши курсы' if client.courses else 'Вы не записаны ни на один курс'
     await bot.edit_message_text(

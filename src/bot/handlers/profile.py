@@ -9,6 +9,7 @@ from bot.helpers import make_kb
 from bot.misc import dp, bot
 from bot.models.dashboard import StudentTable, CategoryType
 from bot.models.db import SessionLocal
+from bot.utils.callback_settings import short_data
 
 
 class ProfileChange(StatesGroup):
@@ -38,24 +39,36 @@ PROFILE_FIELDS = (
 
 
 @create_session
-async def profile_kb(client_id, session):
+async def profile_kb(
+        client_id: int,
+        session: SessionLocal
+):
+    """
+    Renders Student information in message and adds keyboard for edit
+    """
     client = await repo.StudentRepository.get('id', client_id, session)
 
-    kb = await make_kb([InlineKeyboardButton(title, callback_data=f'{key}|{client.id}')
+    kb = await make_kb([InlineKeyboardButton(title, callback_data=short_data.new(property=key, value=client.id))
                         for title, key, _ in PROFILE_FIELDS], row_width=2)
     message = ''
     for title, key, renderer in PROFILE_FIELDS:
         message += '✅' if getattr(client, key) else '✍️'
         message += ' ' + title + ':' + ' ' + await renderer(client, key) + '\n'
 
-    kb.add(InlineKeyboardButton('Назад', callback_data=f'back|{client.id}'))
+    kb.add(InlineKeyboardButton('Назад', callback_data=short_data.new(property='back', value=client.id)))
     return message, kb
 
 
-@dp.callback_query_handler(lambda x: 'profile|' in x.data)
-async def my_profile(cb: types.callback_query):
+@dp.callback_query_handler(short_data.filter(property='student'))
+async def my_profile(
+        cb: types.callback_query,
+        callback_data: dict
+):
+    """
+    Starting point for profile view/edit
+    """
     await bot.answer_callback_query(cb.id)
-    _, client_id = cb.data.split('|')
+    client_id = callback_data['value']
 
     info, kb = await profile_kb(client_id)
 
@@ -67,10 +80,18 @@ async def my_profile(cb: types.callback_query):
     )
 
 
-@dp.callback_query_handler(lambda x: 'first_name|' in x.data)
-async def change_first_name(cb: types.callback_query, state: FSMContext):
+@dp.callback_query_handler(short_data.filter(property='first_name'))
+async def change_first_name(
+        cb: types.callback_query,
+        state: FSMContext,
+        callback_data: dict
+):
+    """
+    Asks student for new first_name
+    """
     await bot.answer_callback_query(cb.id)
-    _, client_id = cb.data.split('|')
+    client_id = callback_data['value']
+
     async with state.proxy() as data:
         data['client_id'] = client_id
         data['message_id'] = cb.message.message_id
@@ -86,7 +107,15 @@ async def change_first_name(cb: types.callback_query, state: FSMContext):
 
 @dp.message_handler(state=ProfileChange.first_name)
 @create_session
-async def set_name(message: types.Message, state: FSMContext, session: SessionLocal, **kwargs):
+async def set_name(
+        message: types.Message,
+        state: FSMContext,
+        session: SessionLocal,
+        **kwargs
+):
+    """
+    Saves new first_name into db
+    """
     data = await state.get_data()
 
     client = await repo.StudentRepository.get('id', data['client_id'], session)
@@ -104,10 +133,18 @@ async def set_name(message: types.Message, state: FSMContext, session: SessionLo
     await state.finish()
 
 
-@dp.callback_query_handler(lambda x: 'last_name|' in x.data)
-async def change_last_name(cb: types.callback_query, state: FSMContext):
+@dp.callback_query_handler(short_data.filter(property='last_name'))
+async def change_last_name(
+        cb: types.callback_query,
+        state: FSMContext,
+        callback_data: dict
+):
+    """
+    Asks student for new last_name
+    """
     await bot.answer_callback_query(cb.id)
-    _, client_id = cb.data.split('|')
+    client_id = callback_data['value']
+
     async with state.proxy() as data:
         data['client_id'] = client_id
         data['message_id'] = cb.message.message_id
@@ -123,7 +160,15 @@ async def change_last_name(cb: types.callback_query, state: FSMContext):
 
 @dp.message_handler(state=ProfileChange.last_name)
 @create_session
-async def set_last_name(message: types.Message, state: FSMContext, session: SessionLocal, **kwargs):
+async def set_last_name(
+        message: types.Message,
+        state: FSMContext,
+        session: SessionLocal,
+        **kwargs
+):
+    """
+    Saves last_name into db
+    """
     data = await state.get_data()
     client = await repo.StudentRepository.get('id', data['client_id'], session)
     await repo.StudentRepository.edit(client, {'last_name': message.text}, session)
@@ -140,17 +185,25 @@ async def set_last_name(message: types.Message, state: FSMContext, session: Sess
     await state.finish()
 
 
-@dp.callback_query_handler(lambda x: 'language_type|' in x.data)
-async def change_lang(cb: types.callback_query, state: FSMContext):
+@dp.callback_query_handler(short_data.filter(property='language_type'))
+async def change_lang(
+        cb: types.callback_query,
+        state: FSMContext,
+        callback_data: dict
+):
+    """
+    Asks student for new lang
+    """
     await bot.answer_callback_query(cb.id)
-    _, client_id = cb.data.split('|')
+    client_id = callback_data['value']
+
     async with state.proxy() as data:
         data['client_id'] = client_id
         data['message_id'] = cb.message.message_id
 
-    kb = await make_kb([InlineKeyboardButton(name.capitalize(), callback_data=f'lang|{member.value}')
+    kb = await make_kb([InlineKeyboardButton(name.capitalize(), callback_data=short_data.new(property='lang',
+                                                                                             value=member.value))
                         for name, member in StudentTable.LanguageType.__members__.items()])
-
     await bot.edit_message_text(
         'Выберите язык',
         cb.from_user.id,
@@ -160,11 +213,21 @@ async def change_lang(cb: types.callback_query, state: FSMContext):
     await ProfileChange.lang.set()
 
 
-@dp.callback_query_handler(lambda x: 'lang|' in x.data, state=ProfileChange.lang)
+@dp.callback_query_handler(short_data.filter(property='lang'), state=ProfileChange.lang)
 @create_session
-async def set_lang(cb: types.callback_query, state: FSMContext, session, **kwargs):
+async def set_lang(
+        cb: types.callback_query,
+        state: FSMContext,
+        session: SessionLocal,
+        callback_data: dict,
+        **kwargs
+):
+    """
+    Saves new lang into db
+    """
     await bot.answer_callback_query(cb.id)
-    _, lang = cb.data.split('|')
+    lang = callback_data['value']
+
     data = await state.get_data()
 
     client = await repo.StudentRepository.get('id', data['client_id'], session)
@@ -180,10 +243,18 @@ async def set_lang(cb: types.callback_query, state: FSMContext, session, **kwarg
     await state.finish()
 
 
-@dp.callback_query_handler(lambda x: 'phone|' in x.data)
-async def change_phone(cb: types.callback_query, state: FSMContext):
+@dp.callback_query_handler(short_data.filter(property='phone'))
+async def change_phone(
+        cb: types.callback_query,
+        state: FSMContext,
+        callback_data: dict
+):
+    """
+    Asks student for new phone
+    """
     await bot.answer_callback_query(cb.id)
-    _, client_id = cb.data.split('|')
+    client_id = callback_data['value']
+
     async with state.proxy() as data:
         data['client_id'] = client_id
         data['message_id'] = cb.message.message_id
@@ -199,7 +270,15 @@ async def change_phone(cb: types.callback_query, state: FSMContext):
 
 @dp.message_handler(state=ProfileChange.phone)
 @create_session
-async def set_phone(message: types.Message, state: FSMContext, session: SessionLocal, **kwargs):
+async def set_phone(
+        message: types.Message,
+        state: FSMContext,
+        session: SessionLocal,
+        **kwargs
+):
+    """
+    Saves phone into db
+    """
     data = await state.get_data()
 
     client = await repo.StudentRepository.get('id', data['client_id'], session)
@@ -217,15 +296,24 @@ async def set_phone(message: types.Message, state: FSMContext, session: SessionL
     await state.finish()
 
 
-@dp.callback_query_handler(lambda x: 'chosen_field|' in x.data)
-async def change_field(cb: types.callback_query, state: FSMContext):
+@dp.callback_query_handler(short_data.filter(property='chosen_field'))
+async def change_field(
+        cb: types.callback_query,
+        state: FSMContext,
+        callback_data: dict
+):
+    """
+    Asks student for new field
+    """
     await bot.answer_callback_query(cb.id)
-    _, client_id = cb.data.split('|')
+    client_id = callback_data['value']
+
     async with state.proxy() as data:
         data['client_id'] = client_id
         data['message_id'] = cb.message.message_id
 
-    kb = await make_kb([InlineKeyboardButton(name.capitalize(), callback_data=f'field|{member.value}')
+    kb = await make_kb([InlineKeyboardButton(name.capitalize(), callback_data=short_data.new(
+        property='field', value=member.value))
                         for name, member in CategoryType.__members__.items()])
 
     await bot.edit_message_text(
@@ -237,11 +325,21 @@ async def change_field(cb: types.callback_query, state: FSMContext):
     await ProfileChange.field.set()
 
 
-@dp.callback_query_handler(lambda x: 'field|' in x.data, state=ProfileChange.field)
+@dp.callback_query_handler(short_data.filter(property='field'), state=ProfileChange.field)
 @create_session
-async def set_field(cb: types.callback_query, state: FSMContext, session: SessionLocal, **kwargs):
+async def set_field(
+        cb: types.callback_query,
+        state: FSMContext,
+        session: SessionLocal,
+        callback_data: dict,
+        **kwargs
+):
+    """
+    Saves field into db
+    """
     await bot.answer_callback_query(cb.id)
-    _, field = cb.data.split('|')
+    field = callback_data['value']
+
     data = await state.get_data()
 
     client = await repo.StudentRepository.get('id', data['client_id'], session)
