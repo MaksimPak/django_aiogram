@@ -12,6 +12,9 @@ class BaseRepository:
 
     @classmethod
     async def get(cls, attribute: str, value: Any, session: SessionLocal):
+        """
+        SELECT from cls.table by specified attribute. Return one object
+        """
         async with session:
             instance = (await session.execute(
                 select(cls.table).where(getattr(cls.table, attribute) == value)
@@ -21,6 +24,9 @@ class BaseRepository:
 
     @classmethod
     async def get_many(cls, attribute: str, value: Any, session: SessionLocal):
+        """
+        SELECT from cls.table by specified attribute. Return many objects
+        """
         async with session:
             instances = (await session.execute(
                 select(CourseTable).where(getattr(cls.table, attribute) == value)
@@ -30,6 +36,9 @@ class BaseRepository:
 
     @classmethod
     async def edit(cls, instance, params: dict, session: SessionLocal):
+        """
+        Edit object with passed params
+        """
         async with session:
             session.add(instance)
             for key, value in params.items():
@@ -38,6 +47,9 @@ class BaseRepository:
 
     @classmethod
     async def create(cls, params: dict, session: SessionLocal):
+        """
+        INSERT record
+        """
         async with session:
             instance = cls.table(**params)
             session.add(instance)
@@ -50,6 +62,10 @@ class StudentRepository(BaseRepository):
 
     @staticmethod
     async def get_course_inload(attribute: str, value: Any, session: SessionLocal):
+        """
+        Emits a second (or more) SELECT statement to load Courses at once from Student
+        and StudentCourse tables
+        """
         # todo create deferred properties dynamically
         async with session:
             student = (await session.execute(
@@ -65,6 +81,9 @@ class CourseRepository(BaseRepository):
 
     @staticmethod
     async def get_lesson_inload(attribute: str, value: Any, session: SessionLocal):
+        """
+        Emits a second (or more) SELECT statement to load Lessons at once from CourseTable
+        """
         async with session:
             course = (await session.execute(
                 select(CourseTable).where(
@@ -81,6 +100,9 @@ class LessonRepository(BaseRepository):
 
     @staticmethod
     async def get_course_inload(attribute: str, value: Any, session: SessionLocal):
+        """
+        Loads courses along with lessons
+        """
         async with session:
             lesson = (await session.execute(
                 select(LessonTable).where(getattr(LessonTable, attribute) == value).options(
@@ -103,6 +125,9 @@ class LessonUrlRepository(BaseRepository):
 
     @staticmethod
     async def get_from_lesson_and_student(lesson_id, student_id, session):
+        """
+        Select from LessonUrl table by specifying two criterias
+        """
         async with session:
             lesson_url = (await session.execute(
                 select(LessonUrlTable).where(LessonUrlTable.lesson_id == lesson_id,
@@ -115,6 +140,9 @@ class StudentLessonRepository(BaseRepository):
 
     @staticmethod
     async def get_lessons_inload(attribute, value, session):
+        """
+        Loads lessons and courses along with students
+        """
         async with session:
             record = (await session.execute(select(StudentLesson).where(
                 getattr(StudentLesson, attribute) == value
@@ -123,6 +151,9 @@ class StudentLessonRepository(BaseRepository):
 
     @staticmethod
     async def get_lesson_student_inload(attribute, value, session):
+        """
+        Loads lesson and student from StudentLesson table, course from Lesson table
+        """
         async with session:
             record = (await session.execute(
                 select(StudentLesson).where(getattr(StudentLesson, attribute) == value).options(
