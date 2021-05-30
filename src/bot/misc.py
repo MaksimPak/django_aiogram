@@ -1,8 +1,8 @@
-import logging
-
 from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.redis import RedisStorage2
 from jinja2 import Environment, PackageLoader, select_autoescape
+from loguru import logger
+
 
 from bot import config
 
@@ -14,15 +14,13 @@ jinja_env = Environment(
     autoescape=select_autoescape()
 )
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-
 
 def setup():
     from bot.utils import executor
 
-    logging.info("Configuring handlers...")
+    logger.info("Configured handlers...")
+    executor.setup()
+
     # noinspection PyUnresolvedReferences
     import bot.handlers
 
-    executor.setup()

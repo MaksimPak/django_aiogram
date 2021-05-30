@@ -62,7 +62,6 @@ async def my_courses(
     """
     await bot.answer_callback_query(cb.id)
     client_id = callback_data['value']
-
     client = await repo.StudentRepository.get_course_inload('id', client_id, session)
     free_courses = await repo.CourseRepository.get_many('is_free', True, session)
 
