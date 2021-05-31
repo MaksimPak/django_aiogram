@@ -192,6 +192,7 @@ async def check_homework(
     studentlesson_id = callback_data['value']
 
     record = await repo.StudentLessonRepository.get_lessons_inload('id', studentlesson_id, session)
+
     await repo.StudentLessonRepository.edit(record, {'date_watched': datetime.datetime.now()}, session)
 
     async with state.proxy() as data:

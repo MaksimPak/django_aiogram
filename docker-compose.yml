@@ -2,18 +2,16 @@ version: '3'
 
 services:
   parcel-db:
-    image: mariadb:10.3
+    image: postgres:13
     restart: on-failure
     environment:
-      MYSQL_DATABASE: parcel
-      MYSQL_USER: parcel
-      MYSQL_PASSWORD: parcel
-      MYSQL_ROOT_PASSWORD: root
+      POSTGRES_DB: parcel
+      POSTGRES_USER: parcel
+      POSTGRES_PASSWORD: parcel
     volumes:
       - ./src:/parcel
-    command: mysqld --character-set-server=utf8 --collation-server=utf8_general_ci
     ports:
-      - 3307:3306
+      - 15432:5432
   redis:
     image: redis:rc-alpine3.12
     restart: on-failure
