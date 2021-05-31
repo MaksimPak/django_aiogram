@@ -19,13 +19,17 @@
                     <input type="hidden" name="action" value="send_message" />
                 </div>
                 <div>
+                    <label for="isFeedback">Это фидбек?</label>
+                    <input type="checkbox" id="isFeedback" name="is_feedback">
+                    <br>
                     <input type="submit" name="send" value="Send message" style="margin-top:1em;"/>
                 </div>
 
             </form>
         </td>
+
         <td style="border: none; padding: 0 0 0 1em;" >
-            <p><strong>Вы собираетесь отпрваить сообщение следующим людям:</strong></p>
+            <p><strong>Вы собираетесь отправить сообщение следующим людям:</strong></p>
             <div>
                 {% for entity in entities %}
                 {{ entity }}

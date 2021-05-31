@@ -1,7 +1,5 @@
 #feedback
-{% if course.hashtag is not none %}
-Course hashtag: {{ course.hashtag }}
-{% endif %}
-Lesson title: {{ lesson.title }}
+{% if course.hashtag is not none %} Course hashtag: {{ course.hashtag }}{% endif %}
+{% if lesson is not none %} Lesson title: {{ lesson.title }} {% endif %}
 
 Фидбек от {{ student.first_name }} {{ student.last_name }}

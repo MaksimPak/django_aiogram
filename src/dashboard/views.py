@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+from pprint import pprint
 
 import requests
 from django.db import IntegrityError
@@ -64,15 +65,20 @@ def message_to_students(request):
     course_id = getattr(request, request.method).get('course_id')
     lesson_id = getattr(request, request.method).get('lesson_id')
     if 'send' in request.POST:
-        for student in students:
-            kb = {'inline_keyboard': [[{'text': 'Ответить', 'callback_data': f'data|feedback|{course_id}|{student.id}|{lesson_id}'}]]}
-            data = {
-                'chat_id': student.tg_id,
-                'parse_mode': 'html',
-                'text': request.POST['message'],
-                'reply_markup': json.dumps(kb)
-            }
-            Telegram.send_single_message(data)
+        is_feedback = request.POST.get('is_feedback')
+        if is_feedback:
+            for student in students:
+                kb = {'inline_keyboard': [[{'text': 'Ответить', 'callback_data': f'data|feedback|{course_id}|{student.id}|{lesson_id}'}]]}
+                data = {
+                    'chat_id': student.tg_id,
+                    'parse_mode': 'html',
+                    'text': request.POST['message'],
+                    'reply_markup': json.dumps(kb)
+                }
+                Telegram.send_single_message(data)
+        else:
+            Telegram.send_to_people(students, request.POST['message'])
+
         return HttpResponseRedirect(reverse('admin:dashboard_course_changelist'))
 
     return render(request, 'dashboard/send_intermediate.html', context={

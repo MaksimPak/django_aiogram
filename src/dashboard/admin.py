@@ -1,4 +1,5 @@
 import datetime
+import json
 
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
@@ -85,7 +86,19 @@ class LeadAdmin(admin.ModelAdmin):
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, leads):
         if 'send' in request.POST:
-            Telegram.send_to_people(leads, request.POST['message'])
+            is_feedback = request.POST.get('is_feedback')
+            if is_feedback:
+                for student in leads:
+                    kb = {'inline_keyboard': [[{'text': 'Ответить', 'callback_data': f'data|feedback_student|{student.id}'}]]}
+                    data = {
+                        'chat_id': student.tg_id,
+                        'parse_mode': 'html',
+                        'text': request.POST['message'],
+                        'reply_markup': json.dumps(kb)
+                    }
+                    Telegram.send_single_message(data)
+            else:
+                Telegram.send_to_people(leads, request.POST['message'])
             return HttpResponseRedirect(request.get_full_path())
 
         return render(request, 'dashboard/send_intermediate.html', context={'entities': leads})
@@ -130,7 +143,20 @@ class ClientAdmin(admin.ModelAdmin):
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, clients):
         if 'send' in request.POST:
-            Telegram.send_to_people(clients, request.POST['message'])
+            is_feedback = request.POST.get('is_feedback')
+            if is_feedback:
+                for student in clients:
+                    kb = {'inline_keyboard': [
+                        [{'text': 'Ответить', 'callback_data': f'data|feedback_student|{student.id}'}]]}
+                    data = {
+                        'chat_id': student.tg_id,
+                        'parse_mode': 'html',
+                        'text': request.POST['message'],
+                        'reply_markup': json.dumps(kb)
+                    }
+                    Telegram.send_single_message(data)
+            else:
+                Telegram.send_to_people(clients, request.POST['message'])
             return HttpResponseRedirect(request.get_full_path())
 
         return render(request, 'dashboard/send_intermediate.html', context={'entities': clients})

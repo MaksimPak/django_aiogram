@@ -21,6 +21,7 @@ class Homework(StatesGroup):
 
 class Feedback(StatesGroup):
     feedback = State()
+    feedback_student = State()
 
 
 async def send_or_get_file_id(lesson, callback, kb, text):
@@ -285,14 +286,15 @@ async def forward_homework(
 
 
 @dp.callback_query_handler(three_valued_data.filter(property='feedback'))
-async def get_feedback(
+async def get_course_feedback(
         cb: types.callback_query,
         state: FSMContext,
         callback_data: dict
 ):
     """
-    Sets the state for feedback processing handler and requests feedback
+    Sets the state for feedback processing handler and requests course feedback
     """
+
     course_id = callback_data['first_value']
     student_id = callback_data['second_value']
     lesson_id = callback_data['third_value']
@@ -313,7 +315,7 @@ async def get_feedback(
 
 @dp.message_handler(state=Feedback.feedback)
 @create_session
-async def forward_feedback(
+async def forward_course_feedback(
         message: types.Message,
         state: FSMContext,
         session: SessionLocal,
@@ -323,7 +325,6 @@ async def forward_feedback(
     Processes feedback from student and forwards it to course chat id
     """
     data = await state.get_data()
-
     course = await repo.CourseRepository.get('id', data['course_id'], session)
     student = await repo.StudentRepository.get('id', data['student_id'], session)
     lesson = await repo.LessonRepository.get('id', data['lesson_id'], session)
@@ -342,4 +343,56 @@ async def forward_feedback(
 
     await message.reply('Отправлено')
     await state.finish()
+
+
+@dp.callback_query_handler(short_data.filter(property='feedback_student'))
+async def get_student_feedback(
+        cb: types.callback_query,
+        state: FSMContext,
+        callback_data: dict
+):
+    """
+    Sets the state for feedback processing handler and requests student feedback
+    """
+    student_id = callback_data['value']
+
+    await bot.answer_callback_query(cb.id)
+
+    async with state.proxy() as data:
+        data['student_id'] = student_id
+
+    await bot.send_message(
+        cb.from_user.id,
+        'Отправьте ваше сообщение'
+    )
+    await Feedback.feedback_student.set()
+
+
+@dp.message_handler(state=Feedback.feedback_student)
+@create_session
+async def forward_student_feedback(
+        message: types.Message,
+        state: FSMContext,
+        session: SessionLocal,
+        **kwargs
+):
+    """
+    Processes feedback from student and forwards it to course chat id
+    """
+    data = await state.get_data()
+    student = await repo.StudentRepository.get('id', data['student_id'], session)
+
+    await bot.send_message(
+        config.CHAT_ID,
+        f'Вам пришло сообщение от: {student.first_name} {student.last_name}'
+    )
+    await bot.forward_message(
+        config.CHAT_ID,
+        message.chat.id,
+        message.message_id
+    )
+
+    await message.reply('Отправлено')
+    await state.finish()
+
 
