@@ -9,8 +9,8 @@ runner = Executor(dp)
 
 
 async def on_startup_webhook(dispatcher: Dispatcher):
-    logger.info("Configure Web-Hook URL to: {url}", url=config.DOMAIN)
-    await dispatcher.bot.set_webhook(config.DOMAIN)
+    logger.info("Configure Web-Hook URL to: {url}", url=config.WEBHOOK_URL)
+    await dispatcher.bot.set_webhook(config.WEBHOOK_URL)
 
 
 def setup():
