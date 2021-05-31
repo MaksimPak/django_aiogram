@@ -11,4 +11,5 @@ REDIS_HOST = os.environ.get('REDIS_HOST', 'redis')
 REDIS_PORT = os.environ.get('REDIS_PORT', 6379)
 DOMAIN = os.environ.get('DOMAIN', 'http://127.0.0.1:8000')
 WEBHOOK_PATH = f'/{BOT_TOKEN}/webhook'
+WEBHOOK_URL = f'{DOMAIN}{WEBHOOK_PATH}'
 BOT_PUBLIC_PORT = os.environ.get('BOT_PUBLIC_PORT', 8080)
