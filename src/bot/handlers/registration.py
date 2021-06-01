@@ -74,7 +74,7 @@ async def start_reg(
     """
     Displays main panel if user exists. Else, offers options for registration
     """
-    student = await repo.StudentRepository.get('tg_id', message.from_user.id, session)
+    student = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
     if not student:
         kb = await make_kb([InlineKeyboardButton('Через бот', callback_data=simple_data.new(value='tg_reg')),
                             InlineKeyboardButton('Через инвайт', callback_data=simple_data.new(value='invite_reg'))])

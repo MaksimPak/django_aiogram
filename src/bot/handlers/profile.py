@@ -46,7 +46,7 @@ async def profile_kb(
     """
     Renders Student information in message and adds keyboard for edit
     """
-    client = await repo.StudentRepository.get('id', client_id, session)
+    client = await repo.StudentRepository.get('id', int(client_id), session)
 
     kb = await make_kb([InlineKeyboardButton(title, callback_data=short_data.new(property=key, value=client.id))
                         for title, key, _ in PROFILE_FIELDS], row_width=2)
@@ -118,7 +118,7 @@ async def set_name(
     """
     data = await state.get_data()
 
-    client = await repo.StudentRepository.get('id', data['client_id'], session)
+    client = await repo.StudentRepository.get('id', int(data['client_id']), session)
     await repo.StudentRepository.edit(client, {'first_name': message.text}, session)
 
     info, kb = await profile_kb(data['client_id'])
@@ -170,7 +170,7 @@ async def set_last_name(
     Saves last_name into db
     """
     data = await state.get_data()
-    client = await repo.StudentRepository.get('id', data['client_id'], session)
+    client = await repo.StudentRepository.get('id', int(data['client_id']), session)
     await repo.StudentRepository.edit(client, {'last_name': message.text}, session)
 
     info, kb = await profile_kb(data['client_id'])
@@ -230,7 +230,7 @@ async def set_lang(
 
     data = await state.get_data()
 
-    client = await repo.StudentRepository.get('id', data['client_id'], session)
+    client = await repo.StudentRepository.get('id', int(data['client_id']), session)
     await repo.StudentRepository.edit(client, {'language_type': lang}, session)
 
     info, kb = await profile_kb(data['client_id'])
@@ -281,7 +281,7 @@ async def set_phone(
     """
     data = await state.get_data()
 
-    client = await repo.StudentRepository.get('id', data['client_id'], session)
+    client = await repo.StudentRepository.get('id', int(data['client_id']), session)
     await repo.StudentRepository.edit(client, {'phone': message.text}, session)
 
     info, kb = await profile_kb(data['client_id'])
@@ -342,7 +342,7 @@ async def set_field(
 
     data = await state.get_data()
 
-    client = await repo.StudentRepository.get('id', data['client_id'], session)
+    client = await repo.StudentRepository.get('id', int(data['client_id']), session)
     await repo.StudentRepository.edit(client, {'chosen_field': field}, session)
 
     info, kb = await profile_kb(data['client_id'])

@@ -63,7 +63,7 @@ async def my_courses(
     """
     await bot.answer_callback_query(cb.id)
     client_id = callback_data['value']
-    client = await repo.StudentRepository.get_course_inload('id', client_id, session)
+    client = await repo.StudentRepository.get_course_inload('id', int(client_id), session)
     free_courses = await repo.CourseRepository.get_many('is_free', True, session)
 
     btn_list = [InlineKeyboardButton(
@@ -101,8 +101,8 @@ async def course_lessons(
     await bot.answer_callback_query(cb.id)
     course_id = callback_data['value']
 
-    course = await repo.CourseRepository.get_lesson_inload('id', course_id, session)
-    client = await repo.StudentRepository.get('tg_id', cb.from_user.id, session)
+    course = await repo.CourseRepository.get_lesson_inload('id', int(course_id), session)
+    client = await repo.StudentRepository.get('tg_id', int(cb.from_user.id), session)
     lessons = await repo.LessonRepository.load_unsent_from_course(course, 'lessons', session)
 
     if course.is_free:
@@ -137,9 +137,9 @@ async def get_lesson(
     await bot.answer_callback_query(cb.id)
     lesson_id = callback_data['value']
 
-    lesson = await repo.LessonRepository.get_course_inload('id', lesson_id, session)
-    client = await repo.StudentRepository.get('tg_id', cb.from_user.id, session)
-    lesson_url = await repo.LessonUrlRepository.get_from_lesson_and_student(lesson_id, client.id, session)
+    lesson = await repo.LessonRepository.get_course_inload('id', int(lesson_id), session)
+    client = await repo.StudentRepository.get('tg_id', int(cb.from_user.id), session)
+    lesson_url = await repo.LessonUrlRepository.get_from_lesson_and_student(int(lesson_id), int(client.id), session)
     kb = None
 
     if not lesson_url:
@@ -191,7 +191,7 @@ async def check_homework(
     """
     studentlesson_id = callback_data['value']
 
-    record = await repo.StudentLessonRepository.get_lessons_inload('id', studentlesson_id, session)
+    record = await repo.StudentLessonRepository.get_lessons_inload('id', int(studentlesson_id), session)
 
     await repo.StudentLessonRepository.edit(record, {'date_watched': datetime.datetime.now()}, session)
 
@@ -269,7 +269,7 @@ async def forward_homework(
     """
     data = await state.get_data()
 
-    record = await repo.StudentLessonRepository.get_lesson_student_inload('id', data['student_lesson'], session)
+    record = await repo.StudentLessonRepository.get_lesson_student_inload('id', int(data['student_lesson']), session)
     await repo.StudentLessonRepository.edit(record, {'homework_sent': datetime.datetime.now()}, session)
     template = jinja_env.get_template('new_homework.html')
     await bot.send_message(
@@ -326,9 +326,9 @@ async def forward_course_feedback(
     Processes feedback from student and forwards it to course chat id
     """
     data = await state.get_data()
-    course = await repo.CourseRepository.get('id', data['course_id'], session)
-    student = await repo.StudentRepository.get('id', data['student_id'], session)
-    lesson = await repo.LessonRepository.get('id', data['lesson_id'], session)
+    course = await repo.CourseRepository.get('id', int(data['course_id']), session)
+    student = await repo.StudentRepository.get('id', int(data['student_id']), session)
+    lesson = await repo.LessonRepository.get('id', int(data['lesson_id']), session)
 
     template = jinja_env.get_template('feedback.html')
 
@@ -381,7 +381,7 @@ async def forward_student_feedback(
     Processes feedback from student and forwards it to course chat id
     """
     data = await state.get_data()
-    student = await repo.StudentRepository.get('id', data['student_id'], session)
+    student = await repo.StudentRepository.get('id', int(data['student_id']), session)
 
     await bot.send_message(
         config.CHAT_ID,
