@@ -1,6 +1,4 @@
 import datetime
-import glob
-import os
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
@@ -62,16 +60,13 @@ async def get_lesson_text(studentlesson, session, *args, **kwargs):
 
 
 async def send_next_lesson(studentlesson, user_id, session):
-    next_lesson = await repo.LessonRepository.get_next('id', studentlesson.lesson.id, session)
+    next_lesson = await repo.LessonRepository.get_next(
+        'id', studentlesson.lesson.id, studentlesson.lesson.course.id, session)
     if studentlesson.lesson.course.is_finished or not next_lesson:
         return
 
-    new_studentlesson = await repo.StudentLessonRepository.create(
-        {
-            'student_id': int(studentlesson.student.id),
-            'lesson_id': int(next_lesson.id),
-            'date_sent': datetime.datetime.now()
-        }, session)
+    new_studentlesson = await repo.StudentLessonRepository.get_or_create(
+        next_lesson.id, int(studentlesson.student.id), session)
 
     kb = await make_kb([
         InlineKeyboardButton(
@@ -79,7 +74,7 @@ async def send_next_lesson(studentlesson, user_id, session):
             callback_data=short_data.new(property='watched', value=new_studentlesson.id)
         )])
 
-    text = await get_lesson_text(studentlesson, session)
+    text = await get_lesson_text(new_studentlesson, session)
 
     if studentlesson.lesson.image:
         file_id = await send_photo(studentlesson.lesson, user_id, kb, text)

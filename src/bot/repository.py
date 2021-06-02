@@ -112,13 +112,14 @@ class LessonRepository(BaseRepository):
         return lesson
 
     @staticmethod
-    async def get_next(attribute: str, value: Any, session: SessionLocal):
+    async def get_next(attribute: str, value: Any, course_id, session: SessionLocal):
         """
         Return first matching query
         """
         async with session:
             lesson = (await session.execute(
-                select(LessonTable).where(getattr(LessonTable, attribute) > value).order_by(LessonTable.id).options(
+                select(LessonTable).filter(getattr(LessonTable, attribute) > value, LessonTable.course_id == course_id)
+                    .order_by(LessonTable.id).options(
                     selectinload(LessonTable.course)
                 ))).scalars().first()
         return lesson
