@@ -124,18 +124,14 @@ class LessonRepository(BaseRepository):
         return lesson
 
     @staticmethod
-    async def get_student_lessons(student_id, session):
+    async def get_student_lessons(student_id, course_id, session):
         async with session:
-            records = (await session.execute(select(LessonTable).where(
-                LessonTable.students.any(StudentTable.id == student_id)
-            ).options(
-                selectinload(LessonTable.students)).options(
-                selectinload(LessonTable.course)
-            ))).scalars()
-            print('*'*23)
-            for x in records:
-                print(x)
-        return records
+            lessons = (await session.execute(
+                select(LessonTable).join_from(LessonTable, StudentLesson, LessonTable.id == StudentLesson.lesson_id)
+                .filter(StudentLesson.student_id == student_id, LessonTable.course.has(id=course_id))
+            )).scalars()
+
+        return lessons
 
     @staticmethod
     async def load_unsent_from_course(course, attribute, session):

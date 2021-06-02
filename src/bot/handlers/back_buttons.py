@@ -49,11 +49,16 @@ async def to_courses(
     client_id = callback_data['value']
 
     client = await repo.StudentRepository.get_course_inload('id', int(client_id), session)
+    free_courses = await repo.CourseRepository.get_many('is_free', True, session)
 
-    kb = await make_kb([
-        InlineKeyboardButton(x.courses.name, callback_data=short_data.new(property='get_course', value=x.courses.id))
-        for x in client.courses
-    ])
+    btn_list = [InlineKeyboardButton(
+        x.courses.name,
+        callback_data=short_data.new(property='get_course', value=x.courses.id)) for x in client.courses]
+
+    btn_list += [InlineKeyboardButton(
+        x.name,
+        callback_data=short_data.new(property='get_course', value=x.id)) for x in free_courses]
+    kb = await make_kb(btn_list)
 
     kb.add(InlineKeyboardButton('Назад', callback_data=short_data.new(property='back', value=client.id)))
 

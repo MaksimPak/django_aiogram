@@ -1,4 +1,6 @@
 import datetime
+import glob
+import os
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
@@ -31,7 +33,8 @@ async def send_photo(lesson, user_id, kb, text):
     wait_message = None
     file_obj = lesson.image_file_id
     if not file_obj:
-        with open('../media/' + lesson.image, 'br') as file:
+
+        with open('media/' + lesson.image, 'br') as file:
             file_obj = file.read()
             wait_message = await bot.send_message(user_id, 'Идет обработка, пожалуйста, подождите ⌛')
 
@@ -144,8 +147,7 @@ async def course_lessons(
 
     course = await repo.CourseRepository.get_lesson_inload('id', int(course_id), session)
     client = await repo.StudentRepository.get('tg_id', int(cb.from_user.id), session)
-    lessons = await repo.LessonRepository.get_student_lessons(client.id, session)
-
+    lessons = await repo.LessonRepository.get_student_lessons(client.id, course.id, session)
     async with state.proxy() as data:
         data['course_id'] = course_id
 
