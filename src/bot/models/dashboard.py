@@ -3,7 +3,7 @@ import enum
 import uuid
 
 from sqlalchemy import Column, String, Enum, Boolean, ForeignKey, DateTime, Integer
-from sqlalchemy.dialects.postgresql import INT8RANGE, TEXT, VARCHAR
+from sqlalchemy.dialects.postgresql import TEXT, VARCHAR
 from sqlalchemy.orm import relationship
 
 from bot.models.db import Base
@@ -26,10 +26,10 @@ class StudentTable(Base):
 
     __tablename__ = 'dashboard_student'
 
-    id = Column(INT8RANGE, primary_key=True)
+    id = Column(Integer, primary_key=True)
     first_name = Column(String(50))
     last_name = Column(String(50))
-    tg_id = Column(INT8RANGE, nullable=True, unique=True)
+    tg_id = Column(Integer, nullable=True, unique=True)
     language_type = Column(Enum(LanguageType, values_callable=lambda x: [e.value for e in x]), default=LanguageType.russian.value)
     phone = Column(String(20), unique=True)
     chosen_field = Column(Enum(CategoryType, values_callable=lambda x: [e.value for e in x]))
@@ -53,7 +53,7 @@ class CourseTable(Base):
 
     __tablename__ = 'dashboard_course'
 
-    id = Column(INT8RANGE, primary_key=True)
+    id = Column(Integer, primary_key=True)
     name = Column(String(50))
     info = Column(TEXT, nullable=True)
     hashtag = Column(String(20), nullable=True)
@@ -61,12 +61,13 @@ class CourseTable(Base):
     start_message = Column(String(200), nullable=True)
     end_message = Column(String(200), nullable=True)
     difficulty = Column(Enum(DifficultyType, values_callable=lambda x: [e.value for e in x]))
-    price = Column(INT8RANGE)
+    price = Column(Integer)
     is_free = Column(Boolean, default=False)
     week_size = Column(Integer)
     is_started = Column(Boolean, default=False)
     is_finished = Column(Boolean, default=False)
-    chat_id = Column(INT8RANGE, nullable=True)
+    chat_id = Column(Integer, nullable=True)
+    autosend = Column(Boolean, default=False)
 
     date_started = Column(DateTime, nullable=True)
     date_finished = Column(DateTime, nullable=True)
@@ -81,13 +82,13 @@ class CourseTable(Base):
 class LessonTable(Base):
     __tablename__ = 'dashboard_lesson'
 
-    id = Column(INT8RANGE, primary_key=True)
+    id = Column(Integer, primary_key=True)
     title = Column(String(50))
     info = Column(TEXT, nullable=True)
     video = Column(String(100))
     image = Column(String(255), nullable=True)
     image_file_id = Column(String(255), nullable=True)
-    course_id = Column(INT8RANGE, ForeignKey('dashboard_course.id'))
+    course_id = Column(Integer, ForeignKey('dashboard_course.id'))
     has_homework = Column(Boolean, default=False)
     homework_desc = Column(TEXT, nullable=True)
     date_sent = Column(DateTime, nullable=True)
@@ -102,9 +103,9 @@ class LessonTable(Base):
 class LessonUrlTable(Base):
     __tablename__ = 'dashboard_lessonurl'
 
-    student_id = Column(INT8RANGE, ForeignKey('dashboard_student.id'), primary_key=True)
+    student_id = Column(Integer, ForeignKey('dashboard_student.id'), primary_key=True)
     hash = Column(VARCHAR(length=36), nullable=False, unique=True, default=lambda: str(uuid.uuid4()))
-    lesson_id = Column(INT8RANGE, ForeignKey('dashboard_lesson.id'), nullable=False)
+    lesson_id = Column(Integer, ForeignKey('dashboard_lesson.id'), nullable=False)
 
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
@@ -113,9 +114,9 @@ class LessonUrlTable(Base):
 class StudentCourse(Base):
     __tablename__ = 'dashboard_studentcourse'
 
-    id = Column(INT8RANGE, primary_key=True)
-    course_id = Column(INT8RANGE, ForeignKey('dashboard_course.id'), nullable=False)
-    student_id = Column(INT8RANGE, ForeignKey('dashboard_student.id'), nullable=False)
+    id = Column(Integer, primary_key=True)
+    course_id = Column(Integer, ForeignKey('dashboard_course.id'), nullable=False)
+    student_id = Column(Integer, ForeignKey('dashboard_student.id'), nullable=False)
 
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
@@ -127,10 +128,11 @@ class StudentCourse(Base):
 class StudentLesson(Base):
     __tablename__ = 'dashboard_studentlesson'
 
-    id = Column(INT8RANGE, primary_key=True)
-    student_id = Column(INT8RANGE, ForeignKey('dashboard_student.id'))
-    lesson_id = Column(INT8RANGE, ForeignKey('dashboard_lesson.id'))
-    date_received = Column(DateTime, nullable=True)
+    id = Column(Integer, primary_key=True)
+    student_id = Column(Integer, ForeignKey('dashboard_student.id'))
+    lesson_id = Column(Integer, ForeignKey('dashboard_lesson.id'))
+
+    date_sent = Column(DateTime, nullable=True)
     date_watched = Column(DateTime, nullable=True)
     homework_sent = Column(DateTime, nullable=True)
 

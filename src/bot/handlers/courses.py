@@ -24,30 +24,71 @@ class Feedback(StatesGroup):
     feedback_student = State()
 
 
-async def send_or_get_file_id(lesson, callback, kb, text):
+async def send_photo(lesson, user_id, kb, text):
     """
     Returns a file_id if photo does not have one recorded in db. Else, sends the photo by file id
     """
-    if lesson.image_file_id:
-        await bot.send_photo(
-            callback.from_user.id,
-            lesson.image_file_id,
-            caption=text,
+    wait_message = None
+    file_obj = lesson.image_file_id
+    if not file_obj:
+        with open('../media/' + lesson.image, 'br') as file:
+            file_obj = file.read()
+            wait_message = await bot.send_message(user_id, 'Идет обработка, пожалуйста, подождите ⌛')
+
+    message = await bot.send_photo(
+        user_id,
+        file_obj,
+        caption=text,
+        parse_mode='html',
+        reply_markup=kb
+    )
+
+    if wait_message:
+        await wait_message.delete()
+    return message.photo[-1].file_id
+
+
+async def get_lesson_text(studentlesson, session, *args, **kwargs):
+    lesson_url = await repo.LessonUrlRepository.get_or_create(
+        studentlesson.lesson.id, studentlesson.student.id, session)
+
+    template = jinja_env.get_template('lesson_info.html')
+    text = template.render(lesson=studentlesson.lesson, hash=lesson_url.hash, **kwargs)
+
+    return text
+
+
+async def send_next_lesson(studentlesson, user_id, session):
+    next_lesson = await repo.LessonRepository.get_next('id', studentlesson.lesson.id, session)
+    if studentlesson.lesson.course.is_finished or not next_lesson:
+        return
+
+    new_studentlesson = await repo.StudentLessonRepository.create(
+        {
+            'student_id': int(studentlesson.student.id),
+            'lesson_id': int(next_lesson.id),
+            'date_sent': datetime.datetime.now()
+        }, session)
+
+    kb = await make_kb([
+        InlineKeyboardButton(
+            'Отметить как просмотренное',
+            callback_data=short_data.new(property='watched', value=new_studentlesson.id)
+        )])
+
+    text = await get_lesson_text(studentlesson, session)
+
+    if studentlesson.lesson.image:
+        file_id = await send_photo(studentlesson.lesson, user_id, kb, text)
+        if not studentlesson.lesson.image_file_id:
+            await repo.LessonRepository.edit(studentlesson.lesson, {'image_file_id': file_id}, session)
+    else:
+        await bot.send_message(
+            user_id,
+            text,
             parse_mode='html',
             reply_markup=kb
         )
-    else:
-        with open('../media/' + lesson.image, 'br') as file:
-            message = await bot.send_message(callback.from_user.id, 'Идет обработка, пожалуйста, подождите ⌛')
-            file_id = (await bot.send_photo(
-                callback.from_user.id,
-                file.read(),
-                caption=text,
-                parse_mode='html',
-                reply_markup=kb
-            )).photo[-1].file_id
-            await message.delete()
-            return file_id
 
 
 @dp.callback_query_handler(short_data.filter(property='course'))
@@ -90,8 +131,8 @@ async def my_courses(
 @create_session
 async def course_lessons(
         cb: types.callback_query,
-        state: FSMContext,
         session: SessionLocal,
+        state: FSMContext,
         callback_data: dict,
         **kwargs
 ):
@@ -103,7 +144,10 @@ async def course_lessons(
 
     course = await repo.CourseRepository.get_lesson_inload('id', int(course_id), session)
     client = await repo.StudentRepository.get('tg_id', int(cb.from_user.id), session)
-    lessons = await repo.LessonRepository.load_unsent_from_course(course, 'lessons', session)
+    lessons = await repo.LessonRepository.get_student_lessons(client.id, session)
+
+    async with state.proxy() as data:
+        data['course_id'] = course_id
 
     if course.is_free:
         lessons = course.lessons
@@ -126,7 +170,6 @@ async def course_lessons(
 @create_session
 async def get_lesson(
         cb: types.callback_query,
-        state: FSMContext,
         callback_data: dict,
         session: SessionLocal,
         **kwargs
@@ -139,18 +182,9 @@ async def get_lesson(
 
     lesson = await repo.LessonRepository.get_course_inload('id', int(lesson_id), session)
     client = await repo.StudentRepository.get('tg_id', int(cb.from_user.id), session)
-    lesson_url = await repo.LessonUrlRepository.get_from_lesson_and_student(int(lesson_id), int(client.id), session)
     kb = None
 
-    if not lesson_url:
-        lesson_url = await repo.LessonUrlRepository.create({'student_id': client.id, 'lesson_id': lesson.id}, session)
-
-    student_lesson = await repo.StudentLessonRepository.create(
-        {
-            'student_id': client.id,
-            'lesson_id': lesson_id,
-            'date_received': datetime.datetime.now()
-        }, session)
+    student_lesson = await repo.StudentLessonRepository.get_or_create(lesson.id, client.id, session)
 
     if not lesson.course.is_finished:
         kb = await make_kb([
@@ -159,18 +193,18 @@ async def get_lesson(
                 callback_data=short_data.new(property='watched', value=student_lesson.id)
             )])
 
-    template = jinja_env.get_template('lesson_info.html')
-    url = f'{config.DOMAIN}/dashboard/watch/{lesson_url.hash}'
-    text = template.render(lesson=lesson, url=url, display_hw=False, display_link=True)
+    text = await get_lesson_text(student_lesson, session, display_hw=False, display_link=True)
     await bot.delete_message(cb.from_user.id, cb.message.message_id)
+    user_id = cb.from_user.id
 
     if lesson.image:
-        file_id = await send_or_get_file_id(lesson, cb, kb, text)
-        file_id and await repo.LessonRepository.edit(lesson, {'image_file_id': file_id}, session)
+        file_id = await send_photo(lesson, user_id, kb, text)
+        if not lesson.image_file_id:
+            await repo.LessonRepository.edit(lesson, {'image_file_id': file_id}, session)
 
     else:
         await bot.send_message(
-            cb.from_user.id,
+            user_id,
             text,
             parse_mode='html',
             reply_markup=kb
@@ -190,18 +224,21 @@ async def check_homework(
     Checks if lesson has homework. If it does, provides student with submit button
     """
     studentlesson_id = callback_data['value']
-
-    record = await repo.StudentLessonRepository.get_lessons_inload('id', int(studentlesson_id), session)
-
-    await repo.StudentLessonRepository.edit(record, {'date_watched': datetime.datetime.now()}, session)
+    record = await repo.StudentLessonRepository.get_lesson_student_inload('id', int(studentlesson_id), session)
 
     async with state.proxy() as data:
         data['hashtag'] = record.lesson.course.hashtag
 
+    await repo.StudentLessonRepository.edit(record, {'date_watched': datetime.datetime.now()}, session)
+
+    if record.lesson.course.autosend and not record.lesson.has_homework:
+        user_id = cb.from_user.id
+        await send_next_lesson(record, user_id, session)
+        await cb.message.edit_reply_markup(reply_markup=None)
+
     if record.lesson.has_homework:
         await bot.answer_callback_query(cb.id)
-        template = jinja_env.get_template('lesson_info.html')
-        text = template.render(lesson=record.lesson, display_hw=True, display_link=False)
+        text = await get_lesson_text(record, session, display_hw=True, display_link=False)
 
         kb = await make_kb([InlineKeyboardButton('Сдать дз', callback_data=two_valued_data.new(
             property='submit',
@@ -268,8 +305,11 @@ async def forward_homework(
     Gets the content of the homework and forwards it to the chat specified for course
     """
     data = await state.get_data()
+    student_lesson = await repo.StudentLessonRepository.get_lesson_student_inload(
+        'id', int(data['student_lesson']), session)
 
     record = await repo.StudentLessonRepository.get_lesson_student_inload('id', int(data['student_lesson']), session)
+
     await repo.StudentLessonRepository.edit(record, {'homework_sent': datetime.datetime.now()}, session)
     template = jinja_env.get_template('new_homework.html')
     await bot.send_message(
@@ -283,6 +323,10 @@ async def forward_homework(
     )
 
     await message.reply('Спасибо')
+
+    if student_lesson.lesson.course.autosend:
+        await send_next_lesson(record, message.from_user.id, session)
+
     await state.finish()
 
 
@@ -395,5 +439,4 @@ async def forward_student_feedback(
 
     await message.reply('Отправлено')
     await state.finish()
-
 

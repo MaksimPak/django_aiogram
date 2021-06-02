@@ -11,8 +11,9 @@ storage = RedisStorage2(host=config.REDIS_HOST, port=config.REDIS_PORT, db=1)
 dp = Dispatcher(bot, storage=storage)
 jinja_env = Environment(
     loader=PackageLoader('bot'),
-    autoescape=select_autoescape()
+    autoescape=select_autoescape(),
 )
+jinja_env.globals['config'] = config
 
 
 def setup():

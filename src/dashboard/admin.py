@@ -211,7 +211,7 @@ class CourseAdmin(admin.ModelAdmin):
                 'hw': set(),
             }
             for record in lesson.studentlesson_set.all():
-                if record.date_received:
+                if record.date_sent:
                     data['received'].add(record.student)
                 if record.date_watched:
                     data['viewed'].add(record.student)

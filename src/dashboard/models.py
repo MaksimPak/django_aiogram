@@ -119,6 +119,7 @@ class Course(models.Model):
     is_started = models.BooleanField(verbose_name='Курс начат', default=False)
     is_finished = models.BooleanField(verbose_name='Курс закончен', default=False)
     chat_id = models.BigIntegerField(verbose_name='Telegram ID', null=True, blank=True, help_text=COURSE_HELP_TEXT)
+    autosend = models.BooleanField(verbose_name='Авто-отправка', default=False)
 
     date_started = models.DateTimeField(verbose_name='Дата начала курса', null=True, blank=True)
     date_finished = models.DateTimeField(verbose_name='Дата окончания курса', null=True, blank=True)
@@ -190,9 +191,13 @@ class StudentCourse(models.Model):
 class StudentLesson(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
-    date_received = models.DateTimeField(verbose_name='Дата получения урока', null=True, blank=True)
+
+    date_sent = models.DateTimeField(verbose_name='Дата получения урока', null=True, blank=True)
     date_watched = models.DateTimeField(verbose_name='Дата дата просмотра урока', null=True, blank=True)
     homework_sent = models.DateTimeField(verbose_name='Дата отправки дз', null=True, blank=True)
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
+
+    class Meta:
+        unique_together = [['student', 'lesson']]

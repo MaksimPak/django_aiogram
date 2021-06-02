@@ -1,3 +1,4 @@
+import datetime
 from typing import Any
 
 from sqlalchemy import select
@@ -111,6 +112,32 @@ class LessonRepository(BaseRepository):
         return lesson
 
     @staticmethod
+    async def get_next(attribute: str, value: Any, session: SessionLocal):
+        """
+        Return first matching query
+        """
+        async with session:
+            lesson = (await session.execute(
+                select(LessonTable).where(getattr(LessonTable, attribute) > value).order_by(LessonTable.id).options(
+                    selectinload(LessonTable.course)
+                ))).scalars().first()
+        return lesson
+
+    @staticmethod
+    async def get_student_lessons(student_id, session):
+        async with session:
+            records = (await session.execute(select(LessonTable).where(
+                LessonTable.students.any(StudentTable.id == student_id)
+            ).options(
+                selectinload(LessonTable.students)).options(
+                selectinload(LessonTable.course)
+            ))).scalars()
+            print('*'*23)
+            for x in records:
+                print(x)
+        return records
+
+    @staticmethod
     async def load_unsent_from_course(course, attribute, session):
         async with session:
             lessons = (await session.execute(select(LessonTable).where(
@@ -124,7 +151,7 @@ class LessonUrlRepository(BaseRepository):
     table = LessonUrlTable
 
     @staticmethod
-    async def get_from_lesson_and_student(lesson_id, student_id, session):
+    async def get_one(lesson_id, student_id, session):
         """
         Select from LessonUrl table by specifying two criterias
         """
@@ -134,20 +161,45 @@ class LessonUrlRepository(BaseRepository):
                                              LessonUrlTable.student_id == student_id))).scalar()
         return lesson_url
 
+    @staticmethod
+    async def get_or_create(lesson_id, student_id, session):
+        lesson_url = await LessonUrlRepository.get_one(
+            lesson_id, student_id, session)
+
+        if not lesson_url:
+            lesson_url = await LessonUrlRepository.create(
+                {'student_id': student_id, 'lesson_id': lesson_id}, session)
+
+        return lesson_url
+
 
 class StudentLessonRepository(BaseRepository):
     table = StudentLesson
 
     @staticmethod
-    async def get_lessons_inload(attribute, value, session):
+    async def get_or_create(lesson_id, student_id, session):
+        studentlesson = await StudentLessonRepository.get_one(
+            lesson_id, student_id, session)
+
+        if not studentlesson:
+            studentlesson = await StudentLessonRepository.create(
+                {'student_id': student_id, 'lesson_id': lesson_id, 'date_sent': datetime.datetime.now()}, session)
+
+        return studentlesson
+
+    @staticmethod
+    async def get_one(lesson_id, student_id, session):
         """
-        Loads lessons and courses along with students
+        Select from LessonUrl table by specifying two criterias
         """
         async with session:
-            record = (await session.execute(select(StudentLesson).where(
-                getattr(StudentLesson, attribute) == value
-            ).options(selectinload(StudentLesson.lesson).selectinload(LessonTable.course)))).scalar()
-        return record
+            studentlesson = (await session.execute(
+                select(StudentLesson).where(StudentLesson.lesson_id == lesson_id,
+                                            StudentLesson.student_id == student_id).options(
+                    selectinload(StudentLesson.lesson)).options(
+                    selectinload(StudentLesson.student)
+                ))).scalar()
+        return studentlesson
 
     @staticmethod
     async def get_lesson_student_inload(attribute, value, session):
