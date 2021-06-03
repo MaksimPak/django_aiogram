@@ -1,3 +1,5 @@
+from typing import Union
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import StatesGroup, State
@@ -40,13 +42,13 @@ PROFILE_FIELDS = (
 
 @create_session
 async def profile_kb(
-        client_id: int,
+        client_tg: int,
         session: SessionLocal
 ):
     """
     Renders Student information in message and adds keyboard for edit
     """
-    client = await repo.StudentRepository.get('id', int(client_id), session)
+    client = await repo.StudentRepository.get('tg_id', int(client_tg), session)
 
     kb = await make_kb([InlineKeyboardButton(title, callback_data=short_data.new(property=key, value=client.id))
                         for title, key, _ in PROFILE_FIELDS], row_width=2)
@@ -59,25 +61,32 @@ async def profile_kb(
     return message, kb
 
 
+@dp.message_handler(commands=['profile'], commands_prefix='/')
 @dp.callback_query_handler(short_data.filter(property='student'))
 async def my_profile(
-        cb: types.callback_query,
-        callback_data: dict
+        payload: Union[types.CallbackQuery, types.Message],
+        callback_data: dict = None
 ):
     """
     Starting point for profile view/edit
     """
-    await bot.answer_callback_query(cb.id)
-    client_id = callback_data['value']
+    isinstance(payload, types.CallbackQuery) and await bot.answer_callback_query(payload.id)
+    client_tg = payload.from_user.id
+    message_id = payload.message.message_id if isinstance(payload, types.CallbackQuery) else payload.message_id
 
-    info, kb = await profile_kb(client_id)
+    # client_id = callback_data['value']
 
-    await bot.edit_message_text(
-        info,
-        cb.from_user.id,
-        cb.message.message_id,
-        reply_markup=kb
-    )
+    info, kb = await profile_kb(client_tg)
+
+    if isinstance(payload, types.CallbackQuery):
+        await bot.edit_message_text(
+            info,
+            client_tg,
+            message_id,
+            reply_markup=kb
+        )
+    else:
+        await payload.reply(info, reply_markup=kb)
 
 
 @dp.callback_query_handler(short_data.filter(property='first_name'))
