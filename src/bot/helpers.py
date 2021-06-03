@@ -14,7 +14,7 @@ async def main_kb():
         KeyboardButton('🧑‍🎓 Профиль'),
         KeyboardButton('📚 Домашка'),
     ]
-    kb = ReplyKeyboardMarkup()
+    kb = ReplyKeyboardMarkup(resize_keyboard=True)
     kb.add(*btns)
 
     return kb
