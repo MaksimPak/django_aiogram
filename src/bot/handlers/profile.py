@@ -1,7 +1,8 @@
-from typing import Union
+from typing import Any
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import InlineKeyboardButton
 
@@ -42,7 +43,7 @@ PROFILE_FIELDS = (
 
 @create_session
 async def profile_kb(
-        client_tg: int,
+        client_tg: Any,
         session: SessionLocal
 ):
     """
@@ -61,32 +62,16 @@ async def profile_kb(
     return message, kb
 
 
-@dp.message_handler(commands=['profile'], commands_prefix='/')
-@dp.callback_query_handler(short_data.filter(property='student'))
+@dp.message_handler(Text(equals='🧑‍🎓 Профиль'))
 async def my_profile(
-        payload: Union[types.CallbackQuery, types.Message],
-        callback_data: dict = None
+        message: types.Message,
 ):
     """
     Starting point for profile view/edit
     """
-    isinstance(payload, types.CallbackQuery) and await bot.answer_callback_query(payload.id)
-    client_tg = payload.from_user.id
-    message_id = payload.message.message_id if isinstance(payload, types.CallbackQuery) else payload.message_id
+    info, kb = await profile_kb(message.from_user.id)
 
-    # client_id = callback_data['value']
-
-    info, kb = await profile_kb(client_tg)
-
-    if isinstance(payload, types.CallbackQuery):
-        await bot.edit_message_text(
-            info,
-            client_tg,
-            message_id,
-            reply_markup=kb
-        )
-    else:
-        await payload.reply(info, reply_markup=kb)
+    await message.reply(info, reply_markup=kb)
 
 
 @dp.callback_query_handler(short_data.filter(property='first_name'))
@@ -127,10 +112,10 @@ async def set_name(
     """
     data = await state.get_data()
 
-    client = await repo.StudentRepository.get('id', int(data['client_id']), session)
+    client = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
     await repo.StudentRepository.edit(client, {'first_name': message.text}, session)
 
-    info, kb = await profile_kb(data['client_id'])
+    info, kb = await profile_kb(message.from_user.id)
 
     await bot.delete_message(message.from_user.id, message.message_id)
     await bot.edit_message_text(
@@ -182,7 +167,7 @@ async def set_last_name(
     client = await repo.StudentRepository.get('id', int(data['client_id']), session)
     await repo.StudentRepository.edit(client, {'last_name': message.text}, session)
 
-    info, kb = await profile_kb(data['client_id'])
+    info, kb = await profile_kb(message.from_user.id)
 
     await bot.delete_message(message.from_user.id, message.message_id)
     await bot.edit_message_text(
@@ -242,7 +227,7 @@ async def set_lang(
     client = await repo.StudentRepository.get('id', int(data['client_id']), session)
     await repo.StudentRepository.edit(client, {'language_type': lang}, session)
 
-    info, kb = await profile_kb(data['client_id'])
+    info, kb = await profile_kb(cb.from_user.id)
     await bot.edit_message_text(
         info,
         cb.from_user.id,
@@ -293,7 +278,7 @@ async def set_phone(
     client = await repo.StudentRepository.get('id', int(data['client_id']), session)
     await repo.StudentRepository.edit(client, {'phone': message.text}, session)
 
-    info, kb = await profile_kb(data['client_id'])
+    info, kb = await profile_kb(message.from_user.id)
 
     await bot.delete_message(message.from_user.id, message.message_id)
     await bot.edit_message_text(
@@ -354,7 +339,7 @@ async def set_field(
     client = await repo.StudentRepository.get('id', int(data['client_id']), session)
     await repo.StudentRepository.edit(client, {'chosen_field': field}, session)
 
-    info, kb = await profile_kb(data['client_id'])
+    info, kb = await profile_kb(cb.from_user.id)
     await bot.edit_message_text(
         info,
         cb.from_user.id,

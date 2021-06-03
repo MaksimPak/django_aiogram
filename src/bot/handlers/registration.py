@@ -8,7 +8,7 @@ from aiogram.types import InlineKeyboardButton
 
 from bot import repository as repo
 from bot.decorators import create_session
-from bot.helpers import make_kb
+from bot.helpers import make_kb, main_kb
 from bot.misc import dp, bot
 from bot.models.dashboard import StudentTable, CategoryType
 from bot.models.db import SessionLocal
@@ -81,13 +81,9 @@ async def start_reg(
 
         await bot.send_message(message.from_user.id, 'Выберите способ регистрации', reply_markup=kb)
     else:
-        reply_kb = await make_kb([
-            InlineKeyboardButton('Курсы', callback_data=short_data.new(property='course', value=student.id)),
-            InlineKeyboardButton('Профиль', callback_data=short_data.new(property='student', value=student.id)),
-            InlineKeyboardButton('Задания', callback_data=short_data.new(property='tasks', value=student.id)),
-        ])
+        kb = await main_kb()
         await bot.send_message(message.from_user.id, 'Выбери опцию',
-                               reply_markup=reply_kb)
+                               reply_markup=kb)
 
 
 @dp.callback_query_handler(ChatTypeFilter(types.ChatType.PRIVATE), simple_data.filter(value='invite_reg'))
@@ -210,13 +206,9 @@ async def create_record(
         'is_client': False
     }
 
-    lead = await repo.StudentRepository.create(lead_data, session)
+    await repo.StudentRepository.create(lead_data, session)
 
-    reply_kb = await make_kb([
-        InlineKeyboardButton('Курсы', callback_data=short_data.new(property='course', value=lead.id)),
-        InlineKeyboardButton('Профиль', callback_data=short_data.new(property='student', value=lead.id)),
-        InlineKeyboardButton('Задания', callback_data=short_data.new(property='tasks', value=lead.id)),
-    ])
+    reply_kb = await main_kb()
 
     await bot.send_message(cb.from_user.id, 'Вы зарегистрированы! В ближайшее время с вами свяжется наш оператор',
                            reply_markup=reply_kb)

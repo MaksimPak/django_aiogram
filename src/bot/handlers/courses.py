@@ -3,6 +3,7 @@ from typing import Union
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import InlineKeyboardButton, ContentType
 
@@ -90,23 +91,17 @@ async def send_next_lesson(studentlesson, user_id, session):
         )
 
 
-@dp.message_handler(commands=['courses'], commands_prefix='/')
-@dp.callback_query_handler(short_data.filter(property='course'))
+@dp.message_handler(Text(equals='📝 Курсы'))
 @create_session
 async def my_courses(
-        payload: Union[types.CallbackQuery, types.Message],
+        message: types.Message,
         session: SessionLocal,
-        callback_data: dict = None,
         **kwargs
 ):
     """
     Displays free and enrolled courses of the student
     """
-    client_tg = payload.from_user.id
-    message_id = payload.message.message_id if isinstance(payload, types.CallbackQuery) else payload.message_id
-    isinstance(payload, types.CallbackQuery) and await bot.answer_callback_query(payload.id)
-
-    client = await repo.StudentRepository.get_course_inload('tg_id', int(client_tg), session)
+    client = await repo.StudentRepository.get_course_inload('tg_id', int(message.from_user.id), session)
     free_courses = await repo.CourseRepository.get_many('is_free', True, session)
 
     btn_list = [InlineKeyboardButton(
@@ -121,15 +116,8 @@ async def my_courses(
     kb.add(InlineKeyboardButton('Назад', callback_data=short_data.new(property='back', value=client.id)))
 
     msg = 'Ваши курсы' if btn_list else 'Вы не записаны ни на один курс'
-    if isinstance(payload, types.CallbackQuery):
-        await bot.edit_message_text(
-            msg,
-            client_tg,
-            message_id,
-            reply_markup=kb
-        )
-    else:
-        await payload.reply(msg, reply_markup=kb)
+
+    await message.reply(msg, reply_markup=kb)
 
 
 @dp.callback_query_handler(short_data.filter(property='get_course'))
