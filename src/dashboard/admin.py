@@ -201,7 +201,7 @@ class CourseAdmin(admin.ModelAdmin):
         extra_context = extra_context or {}
         course = models.Course.objects.get(pk=object_id)
 
-        lessons = course.lesson_set.all()
+        lessons = course.lesson_set.all().order_by('id')
         lessons_stat = []
         for lesson in lessons:
             data = {

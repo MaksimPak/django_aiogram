@@ -129,17 +129,8 @@ class LessonRepository(BaseRepository):
         async with session:
             lessons = (await session.execute(
                 select(LessonTable).join_from(LessonTable, StudentLesson, LessonTable.id == StudentLesson.lesson_id)
-                .filter(StudentLesson.student_id == student_id, LessonTable.course.has(id=course_id))
+                .filter(StudentLesson.student_id == student_id, LessonTable.course.has(id=course_id)).order_by('id')
             )).scalars()
-
-        return lessons
-
-    @staticmethod
-    async def load_unsent_from_course(course, attribute, session):
-        async with session:
-            lessons = (await session.execute(select(LessonTable).where(
-                with_parent(course, getattr(CourseTable, attribute))
-            ).filter(LessonTable.date_sent != None))).scalars().all()
 
         return lessons
 
