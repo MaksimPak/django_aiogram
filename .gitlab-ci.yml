@@ -1,0 +1,22 @@
+stages:
+  - deploy
+
+before_script:
+  - apt-get update -qq
+  - apt-get install -qq git
+  # Setup SSH deploy keys
+  - 'which ssh-agent || ( apt-get install -qq openssh-client)'
+  - mkdir -p ~/.ssh
+  - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+  - chmod 600 ~/.ssh/id_rsa
+  - eval "$(ssh-agent -s)"
+  - ssh-add ~/.ssh/id_rsa
+
+
+deploy_job:
+  stage: deploy
+  script:
+    - ssh-keyscan -H -p 22 $SERVER_IP >> ~/.ssh/known_hosts
+    - ssh "$USER"@"$SERVER_IP" "cd $DIRECTORY && git checkout master && git pull origin master && exit"
+  only:
+    - master
