@@ -118,7 +118,7 @@ class Course(models.Model):
     week_size = models.IntegerField(verbose_name='Количество уроков в неделю', default=0)
     is_started = models.BooleanField(verbose_name='Курс начат', default=False)
     is_finished = models.BooleanField(verbose_name='Курс закончен', default=False)
-    chat_id = models.BigIntegerField(verbose_name='Telegram ID', null=True, blank=True, help_text=COURSE_HELP_TEXT)
+    chat_id = models.BigIntegerField(verbose_name='Telegram ID', help_text=COURSE_HELP_TEXT)
     autosend = models.BooleanField(verbose_name='Авто-отправка', default=False)
 
     date_started = models.DateTimeField(verbose_name='Дата начала курса', null=True, blank=True)
