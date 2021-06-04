@@ -54,7 +54,6 @@ async def send_photo(lesson, user_id, kb, text):
 async def get_lesson_text(studentlesson, session, *args, **kwargs):
     lesson_url = await repo.LessonUrlRepository.get_or_create(
         studentlesson.lesson.id, studentlesson.student.id, session)
-
     template = jinja_env.get_template('lesson_info.html')
     text = template.render(lesson=studentlesson.lesson, hash=lesson_url.hash, **kwargs)
 
@@ -76,7 +75,7 @@ async def send_next_lesson(studentlesson, user_id, session):
             callback_data=short_data.new(property='watched', value=new_studentlesson.id)
         )])
 
-    text = await get_lesson_text(new_studentlesson, session)
+    text = await get_lesson_text(new_studentlesson, session, display_hw=False, display_link=True)
 
     if studentlesson.lesson.image:
         file_id = await send_photo(studentlesson.lesson, user_id, kb, text)
