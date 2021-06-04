@@ -1,37 +1,11 @@
 from aiogram import types
-from aiogram.types import InlineKeyboardButton
 
 from bot import repository as repo
 from bot.decorators import create_session
-from bot.helpers import make_kb
 from bot.misc import bot, dp
 from bot.models.db import SessionLocal
+from bot.serializers import KeyboardGenerator
 from bot.utils.callback_settings import short_data
-
-
-@dp.callback_query_handler(short_data.filter(property='back'))
-async def to_main(
-        cb: types.callback_query,
-        callback_data: dict
-):
-    """
-    Handles back button to return to main panel
-    """
-    await bot.answer_callback_query(cb.id)
-    client_id = callback_data['value']
-
-    reply_kb = await make_kb([
-        InlineKeyboardButton('Курсы', callback_data=short_data.new(property='course', value=client_id)),
-        InlineKeyboardButton('Профиль', callback_data=short_data.new(property='student', value=client_id)),
-        InlineKeyboardButton('Задания', callback_data=short_data.new(property='tasks', value=client_id)),
-    ])
-
-    await bot.edit_message_text(
-        'Выберите опцию',
-        cb.from_user.id,
-        cb.message.message_id,
-        reply_markup=reply_kb
-    )
 
 
 @dp.callback_query_handler(short_data.filter(property='to_courses'))
@@ -51,16 +25,12 @@ async def to_courses(
     client = await repo.StudentRepository.get_course_inload('id', int(client_id), session)
     free_courses = await repo.CourseRepository.get_many('is_free', True, session)
 
-    btn_list = [InlineKeyboardButton(
-        x.courses.name,
-        callback_data=short_data.new(property='get_course', value=x.courses.id)) for x in client.courses]
+    course_btns = [(studentcourse.courses.name, ('get_course', studentcourse.courses.id))
+                   for studentcourse in client.courses]
+    course_btns += [(course.name, ('get_course', course.id)) for course in free_courses]
 
-    btn_list += [InlineKeyboardButton(
-        x.name,
-        callback_data=short_data.new(property='get_course', value=x.id)) for x in free_courses]
-    kb = await make_kb(btn_list)
-
-    kb.add(InlineKeyboardButton('Назад', callback_data=short_data.new(property='back', value=client.id)))
+    kb = KeyboardGenerator(course_btns)
+    kb.add(('Назад', ('back', client.id)))
 
     msg = 'Ваши курсы' if client.courses else 'Вы не записаны ни на один курс'
     await bot.edit_message_text(

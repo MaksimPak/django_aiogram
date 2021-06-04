@@ -4,14 +4,13 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.types import InlineKeyboardButton
 
 from bot import repository as repo
 from bot.decorators import create_session
-from bot.helpers import make_kb
 from bot.misc import dp, bot
 from bot.models.dashboard import StudentTable, CategoryType
 from bot.models.db import SessionLocal
+from bot.serializers import KeyboardGenerator
 from bot.utils.callback_settings import short_data
 
 
@@ -50,15 +49,13 @@ async def profile_kb(
     Renders Student information in message and adds keyboard for edit
     """
     client = await repo.StudentRepository.get('tg_id', int(client_tg), session)
-
-    kb = await make_kb([InlineKeyboardButton(title, callback_data=short_data.new(property=key, value=client.id))
-                        for title, key, _ in PROFILE_FIELDS], row_width=2)
+    data = [(title, (key, client.id)) for title, key, _ in PROFILE_FIELDS]
+    kb = KeyboardGenerator(data, row_width=2).keyboard
     message = ''
     for title, key, renderer in PROFILE_FIELDS:
         message += '✅' if getattr(client, key) else '✍️'
         message += ' ' + title + ':' + ' ' + await renderer(client, key) + '\n'
 
-    kb.add(InlineKeyboardButton('Назад', callback_data=short_data.new(property='back', value=client.id)))
     return message, kb
 
 
@@ -195,9 +192,9 @@ async def change_lang(
         data['client_id'] = client_id
         data['message_id'] = cb.message.message_id
 
-    kb = await make_kb([InlineKeyboardButton(name.capitalize(), callback_data=short_data.new(property='lang',
-                                                                                             value=member.value))
-                        for name, member in StudentTable.LanguageType.__members__.items()])
+    data = [(name.capitalize(), ('lang', member.value))
+            for name, member in StudentTable.LanguageType.__members__.items()]
+    kb = KeyboardGenerator(data).keyboard
     await bot.edit_message_text(
         'Выберите язык',
         cb.from_user.id,
@@ -305,10 +302,8 @@ async def change_field(
     async with state.proxy() as data:
         data['client_id'] = client_id
         data['message_id'] = cb.message.message_id
-
-    kb = await make_kb([InlineKeyboardButton(name.capitalize(), callback_data=short_data.new(
-        property='field', value=member.value))
-                        for name, member in CategoryType.__members__.items()])
+    data = [(name.capitalize(), ('field', member.value)) for name, member in CategoryType.__members__.items()]
+    kb = KeyboardGenerator(data).keyboard
 
     await bot.edit_message_text(
         'Выберите направление',

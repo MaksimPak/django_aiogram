@@ -1,19 +1,18 @@
 import datetime
-from typing import Union
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.types import InlineKeyboardButton, ContentType
+from aiogram.types import ContentType
 
 from bot import config
 from bot import repository as repo
 from bot.decorators import create_session
-from bot.helpers import make_kb
 from bot.misc import dp, bot
 from bot.misc import jinja_env
 from bot.models.db import SessionLocal
+from bot.serializers import KeyboardGenerator
 from bot.utils.callback_settings import short_data, two_valued_data, three_valued_data
 
 
@@ -68,12 +67,7 @@ async def send_next_lesson(studentlesson, user_id, session):
 
     new_studentlesson = await repo.StudentLessonRepository.get_or_create(
         next_lesson.id, int(studentlesson.student.id), session)
-
-    kb = await make_kb([
-        InlineKeyboardButton(
-            'Отметить как просмотренное',
-            callback_data=short_data.new(property='watched', value=new_studentlesson.id)
-        )])
+    kb = KeyboardGenerator(('Отметить как просмотренное', ('watched', new_studentlesson.id))).keyboard
 
     text = await get_lesson_text(new_studentlesson, session, display_hw=False, display_link=True)
 
@@ -103,20 +97,15 @@ async def my_courses(
     client = await repo.StudentRepository.get_course_inload('tg_id', int(message.from_user.id), session)
     free_courses = await repo.CourseRepository.get_many('is_free', True, session)
 
-    btn_list = [InlineKeyboardButton(
-        x.courses.name,
-        callback_data=short_data.new(property='get_course', value=x.courses.id)) for x in client.courses]
+    course_btns = [(studentcourse.courses.name, ('get_course', studentcourse.courses.id))
+                   for studentcourse in client.courses]
+    course_btns += [(course.name, ('get_course', course.id)) for course in free_courses]
 
-    btn_list += [InlineKeyboardButton(
-        x.name,
-        callback_data=short_data.new(property='get_course', value=x.id)) for x in free_courses]
+    kb = KeyboardGenerator(course_btns)
 
-    kb = await make_kb(btn_list)
-    kb.add(InlineKeyboardButton('Назад', callback_data=short_data.new(property='back', value=client.id)))
+    msg = 'Ваши курсы' if course_btns else 'Вы не записаны ни на один курс'
 
-    msg = 'Ваши курсы' if btn_list else 'Вы не записаны ни на один курс'
-
-    await message.reply(msg, reply_markup=kb)
+    await message.reply(msg, reply_markup=kb.keyboard)
 
 
 @dp.callback_query_handler(short_data.filter(property='get_course'))
@@ -142,18 +131,15 @@ async def course_lessons(
 
     if course.is_free:
         lessons = course.lessons
-
-    kb = await make_kb([
-        InlineKeyboardButton(x.title, callback_data=short_data.new(property='lesson', value=x.id)) for x in lessons])
-
-    kb.add(InlineKeyboardButton('Назад', callback_data=short_data.new(property='to_courses', value=client.id)))
+    lessons_data = [(lesson.title, ('lesson', lesson.id)) for lesson in lessons]
+    markup = KeyboardGenerator(lessons_data).add(('Назад', ('to_courses', client.id))).keyboard
 
     msg = 'Уроки курса' if lessons else 'У курса нет уроков'
     await bot.edit_message_text(
         msg,
         cb.from_user.id,
         cb.message.message_id,
-        reply_markup=kb
+        reply_markup=markup
     )
 
 
@@ -178,11 +164,7 @@ async def get_lesson(
     student_lesson = await repo.StudentLessonRepository.get_or_create(lesson.id, client.id, session)
 
     if not lesson.course.is_finished:
-        kb = await make_kb([
-            InlineKeyboardButton(
-                'Отметить как просмотренное',
-                callback_data=short_data.new(property='watched', value=student_lesson.id)
-            )])
+        kb = KeyboardGenerator().add(('Отметить как просмотренное', ('watched', student_lesson.id))).keyboard
 
     text = await get_lesson_text(student_lesson, session, display_hw=False, display_link=True)
     await bot.delete_message(cb.from_user.id, cb.message.message_id)
@@ -230,12 +212,7 @@ async def check_homework(
     if record.lesson.has_homework:
         await bot.answer_callback_query(cb.id)
         text = await get_lesson_text(record, session, display_hw=True, display_link=False)
-
-        kb = await make_kb([InlineKeyboardButton('Сдать дз', callback_data=two_valued_data.new(
-            property='submit',
-            first_value=record.lesson.course.chat_id,
-            second_value=record.id
-        ))])
+        kb = KeyboardGenerator(('Сдать дз', ('submit', record.lesson.course.chat_id, record.id))).keyboard
 
         if cb.message.photo:
             await bot.edit_message_caption(

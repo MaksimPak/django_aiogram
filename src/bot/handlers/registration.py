@@ -4,14 +4,13 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import CommandStart, Text, ChatTypeFilter
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.types import InlineKeyboardButton
 
 from bot import repository as repo
 from bot.decorators import create_session
-from bot.helpers import make_kb, main_kb
 from bot.misc import dp, bot
 from bot.models.dashboard import StudentTable, CategoryType
 from bot.models.db import SessionLocal
+from bot.serializers import KeyboardGenerator
 from bot.utils.callback_settings import short_data, simple_data
 
 
@@ -76,12 +75,10 @@ async def start_reg(
     """
     student = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
     if not student:
-        kb = await make_kb([InlineKeyboardButton('Через бот', callback_data=simple_data.new(value='tg_reg')),
-                            InlineKeyboardButton('Через инвайт', callback_data=simple_data.new(value='invite_reg'))])
-
+        kb = KeyboardGenerator([('Через бот', ('tg_reg',)), ('Через инвайт', ('invite_reg',))]).keyboard
         await bot.send_message(message.from_user.id, 'Выберите способ регистрации', reply_markup=kb)
     else:
-        kb = await main_kb()
+        kb = await KeyboardGenerator.main_kb()
         await bot.send_message(message.from_user.id, 'Выбери опцию',
                                reply_markup=kb)
 
@@ -117,10 +114,10 @@ async def tg_reg(
         cb: types.callback_query
 ):
     await bot.answer_callback_query(cb.id)
+    data = [(name.capitalize(), ('lang', member.value))
+            for name, member in StudentTable.LanguageType.__members__.items()]
 
-    kb = await make_kb([
-        InlineKeyboardButton(name.capitalize(), callback_data=short_data.new(property='lang', value=member.value))
-        for name, member in StudentTable.LanguageType.__members__.items()])
+    kb = KeyboardGenerator(data).keyboard
 
     await bot.send_message(cb.from_user.id, 'Привет! Выбери язык', reply_markup=kb)
     await RegistrationState.lang.set()
@@ -173,10 +170,8 @@ async def set_phone(
 ):
     async with state.proxy() as data:
         data['phone'] = message.text
-
-    kb = await make_kb([
-        InlineKeyboardButton(name.capitalize(), callback_data=short_data.new(property='field', value=member.value))
-        for name, member in CategoryType.__members__.items()])
+    data = [(name.capitalize(), ('field', member.value)) for name, member in CategoryType.__members__.items()]
+    kb = KeyboardGenerator(data).keyboard
 
     await bot.send_message(message.chat.id, 'В каком направлении вы хотите учиться?', reply_markup=kb)
     await RegistrationState.selected_field.set()
@@ -208,7 +203,7 @@ async def create_record(
 
     await repo.StudentRepository.create(lead_data, session)
 
-    reply_kb = await main_kb()
+    reply_kb = await KeyboardGenerator.main_kb()
 
     await bot.send_message(cb.from_user.id, 'Вы зарегистрированы! В ближайшее время с вами свяжется наш оператор',
                            reply_markup=reply_kb)
