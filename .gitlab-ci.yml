@@ -16,6 +16,6 @@ deploy_job:
   stage: deploy
   script:
     - ssh-keyscan -H -p 22 $SERVER_IP >> ~/.ssh/known_hosts
-    - ssh "$USER"@"$SERVER_IP" "cd $DIRECTORY && source ../../venv/bin/activate && git pull && pip install -r requirements.txt && python manage.py migrate && supervisorctl restart supersonic_admin && supervisorctl restart supersonic_bot && exit"
+    - ssh "$USER"@"$SERVER_IP" "cd $DIRECTORY && bash auto_pull.sh"
   only:
     - master
