@@ -95,6 +95,10 @@ async def my_courses(
     Displays free and enrolled courses of the student
     """
     client = await repo.StudentRepository.get_course_inload('tg_id', int(message.from_user.id), session)
+    if not client:
+        await message.reply('Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться')
+        return
+
     free_courses = await repo.CourseRepository.get_many('is_free', True, session)
 
     course_btns = [(studentcourse.courses.name, ('get_course', studentcourse.courses.id))

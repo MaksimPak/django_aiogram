@@ -27,7 +27,6 @@ async def default_renderer(client, key):
 
 
 async def enum_renderer(client, key):
-
     return (await default_renderer(client, key)).name
 
 
@@ -40,16 +39,15 @@ PROFILE_FIELDS = (
 )
 
 
-@create_session
 async def profile_kb(
-        client_tg: Any,
-        session: SessionLocal
+        client: StudentTable,
 ):
     """
     Renders Student information in message and adds keyboard for edit
     """
-    client = await repo.StudentRepository.get('tg_id', int(client_tg), session)
+
     data = [(title, (key, client.id)) for title, key, _ in PROFILE_FIELDS]
+
     kb = KeyboardGenerator(data, row_width=2).keyboard
     message = ''
     for title, key, renderer in PROFILE_FIELDS:
@@ -60,13 +58,22 @@ async def profile_kb(
 
 
 @dp.message_handler(Text(equals='🧑‍🎓 Профиль'))
+@create_session
 async def my_profile(
         message: types.Message,
+        session: SessionLocal,
+        **kwargs
 ):
     """
     Starting point for profile view/edit
     """
-    info, kb = await profile_kb(message.from_user.id)
+    client = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
+
+    if not client:
+        await message.reply('Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться')
+        return
+
+    info, kb = await profile_kb(client)
 
     await message.reply(info, reply_markup=kb)
 
@@ -81,10 +88,8 @@ async def change_first_name(
     Asks student for new first_name
     """
     await bot.answer_callback_query(cb.id)
-    client_id = callback_data['value']
 
     async with state.proxy() as data:
-        data['client_id'] = client_id
         data['message_id'] = cb.message.message_id
 
     await bot.edit_message_text(
@@ -112,7 +117,7 @@ async def set_name(
     client = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
     await repo.StudentRepository.edit(client, {'first_name': message.text}, session)
 
-    info, kb = await profile_kb(message.from_user.id)
+    info, kb = await profile_kb(client)
 
     await bot.delete_message(message.from_user.id, message.message_id)
     await bot.edit_message_text(
@@ -134,10 +139,8 @@ async def change_last_name(
     Asks student for new last_name
     """
     await bot.answer_callback_query(cb.id)
-    client_id = callback_data['value']
 
     async with state.proxy() as data:
-        data['client_id'] = client_id
         data['message_id'] = cb.message.message_id
 
     await bot.edit_message_text(
@@ -161,10 +164,10 @@ async def set_last_name(
     Saves last_name into db
     """
     data = await state.get_data()
-    client = await repo.StudentRepository.get('id', int(data['client_id']), session)
+    client = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
     await repo.StudentRepository.edit(client, {'last_name': message.text}, session)
 
-    info, kb = await profile_kb(message.from_user.id)
+    info, kb = await profile_kb(client)
 
     await bot.delete_message(message.from_user.id, message.message_id)
     await bot.edit_message_text(
@@ -186,10 +189,8 @@ async def change_lang(
     Asks student for new lang
     """
     await bot.answer_callback_query(cb.id)
-    client_id = callback_data['value']
 
     async with state.proxy() as data:
-        data['client_id'] = client_id
         data['message_id'] = cb.message.message_id
 
     data = [(name.capitalize(), ('lang', member.value))
@@ -221,10 +222,17 @@ async def set_lang(
 
     data = await state.get_data()
 
-    client = await repo.StudentRepository.get('id', int(data['client_id']), session)
+    client = await repo.StudentRepository.get('tg_id', int(cb.from_user.id), session)
+
     await repo.StudentRepository.edit(client, {'language_type': lang}, session)
 
-    info, kb = await profile_kb(cb.from_user.id)
+    # Adding object back to session since it is in detached state after edit
+    # and enum type value returns VARCHAR
+    async with session:
+        session.add(client)
+        await session.refresh(client)
+
+    info, kb = await profile_kb(client)
     await bot.edit_message_text(
         info,
         cb.from_user.id,
@@ -244,10 +252,9 @@ async def change_phone(
     Asks student for new phone
     """
     await bot.answer_callback_query(cb.id)
-    client_id = callback_data['value']
 
     async with state.proxy() as data:
-        data['client_id'] = client_id
+
         data['message_id'] = cb.message.message_id
 
     await bot.edit_message_text(
@@ -272,10 +279,10 @@ async def set_phone(
     """
     data = await state.get_data()
 
-    client = await repo.StudentRepository.get('id', int(data['client_id']), session)
+    client = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
     await repo.StudentRepository.edit(client, {'phone': message.text}, session)
 
-    info, kb = await profile_kb(message.from_user.id)
+    info, kb = await profile_kb(client)
 
     await bot.delete_message(message.from_user.id, message.message_id)
     await bot.edit_message_text(
@@ -297,11 +304,10 @@ async def change_field(
     Asks student for new field
     """
     await bot.answer_callback_query(cb.id)
-    client_id = callback_data['value']
 
     async with state.proxy() as data:
-        data['client_id'] = client_id
         data['message_id'] = cb.message.message_id
+
     data = [(name.capitalize(), ('field', member.value)) for name, member in CategoryType.__members__.items()]
     kb = KeyboardGenerator(data).keyboard
 
@@ -331,10 +337,16 @@ async def set_field(
 
     data = await state.get_data()
 
-    client = await repo.StudentRepository.get('id', int(data['client_id']), session)
+    client = await repo.StudentRepository.get('tg_id', int(cb.from_user.id), session)
     await repo.StudentRepository.edit(client, {'chosen_field': field}, session)
 
-    info, kb = await profile_kb(cb.from_user.id)
+    # Adding object back to session since it is in detached state after edit
+    # and enum type value returns VARCHAR
+    async with session:
+        session.add(client)
+        await session.refresh(client)
+
+    info, kb = await profile_kb(client)
     await bot.edit_message_text(
         info,
         cb.from_user.id,
