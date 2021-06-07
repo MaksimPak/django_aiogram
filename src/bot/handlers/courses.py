@@ -53,6 +53,7 @@ async def send_photo(lesson, user_id, kb, text):
 async def get_lesson_text(studentlesson, session, *args, **kwargs):
     lesson_url = await repo.LessonUrlRepository.get_or_create(
         studentlesson.lesson.id, studentlesson.student.id, session)
+
     template = jinja_env.get_template('lesson_info.html')
     text = template.render(lesson=studentlesson.lesson, hash=lesson_url.hash, **kwargs)
 

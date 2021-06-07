@@ -37,5 +37,5 @@ async def to_courses(
         msg,
         cb.from_user.id,
         cb.message.message_id,
-        reply_markup=kb
+        reply_markup=kb.keyboard
     )

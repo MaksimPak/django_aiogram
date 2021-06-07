@@ -170,8 +170,11 @@ class StudentLessonRepository(BaseRepository):
             lesson_id, student_id, session)
 
         if not studentlesson:
-            studentlesson = await StudentLessonRepository.create(
+            await StudentLessonRepository.create(
                 {'student_id': student_id, 'lesson_id': lesson_id, 'date_sent': datetime.datetime.now()}, session)
+
+            studentlesson = await StudentLessonRepository.get_one(
+                lesson_id, student_id, session)
 
         return studentlesson
 
