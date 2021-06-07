@@ -1,17 +1,49 @@
 {% extends 'dashboard/base.html' %}
 {% load bootstrap4 %}
 
+{% block extra_links %}
+<style>
+    body {
+    background-color: #FAEAE8;
+    }
+</style>
+{% endblock %}
 
 {% block title %} Зарегистрироваться {% endblock %}
 {% block content %}
-<div class="container">
-    <h1>Регистрация</h1>
-<form action="" method="post" class="form">
+
+<div class="container my-2">
+    <div class="card mx-auto" style="width: 18rem;">
+      <img src="/static/general.jpg" class="card-img-top" alt="...">
+    </div>
+    <div class="card mt-2">
+      <div class="card-header">
+          <h5>Регистрация</h5>
+      </div>
+      <div class="card-body">
+        <h5 class="card-title">Первый урок бесплатный!</h5>
+        <p class="card-text">* Required</p>
+      </div>
+    </div>
+
+
+    <form action="" method="post" class="form">
     {% csrf_token %}
-    {% bootstrap_form form %}
-    {% buttons %}
-        <button type="submit" class="btn btn-primary mt-3"> Зарегистрироваться </button>
-    {% endbuttons %}
-</form>
+
+    {% for input in form %}
+    <div class="card my-4">
+        <div class="card-body">
+            {% bootstrap_field input %}
+        </div>
+    </div>
+    {% endfor %}
+       {% buttons %}
+            <button type="submit" class="btn btn-primary mt-3"> Зарегистрироваться </button>
+        {% endbuttons %}
+    </form>
+    <div>
+        This content is neither created nor endorsed by Google. Report Abuse - Terms of Service - Privacy Policy
+    </div>
 </div>
+
 {% endblock %}
