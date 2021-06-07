@@ -6,7 +6,7 @@ from dashboard import models
 class LeadForm(forms.ModelForm):
     class Meta:
         model = models.Lead
-        fields = ['first_name', 'last_name', 'language_type', 'phone', 'chosen_field']
+        fields = ['first_name', 'last_name', 'language_type', 'phone', 'city', 'chosen_field']
 
 
 class StudentAdmin(forms.ModelForm):
