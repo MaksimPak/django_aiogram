@@ -18,7 +18,7 @@ class RegistrationState(StatesGroup):
     invite_link = State()
     lang = State()
     first_name = State()
-    last_name = State()
+    city = State()
     phone = State()
     selected_field = State()
 
@@ -57,7 +57,8 @@ async def register_deep_link(
 
     if student and not student.tg_id:
         await repo.StudentRepository.edit(student, {'tg_id': message.from_user.id}, session)
-        await message.reply('Вы были успешно зарегистрированы', reply_markup=kb)
+        await message.reply(f'Спасибо {message.from_user.first_name}, вы были успешно зарегистрированы в боте',
+                            reply_markup=kb)
     elif not student:
         await message.reply('Неверный инвайт код')
     elif student and student.tg_id:
@@ -104,7 +105,7 @@ async def check_invite_code(
     student = await repo.StudentRepository.get('unique_code', message.text, session)
     if student:
         await repo.StudentRepository.edit(student, {'tg_id': message.from_user.id}, session)
-        await message.reply('Вы были успешно зарегистрированы')
+        await message.reply(f'Спасибо {message.from_user.first_name}, вы были успешно зарегистрированы в боте')
         await state.finish()
     else:
         await message.reply('Неверный инвайт код')
@@ -148,19 +149,19 @@ async def set_first_name(
     async with state.proxy() as data:
         data['first_name'] = message.text
 
-    await message.reply(f'Хорошо, {message.text}. Теперь укажи фамилию')
-    await RegistrationState.last_name.set()
+    await message.reply('Отлично, теперь напиши из какого ты города')
+    await RegistrationState.city.set()
 
 
-@dp.message_handler(state=RegistrationState.last_name)
-async def set_last_name(
+@dp.message_handler(state=RegistrationState.city)
+async def set_first_name(
         message: types.Message,
         state: FSMContext
 ):
     async with state.proxy() as data:
-        data['last_name'] = message.text
+        data['city'] = message.text
 
-    await message.reply('Отлично, теперь пожалуйста отправь свой номер')
+    await message.reply('Хорошо, теперь пожалуйста отправь свой номер')
     await RegistrationState.phone.set()
 
 
@@ -193,7 +194,7 @@ async def create_record(
     data = await state.get_data()
     lead_data = {
         'first_name': data['first_name'],
-        'last_name': data['last_name'],
+        'city': data['city'],
         'tg_id': cb.from_user.id,
         'language_type': data['lang'],
         'phone': data['phone'],

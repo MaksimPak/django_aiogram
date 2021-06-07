@@ -1,5 +1,3 @@
-from typing import Any
-
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
@@ -19,15 +17,16 @@ class ProfileChange(StatesGroup):
     last_name = State()
     lang = State()
     phone = State()
+    city = State()
     field = State()
 
 
 async def default_renderer(client, key):
-    return getattr(client, key)
+    return str(getattr(client, key)) if getattr(client, key) else ''
 
 
 async def enum_renderer(client, key):
-    return (await default_renderer(client, key)).name
+    return getattr(client, key).name
 
 
 PROFILE_FIELDS = (
@@ -35,6 +34,7 @@ PROFILE_FIELDS = (
     ('Фамилия', 'last_name', default_renderer),
     ('Язык', 'language_type', enum_renderer),
     ('Телефон', 'phone', default_renderer),
+    ('Город', 'city', default_renderer),
     ('Отрасль', 'chosen_field', enum_renderer)
 )
 
@@ -82,7 +82,6 @@ async def my_profile(
 async def change_first_name(
         cb: types.callback_query,
         state: FSMContext,
-        callback_data: dict
 ):
     """
     Asks student for new first_name
@@ -132,8 +131,7 @@ async def set_name(
 @dp.callback_query_handler(short_data.filter(property='last_name'))
 async def change_last_name(
         cb: types.callback_query,
-        state: FSMContext,
-        callback_data: dict
+        state: FSMContext
 ):
     """
     Asks student for new last_name
@@ -182,8 +180,7 @@ async def set_last_name(
 @dp.callback_query_handler(short_data.filter(property='language_type'))
 async def change_lang(
         cb: types.callback_query,
-        state: FSMContext,
-        callback_data: dict
+        state: FSMContext
 ):
     """
     Asks student for new lang
@@ -245,8 +242,7 @@ async def set_lang(
 @dp.callback_query_handler(short_data.filter(property='phone'))
 async def change_phone(
         cb: types.callback_query,
-        state: FSMContext,
-        callback_data: dict
+        state: FSMContext
 ):
     """
     Asks student for new phone
@@ -294,11 +290,60 @@ async def set_phone(
     await state.finish()
 
 
+@dp.callback_query_handler(short_data.filter(property='city'))
+async def change_city(
+        cb: types.callback_query,
+        state: FSMContext
+):
+    """
+    Asks student for new first_name
+    """
+    await bot.answer_callback_query(cb.id)
+
+    async with state.proxy() as data:
+        data['message_id'] = cb.message.message_id
+
+    await bot.edit_message_text(
+        'Укажите новый город',
+        cb.from_user.id,
+        cb.message.message_id,
+        reply_markup=None
+    )
+    await ProfileChange.city.set()
+
+
+@dp.message_handler(state=ProfileChange.city)
+@create_session
+async def set_city(
+        message: types.Message,
+        state: FSMContext,
+        session: SessionLocal,
+        **kwargs
+):
+    """
+    Saves phone into db
+    """
+    data = await state.get_data()
+
+    client = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
+    await repo.StudentRepository.edit(client, {'city': message.text}, session)
+
+    info, kb = await profile_kb(client)
+
+    await bot.delete_message(message.from_user.id, message.message_id)
+    await bot.edit_message_text(
+        info,
+        message.from_user.id,
+        data['message_id'],
+        reply_markup=kb
+    )
+    await state.finish()
+
+
 @dp.callback_query_handler(short_data.filter(property='chosen_field'))
 async def change_field(
         cb: types.callback_query,
-        state: FSMContext,
-        callback_data: dict
+        state: FSMContext
 ):
     """
     Asks student for new field

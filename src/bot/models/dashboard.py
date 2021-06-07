@@ -28,7 +28,8 @@ class StudentTable(Base):
 
     id = Column(Integer, primary_key=True)
     first_name = Column(String(50))
-    last_name = Column(String(50))
+    last_name = Column(String(50), nullable=True)
+    city = Column(String(50))
     tg_id = Column(Integer, nullable=True, unique=True)
     language_type = Column(Enum(LanguageType, values_callable=lambda x: [e.value for e in x]), default=LanguageType.russian.value)
     phone = Column(String(20), unique=True)
@@ -43,6 +44,10 @@ class StudentTable(Base):
 
     courses = relationship('StudentCourse', back_populates='students')
     lessons = relationship('StudentLesson', back_populates='student')
+
+    @property
+    def name(self):
+        return f'{self.first_name} {self.last_name}' if self.last_name else self.first_name
 
 
 class CourseTable(Base):

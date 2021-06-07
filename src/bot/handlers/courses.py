@@ -402,7 +402,7 @@ async def forward_student_feedback(
 
     await bot.send_message(
         config.CHAT_ID,
-        f'Вам пришло сообщение от: {student.first_name} {student.last_name}'
+        f'Вам пришло сообщение от: {student.name}'
     )
     await bot.forward_message(
         config.CHAT_ID,

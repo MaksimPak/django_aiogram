@@ -46,7 +46,8 @@ class Student(models.Model):
         web = '3', 'Web'
 
     first_name = models.CharField(max_length=50, verbose_name='Имя')
-    last_name = models.CharField(max_length=50, verbose_name='Фамилия')
+    last_name = models.CharField(max_length=50, verbose_name='Фамилия', null=True, blank=True)
+    city = models.CharField(max_length=50, verbose_name='Город проживания')
     tg_id = models.BigIntegerField(verbose_name='Telegram ID', blank=True, null=True, unique=True)
     language_type = models.CharField(max_length=20, verbose_name='Язык ученика', choices=LanguageType.choices, default=LanguageType.ru)
     phone = models.CharField(max_length=20, verbose_name='Контактный телефон', unique=True)
