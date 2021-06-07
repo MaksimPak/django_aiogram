@@ -23,7 +23,7 @@ from dashboard import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('dashboard/', include('dashboard.urls')),
-    path('start/', views.signup, name='signup'),
+    path('start/', views.signup, name='web_signup'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
   + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
