@@ -100,11 +100,8 @@ async def my_courses(
         await message.reply('Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться')
         return
 
-    free_courses = await repo.CourseRepository.get_many('is_free', True, session)
-
     course_btns = [(studentcourse.courses.name, ('get_course', studentcourse.courses.id))
                    for studentcourse in client.courses]
-    course_btns += [(course.name, ('get_course', course.id)) for course in free_courses]
 
     kb = KeyboardGenerator(course_btns)
 

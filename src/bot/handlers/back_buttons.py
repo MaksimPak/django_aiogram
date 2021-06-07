@@ -23,14 +23,11 @@ async def to_courses(
     client_id = callback_data['value']
 
     client = await repo.StudentRepository.get_course_inload('id', int(client_id), session)
-    free_courses = await repo.CourseRepository.get_many('is_free', True, session)
 
     course_btns = [(studentcourse.courses.name, ('get_course', studentcourse.courses.id))
                    for studentcourse in client.courses]
-    course_btns += [(course.name, ('get_course', course.id)) for course in free_courses]
 
     kb = KeyboardGenerator(course_btns)
-    kb.add(('Назад', ('back', client.id)))
 
     msg = 'Ваши курсы' if client.courses else 'Вы не записаны ни на один курс'
     await bot.edit_message_text(

@@ -80,10 +80,11 @@ class Lead(Student):
     objects = LeadManager()
 
     @transaction.atomic
-    def make_client(self, courses):
-        self.courses.set(courses)
-        self.is_client = True
-        self.save()
+    def assign_courses(self, courses, is_client=False):
+        self.courses.add(*courses)
+        if is_client:
+            self.is_client = is_client
+            self.save()
 
     class Meta:
         proxy = True

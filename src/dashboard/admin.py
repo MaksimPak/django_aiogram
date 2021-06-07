@@ -77,7 +77,7 @@ class LeadAdmin(admin.ModelAdmin):
     list_filter = ('chosen_field', 'application_type')
     list_display_links = ('__str__',)
     readonly_fields = ('unique_code', 'checkout_date', 'invite_link', 'created_at',)
-    actions = ('send_message', 'send_checkout', 'assign_to_course')
+    actions = ('send_message', 'send_checkout', 'assign_courses', 'assign_free_courses')
     search_fields = ('id', 'first_name', 'last_name')
     ordering = ('id',)
     date_hierarchy = 'created_at'
@@ -114,17 +114,29 @@ class LeadAdmin(admin.ModelAdmin):
             resp['ok'] and models.Student.objects.filter(pk=lead.id).update(checkout_date=datetime.datetime.now())
         return HttpResponseRedirect(request.get_full_path())
 
-    @admin.display(description='Приписать к курсу')
-    def assign_to_course(self, request, leads):
+    @admin.display(description='Назначить курсы')
+    def assign_courses(self, request, leads):
         if 'assign' in request.POST:
             courses = Course.objects.filter(pk__in=request.POST.getlist('course'))
             for lead in leads:
-                lead.make_client(courses)
+                lead.assign_courses(courses, True)
             return HttpResponseRedirect(request.get_full_path())
 
         courses = Course.objects.filter(is_free=False)
-        return render(request, 'dashboard/assign_to_course.html',
-                      context={'entities': leads, 'courses': courses})
+        return render(request, 'dashboard/assign_courses.html',
+                      context={'entities': leads, 'courses': courses, 'action': 'assign_courses'})
+
+    @admin.display(description='Добавить бесплатных курсов')
+    def assign_free_courses(self, request, leads):
+        if 'assign' in request.POST:
+            courses = Course.objects.filter(pk__in=request.POST.getlist('course'))
+            for lead in leads:
+                lead.assign_courses(courses)
+            return HttpResponseRedirect(request.get_full_path())
+
+        courses = Course.objects.filter(is_free=True)
+        return render(request, 'dashboard/assign_courses.html',
+                      context={'entities': leads, 'courses': courses, 'action': 'assign_free_courses'})
 
 
 @admin.register(models.Client)

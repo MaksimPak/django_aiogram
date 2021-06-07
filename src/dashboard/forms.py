@@ -11,7 +11,7 @@ class LeadForm(forms.ModelForm):
 
 class StudentAdmin(forms.ModelForm):
     course = forms.ModelMultipleChoiceField(
-        queryset=models.Course.objects.filter(is_free=False),
+        queryset=models.Course.objects.all(),
         widget=forms.SelectMultiple,
         required=False
     )
