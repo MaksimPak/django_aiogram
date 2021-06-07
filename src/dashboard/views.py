@@ -61,7 +61,11 @@ def message_to_students(request):
     """
     Handles message sending to students from Course in Admin panel
     """
-    students = Student.objects.filter(pk__in=getattr(request, request.method).getlist('_selected_action'))
+    students = Student.objects.all()
+    selected = getattr(request, request.method).getlist('_selected_action')
+    if selected:
+        students = Student.objects.filter(pk__in=selected)
+
     course_id = getattr(request, request.method).get('course_id')
     lesson_id = getattr(request, request.method).get('lesson_id')
     if 'send' in request.POST:

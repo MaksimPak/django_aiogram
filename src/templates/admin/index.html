@@ -1,8 +1,19 @@
 {% extends "admin/index.html" %}
 {% load i18n static %}
 
+
 {% block sidebar %}
 <div id="content-related">
+
+    <div class="module" >
+        <h2>Панелька</h2>
+    <ul class="actionlist">
+        <li class="message">
+            <a href="{% url 'dashboard:send_message' %}">Client/Lead broadcast</a>
+        </li>
+    </ul>
+    </div>
+
     <div class="module" id="recent-actions-module">
         <h2>{% trans 'Recent actions' %}</h2>
         <h3>{% trans 'All users' %}</h3>
