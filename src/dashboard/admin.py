@@ -139,6 +139,7 @@ class ClientAdmin(admin.ModelAdmin):
     ordering = ('id',)
     date_hierarchy = 'created_at'
     form = StudentAdmin
+    change_form_template = 'admin/dashboard/student/change_form.html'
 
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, clients):
