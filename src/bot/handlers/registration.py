@@ -53,14 +53,15 @@ async def register_deep_link(
     Saves user tg_id into db if start was passed w/ deep link
     """
     student = await repo.StudentRepository.get('unique_code', message.get_args(), session)
+    kb = await KeyboardGenerator.main_kb()
 
     if student and not student.tg_id:
         await repo.StudentRepository.edit(student, {'tg_id': message.from_user.id}, session)
-        await message.reply('Вы были успешно зарегистрированы')
+        await message.reply('Вы были успешно зарегистрированы', reply_markup=kb)
     elif not student:
         await message.reply('Неверный инвайт код')
     elif student and student.tg_id:
-        await message.reply('Вы уже зарегистрированы. Отправьте /start чтобы начать взаимодействие')
+        await message.reply('Вы уже зарегистрированы. Выберите опцию', reply_markup=kb)
 
 
 @dp.message_handler(CommandStart(), ChatTypeFilter(types.ChatType.PRIVATE))
@@ -208,6 +209,3 @@ async def create_record(
     await bot.send_message(cb.from_user.id, 'Вы зарегистрированы! В ближайшее время с вами свяжется наш оператор',
                            reply_markup=reply_kb)
     await state.finish()
-
-
-
