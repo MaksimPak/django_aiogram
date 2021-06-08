@@ -8,8 +8,6 @@ services:
       POSTGRES_DB: parcel
       POSTGRES_USER: parcel
       POSTGRES_PASSWORD: parcel
-    volumes:
-      - ./src:/parcel
     ports:
       - 15432:5432
   redis:
