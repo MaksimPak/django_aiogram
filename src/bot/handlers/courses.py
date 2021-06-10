@@ -5,6 +5,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import ContentType
+from aiogram.utils.exceptions import ChatNotFound
 
 from bot import config
 from bot import repository as repo
@@ -282,15 +283,28 @@ async def forward_homework(
 
     await repo.StudentLessonRepository.edit(record, {'homework_sent': datetime.datetime.now()}, session)
     template = jinja_env.get_template('new_homework.html')
-    await bot.send_message(
-        data['course_tg'],
-        template.render(student=record.student, hashtag=data['hashtag'], lesson=record.lesson)
-    )
-    await bot.forward_message(
-        data['course_tg'],
-        message.chat.id,
-        message.message_id
-    )
+
+    try:
+        await bot.send_message(
+            data['course_tg'],
+            template.render(student=record.student, hashtag=data['hashtag'], lesson=record.lesson)
+        )
+        await bot.forward_message(
+            data['course_tg'],
+            message.chat.id,
+            message.message_id
+        )
+    except ChatNotFound:
+        error = f'Неверный Chat id у курса {record.lesson.course.name}. Пожалуйста исправьте'
+        await bot.send_message(
+            config.CHAT_ID,
+            template.render(student=record.student, hashtag=data['hashtag'], lesson=record.lesson, error=error)
+        )
+        await bot.forward_message(
+            config.CHAT_ID,
+            message.chat.id,
+            message.message_id
+        )
 
     await message.reply('Спасибо')
 
@@ -342,19 +356,33 @@ async def forward_course_feedback(
     data = await state.get_data()
     course = await repo.CourseRepository.get('id', data['course_id'], session)
     student = await repo.StudentRepository.get('id', data['student_id'], session)
+
     lesson = await repo.LessonRepository.get('id', data['lesson_id'], session)
 
     template = jinja_env.get_template('feedback.html')
 
-    await bot.send_message(
-        course.chat_id,
-        template.render(student=student, course=course, lesson=lesson)
-    )
-    await bot.forward_message(
-        course.chat_id,
-        message.chat.id,
-        message.message_id
-    )
+    try:
+        await bot.send_message(
+            course.chat_id,
+            template.render(student=student, course=course, lesson=lesson)
+        )
+        await bot.forward_message(
+            course.chat_id,
+            message.chat.id,
+            message.message_id
+        )
+    except ChatNotFound:
+        error = f'Неверный Chat id у курса {course.name}. Пожалуйста исправьте'
+
+        await bot.send_message(
+            config.CHAT_ID,
+            template.render(student=student, course=course, lesson=lesson, error=error)
+        )
+        await bot.forward_message(
+            config.CHAT_ID,
+            message.chat.id,
+            message.message_id
+        )
 
     await message.reply('Отправлено')
     await state.finish()

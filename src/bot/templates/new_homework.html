@@ -4,3 +4,7 @@ Course hashtag: {{ hashtag }}
 Lesson title: {{ lesson.title }}
 
 Вам пришла домашняя работа от {{ student.first_name }} {{ student.last_name }}
+
+{% if error %}
+<strong>{{ error }}</strong>
+{% endif %}

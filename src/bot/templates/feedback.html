@@ -3,3 +3,7 @@
 {% if lesson is not none %} Lesson title: {{ lesson.title }} {% endif %}
 
 Фидбек от {{ student.first_name }} {{ student.last_name }}
+
+{% if error %}
+<strong> {{ error }} </strong>
+{% endif %}
