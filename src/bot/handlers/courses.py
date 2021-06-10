@@ -317,9 +317,9 @@ async def get_course_feedback(
     await bot.answer_callback_query(cb.id)
 
     async with state.proxy() as data:
-        data['course_id'] = course_id
-        data['student_id'] = student_id
-        data['lesson_id'] = lesson_id
+        data['course_id'] = int(course_id) if course_id != 'None' else None
+        data['student_id'] = int(student_id) if student_id != 'None' else None
+        data['lesson_id'] = int(lesson_id) if lesson_id != 'None' else None
 
     await bot.send_message(
         cb.from_user.id,
@@ -340,9 +340,9 @@ async def forward_course_feedback(
     Processes feedback from student and forwards it to course chat id
     """
     data = await state.get_data()
-    course = await repo.CourseRepository.get('id', int(data['course_id']), session)
-    student = await repo.StudentRepository.get('id', int(data['student_id']), session)
-    lesson = await repo.LessonRepository.get('id', int(data['lesson_id']), session)
+    course = await repo.CourseRepository.get('id', data['course_id'], session)
+    student = await repo.StudentRepository.get('id', data['student_id'], session)
+    lesson = await repo.LessonRepository.get('id', data['lesson_id'], session)
 
     template = jinja_env.get_template('feedback.html')
 
