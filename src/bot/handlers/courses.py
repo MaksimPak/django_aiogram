@@ -356,30 +356,30 @@ async def forward_course_feedback(
     data = await state.get_data()
     course = await repo.CourseRepository.get('id', data['course_id'], session)
     student = await repo.StudentRepository.get('id', data['student_id'], session)
-
     lesson = await repo.LessonRepository.get('id', data['lesson_id'], session)
+
+    chat_id = course.chat_id if course else config.CHAT_ID
 
     template = jinja_env.get_template('feedback.html')
 
     try:
         await bot.send_message(
-            course.chat_id,
+            chat_id,
             template.render(student=student, course=course, lesson=lesson)
         )
         await bot.forward_message(
-            course.chat_id,
+            chat_id,
             message.chat.id,
             message.message_id
         )
     except ChatNotFound:
-        error = f'Неверный Chat id у курса {course.name}. Пожалуйста исправьте'
-
+        error = f'Неверный Chat id у курса {course.name}. Пожалуйста исправьте' if course else None
         await bot.send_message(
-            config.CHAT_ID,
+            chat_id,
             template.render(student=student, course=course, lesson=lesson, error=error)
         )
         await bot.forward_message(
-            config.CHAT_ID,
+            chat_id,
             message.chat.id,
             message.message_id
         )
