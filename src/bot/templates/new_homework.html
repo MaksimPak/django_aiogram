@@ -3,8 +3,11 @@ Course hashtag: {{ hashtag }}
 {% endif %}
 Lesson title: {{ lesson.title }}
 
-Вам пришла домашняя работа от {{ student.first_name }} {{ student.last_name }}
-
+{% if student.is_client %}
+Вам пришла домашняя работа от <a href="{{config.DOMAIN}}/admin/dashboard/client/{{ student.id }}/change/">{{ student.first_name }} {{ student.last_name }}</a>
+{% else %}
+Вам пришла домашняя работа от <a href="{{config.DOMAIN}}/admin/dashboard/lead/{{ student.id }}/change/">{{ student.first_name }} {{ student.last_name }}</a>
+{% endif %}
 {% if error %}
 <strong>{{ error }}</strong>
 {% endif %}
