@@ -376,7 +376,8 @@ async def forward_course_feedback(
         error = f'Неверный Chat id у курса {course.name}. Пожалуйста исправьте' if course else None
         await bot.send_message(
             chat_id,
-            template.render(student=student, course=course, lesson=lesson, error=error)
+            template.render(student=student, course=course, lesson=lesson, error=error),
+            parse_mode='html'
         )
         await bot.forward_message(
             chat_id,
@@ -424,10 +425,12 @@ async def forward_student_feedback(
     """
     data = await state.get_data()
     student = await repo.StudentRepository.get('id', int(data['student_id']), session)
+    template = jinja_env.get_template('feedback.html')
 
     await bot.send_message(
         config.CHAT_ID,
-        f'Вам пришло сообщение от: {student.name}'
+        template.render(student=student, course=None, lesson=None),
+        parse_mode='html'
     )
     await bot.forward_message(
         config.CHAT_ID,
