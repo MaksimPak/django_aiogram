@@ -287,7 +287,8 @@ async def forward_homework(
     try:
         await bot.send_message(
             data['course_tg'],
-            template.render(student=record.student, hashtag=data['hashtag'], lesson=record.lesson)
+            template.render(student=record.student, hashtag=data['hashtag'], lesson=record.lesson),
+            parse_mode='html'
         )
         await bot.forward_message(
             data['course_tg'],
@@ -298,7 +299,8 @@ async def forward_homework(
         error = f'Неверный Chat id у курса {record.lesson.course.name}. Пожалуйста исправьте'
         await bot.send_message(
             config.CHAT_ID,
-            template.render(student=record.student, hashtag=data['hashtag'], lesson=record.lesson, error=error)
+            template.render(student=record.student, hashtag=data['hashtag'], lesson=record.lesson, error=error),
+            parse_mode='html'
         )
         await bot.forward_message(
             config.CHAT_ID,
