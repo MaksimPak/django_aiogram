@@ -2,7 +2,7 @@
 {% if course.hashtag is not none %} Course hashtag: {{ course.hashtag }}{% endif %}
 {% if lesson is not none %} Lesson title: {{ lesson.title }} {% endif %}
 
-Фидбек от <a href="https://megaskill.uz/admin/dashboard/client/{{ student.id }}/change/">{{ student.first_name }} {{ student.last_name }}</a>
+Фидбек от <a href="{{config.DOMAIN}}/admin/dashboard/client/{{ student.id }}/change/">{{ student.first_name }} {{ student.last_name }}</a>
 
 {% if error %}
 <strong> {{ error }} </strong>
