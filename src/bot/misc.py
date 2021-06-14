@@ -2,27 +2,37 @@ from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.redis import RedisStorage2
 from jinja2 import Environment, PackageLoader, select_autoescape
 from loguru import logger
+from bot.middlewares.i18n import I18nMiddleware
+
+from pathlib import Path
+
 import sentry_sdk
 
 
 from bot import config
 
 bot = Bot(token=config.BOT_TOKEN)
-storage = RedisStorage2(host=config.REDIS_HOST, port=config.REDIS_PORT, db=1)
-dp = Dispatcher(bot, storage=storage)
+redis = RedisStorage2(host=config.REDIS_HOST, port=config.REDIS_PORT, db=2)
+dp = Dispatcher(bot, storage=redis)
 jinja_env = Environment(
     loader=PackageLoader('bot'),
     autoescape=select_autoescape(),
 )
+app_dir: Path = Path(__file__).parent
+locales_dir = app_dir / 'locales'
+i18n = I18nMiddleware('bot', locales_dir, default='ru')
+
 jinja_env.globals['config'] = config
 
 
 def setup():
+    from bot import middlewares
     from bot.utils import executor
 
-    logger.info("Configured handlers...")
+    middlewares.setup(dp)
     executor.setup()
 
+    logger.info("Configured handlers...")
     # noinspection PyUnresolvedReferences
     import bot.handlers
 

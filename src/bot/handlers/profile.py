@@ -5,11 +5,13 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 
 from bot import repository as repo
 from bot.decorators import create_session
-from bot.misc import dp, bot
+from bot.misc import dp, bot, i18n
 from bot.models.dashboard import StudentTable, CategoryType
 from bot.models.db import SessionLocal
 from bot.serializers import KeyboardGenerator
 from bot.utils.callback_settings import short_data
+
+_ = i18n.gettext
 
 
 class ProfileChange(StatesGroup):
@@ -30,12 +32,12 @@ async def enum_renderer(client, key):
 
 
 PROFILE_FIELDS = (
-    ('Имя', 'first_name', default_renderer),
-    ('Фамилия', 'last_name', default_renderer),
-    ('Язык', 'language_type', enum_renderer),
-    ('Телефон', 'phone', default_renderer),
-    ('Город', 'city', default_renderer),
-    ('Отрасль', 'chosen_field', enum_renderer)
+    (_('Имя'), 'first_name', default_renderer),
+    (_('Фамилия'), 'last_name', default_renderer),
+    (_('Язык'), 'language_type', enum_renderer),
+    (_('Телефон'), 'phone', default_renderer),
+    (_('Город'), 'city', default_renderer),
+    (_('Отрасль'), 'chosen_field', enum_renderer)
 )
 
 
@@ -70,7 +72,7 @@ async def my_profile(
     client = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
 
     if not client:
-        await message.reply('Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться')
+        await message.reply(_('Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться'))
         return
 
     info, kb = await profile_kb(client)
@@ -92,7 +94,7 @@ async def change_first_name(
         data['message_id'] = cb.message.message_id
 
     await bot.edit_message_text(
-        'Укажите новое имя',
+        _('Укажите новое имя'),
         cb.from_user.id,
         cb.message.message_id,
         reply_markup=None
@@ -142,7 +144,7 @@ async def change_last_name(
         data['message_id'] = cb.message.message_id
 
     await bot.edit_message_text(
-        'Укажите фамилию',
+        _('Укажите фамилию'),
         cb.from_user.id,
         cb.message.message_id,
         reply_markup=None
@@ -194,7 +196,7 @@ async def change_lang(
             for name, member in StudentTable.LanguageType.__members__.items()]
     kb = KeyboardGenerator(data).keyboard
     await bot.edit_message_text(
-        'Выберите язык',
+        _('Выберите язык'),
         cb.from_user.id,
         cb.message.message_id,
         reply_markup=kb
@@ -254,7 +256,7 @@ async def change_phone(
         data['message_id'] = cb.message.message_id
 
     await bot.edit_message_text(
-        'Укажите телефон',
+        _('Укажите телефон'),
         cb.from_user.id,
         cb.message.message_id,
         reply_markup=None
@@ -304,7 +306,7 @@ async def change_city(
         data['message_id'] = cb.message.message_id
 
     await bot.edit_message_text(
-        'Укажите новый город',
+        _('Укажите новый город'),
         cb.from_user.id,
         cb.message.message_id,
         reply_markup=None
@@ -357,7 +359,7 @@ async def change_field(
     kb = KeyboardGenerator(data).keyboard
 
     await bot.edit_message_text(
-        'Выберите направление',
+        _('Выберите направление'),
         cb.from_user.id,
         cb.message.message_id,
         reply_markup=kb

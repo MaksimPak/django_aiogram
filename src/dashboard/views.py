@@ -1,7 +1,6 @@
 import datetime
 import json
 import os
-from pprint import pprint
 
 import requests
 from django.db import IntegrityError
@@ -63,6 +62,7 @@ def message_to_students(request):
     """
     students = Student.objects.all()
     selected = getattr(request, request.method).getlist('_selected_action')
+
     if selected:
         students = Student.objects.filter(pk__in=selected)
 
@@ -70,9 +70,11 @@ def message_to_students(request):
     lesson_id = getattr(request, request.method).get('lesson_id')
     if 'send' in request.POST:
         is_feedback = request.POST.get('is_feedback')
+
         if is_feedback:
             for student in students:
-                kb = {'inline_keyboard': [[{'text': 'Ответить', 'callback_data': f'data|feedback|{course_id}|{student.id}|{lesson_id}'}]]}
+                text = 'Ответить' if student.language_type == Student.LanguageType.ru else 'Javob'
+                kb = {'inline_keyboard': [[{'text': text, 'callback_data': f'data|feedback|{course_id}|{student.id}|{lesson_id}'}]]}
                 data = {
                     'chat_id': student.tg_id,
                     'parse_mode': 'html',
@@ -100,13 +102,15 @@ def send_lesson(request, course_id, lesson_id):
     lesson = Lesson.objects.get(pk=lesson_id)
     students = course.student_set.all()
 
-    kb = {'inline_keyboard': [[{'text': 'Посмотреть урок', 'callback_data': f'data|lesson|{lesson.id}'}]]}
+    kb = {'inline_keyboard': [[{'text': '', 'callback_data': f'data|lesson|{lesson.id}'}]]}
+
     url = MESSAGE_URL
     image = lesson.image.read() if lesson.image and not lesson.image_file_id else None
 
     for student in students:
         # todo studentlesson create record
-
+        kb['inline_keyboard'][0][0]['text'] = 'Посмотреть урок' if student.language_type == Student.LanguageType.ru \
+            else 'Darsni tomosha qiling'
         data = {
             'chat_id': student.tg_id,
             'parse_mode': 'html',

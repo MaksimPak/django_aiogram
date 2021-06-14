@@ -10,11 +10,13 @@ from aiogram.utils.exceptions import ChatNotFound
 from bot import config
 from bot import repository as repo
 from bot.decorators import create_session
-from bot.misc import dp, bot
+from bot.misc import dp, bot, i18n
 from bot.misc import jinja_env
 from bot.models.db import SessionLocal
 from bot.serializers import KeyboardGenerator
 from bot.utils.callback_settings import short_data, two_valued_data, three_valued_data
+
+_ = i18n.gettext
 
 
 class Homework(StatesGroup):
@@ -36,7 +38,7 @@ async def send_photo(lesson, user_id, kb, text):
 
         with open('media/' + lesson.image, 'br') as file:
             file_obj = file.read()
-            wait_message = await bot.send_message(user_id, 'Идет обработка, пожалуйста, подождите ⌛')
+            wait_message = await bot.send_message(user_id, _('Идет обработка, пожалуйста, подождите ⌛'))
 
     message = await bot.send_photo(
         user_id,
@@ -69,7 +71,7 @@ async def send_next_lesson(studentlesson, user_id, session):
 
     new_studentlesson = await repo.StudentLessonRepository.get_or_create(
         next_lesson.id, int(studentlesson.student.id), session)
-    kb = KeyboardGenerator(('Отметить как просмотренное', ('watched', new_studentlesson.id))).keyboard
+    kb = KeyboardGenerator((_('Отметить как просмотренное'), ('watched', new_studentlesson.id))).keyboard
 
     text = await get_lesson_text(new_studentlesson, session, display_hw=False, display_link=True)
 
@@ -98,7 +100,7 @@ async def my_courses(
     """
     client = await repo.StudentRepository.get_course_inload('tg_id', int(message.from_user.id), session)
     if not client:
-        await message.reply('Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться')
+        await message.reply(_('Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться'))
         return
 
     course_btns = [(studentcourse.courses.name, ('get_course', studentcourse.courses.id))
@@ -106,7 +108,7 @@ async def my_courses(
 
     kb = KeyboardGenerator(course_btns)
 
-    msg = 'Ваши курсы' if course_btns else 'Вы не записаны ни на один курс'
+    msg = _('Ваши курсы') if course_btns else _('Вы не записаны ни на один курс')
 
     await message.reply(msg, reply_markup=kb.keyboard)
 
@@ -135,9 +137,9 @@ async def course_lessons(
     if course.is_free:
         lessons = course.lessons
     lessons_data = [(lesson.title, ('lesson', lesson.id)) for lesson in lessons]
-    markup = KeyboardGenerator(lessons_data).add(('Назад', ('to_courses', client.id))).keyboard
+    markup = KeyboardGenerator(lessons_data).add((_('Назад'), ('to_courses', client.id))).keyboard
 
-    msg = 'Уроки курса' if lessons else 'У курса нет уроков'
+    msg = _('Уроки курса') if lessons else _('У курса нет уроков')
     await bot.edit_message_text(
         msg,
         cb.from_user.id,
@@ -167,7 +169,7 @@ async def get_lesson(
     student_lesson = await repo.StudentLessonRepository.get_or_create(lesson.id, client.id, session)
 
     if not lesson.course.is_finished:
-        kb = KeyboardGenerator().add(('Отметить как просмотренное', ('watched', student_lesson.id))).keyboard
+        kb = KeyboardGenerator().add((_('Отметить как просмотренное'), ('watched', student_lesson.id))).keyboard
 
     text = await get_lesson_text(student_lesson, session, display_hw=False, display_link=True)
     await bot.delete_message(cb.from_user.id, cb.message.message_id)
@@ -215,7 +217,7 @@ async def check_homework(
     if record.lesson.has_homework:
         await bot.answer_callback_query(cb.id)
         text = await get_lesson_text(record, session, display_hw=True, display_link=False)
-        kb = KeyboardGenerator(('Сдать дз', ('submit', record.lesson.course.chat_id, record.id))).keyboard
+        kb = KeyboardGenerator((_('Сдать дз'), ('submit', record.lesson.course.chat_id, record.id))).keyboard
 
         if cb.message.photo:
             await bot.edit_message_caption(
@@ -234,7 +236,7 @@ async def check_homework(
                 reply_markup=kb
             )
     else:
-        await bot.answer_callback_query(cb.id, 'Отмечено')
+        await bot.answer_callback_query(cb.id, _('Отмечено'))
 
 
 @dp.callback_query_handler(two_valued_data.filter(property='submit'))
@@ -258,7 +260,7 @@ async def request_homework(
         data['student_lesson'] = student_lesson
     await bot.send_message(
         cb.from_user.id,
-        'Отправьте вашу работу'
+        _('Отправьте вашу работу')
        )
 
     await Homework.homework_start.set()
@@ -296,7 +298,8 @@ async def forward_homework(
             message.message_id
         )
     except ChatNotFound:
-        error = f'Неверный Chat id у курса {record.lesson.course.name}. Пожалуйста исправьте'
+        error = _('Неверный Chat id у курса {course_name}. '
+                  'Пожалуйста исправьте').format(course_name=record.lesson.course.name)
         await bot.send_message(
             config.CHAT_ID,
             template.render(student=record.student, hashtag=data['hashtag'], lesson=record.lesson, error=error),
@@ -308,7 +311,7 @@ async def forward_homework(
             message.message_id
         )
 
-    await message.reply('Спасибо')
+    await message.reply(_('Спасибо'))
 
     if student_lesson.lesson.course.autosend:
         await send_next_lesson(record, message.from_user.id, session)
@@ -339,7 +342,7 @@ async def get_course_feedback(
 
     await bot.send_message(
         cb.from_user.id,
-        'Отправьте ваше сообщение'
+        _('Отправьте ваше сообщение')
        )
     await Feedback.feedback.set()
 
@@ -375,7 +378,8 @@ async def forward_course_feedback(
             message.message_id
         )
     except ChatNotFound:
-        error = f'Неверный Chat id у курса {course.name}. Пожалуйста исправьте' if course else None
+        error = _('Неверный Chat id у курса {course_name}. '
+                  'Пожалуйста исправьте').format(course_name=course.name) if course else None
         await bot.send_message(
             chat_id,
             template.render(student=student, course=course, lesson=lesson, error=error),
@@ -387,7 +391,7 @@ async def forward_course_feedback(
             message.message_id
         )
 
-    await message.reply('Отправлено')
+    await message.reply(_('Отправлено'))
     await state.finish()
 
 
@@ -409,7 +413,7 @@ async def get_student_feedback(
 
     await bot.send_message(
         cb.from_user.id,
-        'Отправьте ваше сообщение'
+        _('Отправьте ваше сообщение')
     )
     await Feedback.feedback_student.set()
 
@@ -440,6 +444,6 @@ async def forward_student_feedback(
         message.message_id
     )
 
-    await message.reply('Отправлено')
+    await message.reply(_('Отправлено'))
     await state.finish()
 
