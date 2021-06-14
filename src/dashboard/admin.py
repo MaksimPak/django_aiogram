@@ -246,6 +246,7 @@ class CourseAdmin(admin.ModelAdmin):
             for lesson in lessons:
                 lesson.id = None
                 lesson.course = course
+                lesson.date_sent = None
                 lesson.save()
 
         self.message_user(request, '{0} курс(а) были успешно дублированны'.format(courses.count()), messages.SUCCESS)
