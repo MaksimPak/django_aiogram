@@ -1,7 +1,7 @@
 import datetime
 import json
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
@@ -22,18 +22,6 @@ class StudentCourseList(admin.TabularInline):
     can_delete = False
     extra = 0
     classes = ('collapse',)
-
-    def get_parent_object_from_request(self, request):
-        """
-        Returns the parent object from the request or None.
-
-        Note that this only works for Inlines, because the `parent_model`
-        is not available in the regular admin.ModelAdmin as an attribute.
-        """
-        resolved = resolve(request.path_info)
-        if resolved.args:
-            return self.parent_model.objects.get(pk=resolved.args[0])
-        return None
 
     def has_add_permission(self, request, obj):
         return False
@@ -210,6 +198,7 @@ class CourseAdmin(admin.ModelAdmin):
     ordering = ('id',)
     date_hierarchy = 'created_at'
     change_form_template = 'admin/dashboard/course/change_form.html'
+    actions = ['duplicate']
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         extra_context = extra_context or {}
@@ -238,6 +227,28 @@ class CourseAdmin(admin.ModelAdmin):
         return super().change_view(
             request, object_id, form_url, extra_context=extra_context,
         )
+
+    @admin.display(description='Дублировать (Максимум 3)')
+    def duplicate(self, request, courses):
+        if len(courses) > 3:
+            self.message_user(request, 'Нельзя дублировать больше 3 курсов', messages.ERROR)
+            return
+
+        for course in courses:
+            lessons = list(course.lesson_set.all())
+            course.pk = None
+
+            course.is_started = False
+            course.is_finished = False
+            course.hashtag = ''
+            course.save()
+
+            for lesson in lessons:
+                lesson.id = None
+                lesson.course = course
+                lesson.save()
+
+        self.message_user(request, '{0} курс(а) были успешно дублированны'.format(courses.count()), messages.SUCCESS)
 
     class Media:
         js = (
