@@ -60,7 +60,7 @@ class LessonList(admin.StackedInline):
 
 @admin.register(models.Lead)
 class LeadAdmin(admin.ModelAdmin):
-    list_display = ('id', '__str__', 'tg_id', 'application_type', 'phone', 'language_type', 'chosen_field', 'checkout_date')
+    list_display = ('id', '__str__', 'tg_id', 'application_type', 'phone', 'language_type', 'chosen_field', 'checkout_date', 'get_courses')
     list_per_page = 20
     list_filter = ('chosen_field', 'application_type')
     list_display_links = ('__str__',)
@@ -126,6 +126,15 @@ class LeadAdmin(admin.ModelAdmin):
         courses = Course.objects.filter(is_free=True)
         return render(request, 'dashboard/assign_courses.html',
                       context={'entities': leads, 'courses': courses, 'action': 'assign_free_courses'})
+
+    @admin.display(description='Курсы')
+    def get_courses(self, lead):
+        return render_to_string(
+            'dashboard/display_courses.html',
+            {
+                'courses': lead.courses.values_list('name', flat=True)
+            }
+        )
 
 
 @admin.register(models.Client)
