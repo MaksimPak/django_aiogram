@@ -12,6 +12,7 @@ from bot import repository as repo
 from bot.decorators import create_session
 from bot.misc import dp, bot, i18n
 from bot.misc import jinja_env
+from bot.models.dashboard import StudentLesson
 from bot.models.db import SessionLocal
 from bot.serializers import KeyboardGenerator
 from bot.utils.callback_settings import short_data, two_valued_data, three_valued_data
@@ -103,8 +104,16 @@ async def my_courses(
         await message.reply(_('Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться'))
         return
 
-    course_btns = [(studentcourse.courses.name, ('get_course', studentcourse.courses.id))
-                   for studentcourse in client.courses]
+    course_btns = []
+
+    courses = client.courses
+    for studentcourse in courses:
+        watch_count = await repo.StudentLessonRepository.finished_lesson_count(
+            studentcourse.courses.id, client.id, session
+        )
+        lesson_count = len(studentcourse.courses.lessons)
+        txt = studentcourse.courses.name + ' ✅' if watch_count == lesson_count else studentcourse.courses.name
+        course_btns.append((txt, ('get_course', studentcourse.courses.id)))
 
     kb = KeyboardGenerator(course_btns)
 
