@@ -70,6 +70,13 @@ class Student(models.Model):
     def short_name(self):
         return f'{self.first_name[0]}.{self.last_name}'
 
+    @transaction.atomic
+    def assign_courses(self, courses, is_client=False):
+        self.courses.add(*courses)
+        if is_client:
+            self.is_client = is_client
+            self.save()
+
     class Meta:
         verbose_name = 'Студент'
         verbose_name_plural = 'Студенты'
@@ -79,12 +86,6 @@ class Lead(Student):
 
     objects = LeadManager()
 
-    @transaction.atomic
-    def assign_courses(self, courses, is_client=False):
-        self.courses.add(*courses)
-        if is_client:
-            self.is_client = is_client
-            self.save()
 
     class Meta:
         proxy = True
