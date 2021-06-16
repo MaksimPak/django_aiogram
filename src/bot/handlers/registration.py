@@ -7,11 +7,13 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 
 from bot import repository as repo
 from bot.decorators import create_session
-from bot.misc import dp, bot
+from bot.misc import dp, bot, i18n
 from bot.models.dashboard import StudentTable, CategoryType
 from bot.models.db import SessionLocal
 from bot.serializers import KeyboardGenerator
 from bot.utils.callback_settings import short_data, simple_data
+
+_ = i18n.gettext
 
 
 class RegistrationState(StatesGroup):
@@ -32,14 +34,14 @@ async def cancel_handler(
     """
     Allow user to cancel any action
     """
+
     current_state = await state.get_state()
     if current_state is None:
         return
-
     # Cancel state and inform user about it
     await state.finish()
     # And remove keyboard (just in case)
-    await message.reply('Cancelled.', reply_markup=types.ReplyKeyboardRemove())
+    await message.reply(_('Отменено.'), reply_markup=types.ReplyKeyboardRemove())
 
 
 @dp.message_handler(CommandStart(re.compile(r'\d+')), ChatTypeFilter(types.ChatType.PRIVATE))
@@ -57,12 +59,14 @@ async def register_deep_link(
 
     if student and not student.tg_id:
         await repo.StudentRepository.edit(student, {'tg_id': message.from_user.id}, session)
-        await message.reply(f'Спасибо {message.from_user.first_name}, вы были успешно зарегистрированы в боте',
-                            reply_markup=kb)
+        await message.reply(
+            _('Спасибо {first_name},'
+              'вы были успешно зарегистрированы в боте').format(first_name=message.from_user.first_name),
+            reply_markup=kb)
     elif not student:
-        await message.reply('Неверный инвайт код')
+        await message.reply(_('Неверный инвайт код'))
     elif student and student.tg_id:
-        await message.reply('Вы уже зарегистрированы. Выберите опцию', reply_markup=kb)
+        await message.reply(_('Вы уже зарегистрированы. Выберите опцию'), reply_markup=kb)
 
 
 @dp.message_handler(CommandStart(), ChatTypeFilter(types.ChatType.PRIVATE))
@@ -77,11 +81,11 @@ async def start_reg(
     """
     student = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
     if not student:
-        kb = KeyboardGenerator([('Через бот', ('tg_reg',)), ('Через инвайт', ('invite_reg',))]).keyboard
-        await bot.send_message(message.from_user.id, 'Выберите способ регистрации', reply_markup=kb)
+        kb = KeyboardGenerator([(_('Через бот'), ('tg_reg',)), (_('Через инвайт'), ('invite_reg',))]).keyboard
+        await bot.send_message(message.from_user.id, _('Выберите способ регистрации'), reply_markup=kb)
     else:
         kb = await KeyboardGenerator.main_kb()
-        await bot.send_message(message.from_user.id, 'Выбери опцию',
+        await bot.send_message(message.from_user.id, _('Выбери опцию'),
                                reply_markup=kb)
 
 
@@ -90,7 +94,7 @@ async def invite_reg(
         cb: types.callback_query
 ):
     await bot.answer_callback_query(cb.id)
-    await bot.send_message(cb.from_user.id, 'Введите инвайт код')
+    await bot.send_message(cb.from_user.id, _('Введите инвайт код'))
     await RegistrationState.invite_link.set()
 
 
@@ -105,10 +109,12 @@ async def check_invite_code(
     student = await repo.StudentRepository.get('unique_code', message.text, session)
     if student:
         await repo.StudentRepository.edit(student, {'tg_id': message.from_user.id}, session)
-        await message.reply(f'Спасибо {message.from_user.first_name}, вы были успешно зарегистрированы в боте')
+        await message.reply(('Спасибо {first_name},'
+                             ' вы были успешно'
+                             ' зарегистрированы в боте').format(first_name=message.from_user.first_name))
         await state.finish()
     else:
-        await message.reply('Неверный инвайт код')
+        await message.reply(_('Неверный инвайт код'))
 
 
 @dp.callback_query_handler(simple_data.filter(value='tg_reg'))
@@ -121,7 +127,7 @@ async def tg_reg(
 
     kb = KeyboardGenerator(data).keyboard
 
-    await bot.send_message(cb.from_user.id, 'Привет! Выбери язык', reply_markup=kb)
+    await bot.send_message(cb.from_user.id, _('Привет! Выбери язык'), reply_markup=kb)
     await RegistrationState.lang.set()
 
 
@@ -137,7 +143,7 @@ async def set_lang(
     async with state.proxy() as data:
         data['lang'] = lang
 
-    await bot.send_message(cb.from_user.id, 'Как тебя зовут?')
+    await bot.send_message(cb.from_user.id, _('Как тебя зовут?'))
     await RegistrationState.first_name.set()
 
 
@@ -149,7 +155,7 @@ async def set_first_name(
     async with state.proxy() as data:
         data['first_name'] = message.text
 
-    await message.reply('Отлично, теперь напиши из какого ты города')
+    await message.reply(_('Отлично, теперь напиши из какого ты города'))
     await RegistrationState.city.set()
 
 
@@ -161,7 +167,7 @@ async def set_first_name(
     async with state.proxy() as data:
         data['city'] = message.text
 
-    await message.reply('Хорошо, теперь пожалуйста отправь свой номер')
+    await message.reply(_('Хорошо, теперь пожалуйста отправь свой номер'))
     await RegistrationState.phone.set()
 
 
@@ -175,7 +181,7 @@ async def set_phone(
     data = [(name.capitalize(), ('field', member.value)) for name, member in CategoryType.__members__.items()]
     kb = KeyboardGenerator(data).keyboard
 
-    await bot.send_message(message.chat.id, 'В каком направлении вы хотите учиться?', reply_markup=kb)
+    await bot.send_message(message.chat.id, _('В каком направлении вы хотите учиться?'), reply_markup=kb)
     await RegistrationState.selected_field.set()
 
 
@@ -207,6 +213,6 @@ async def create_record(
 
     reply_kb = await KeyboardGenerator.main_kb()
 
-    await bot.send_message(cb.from_user.id, 'Вы зарегистрированы! В ближайшее время с вами свяжется наш оператор',
+    await bot.send_message(cb.from_user.id, _('Вы зарегистрированы! В ближайшее время с вами свяжется наш оператор'),
                            reply_markup=reply_kb)
     await state.finish()

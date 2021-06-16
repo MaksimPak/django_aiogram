@@ -2,10 +2,12 @@ from aiogram import types
 
 from bot import repository as repo
 from bot.decorators import create_session
-from bot.misc import bot, dp
+from bot.misc import bot, dp, i18n
 from bot.models.db import SessionLocal
 from bot.serializers import KeyboardGenerator
 from bot.utils.callback_settings import short_data
+
+_ = i18n.gettext
 
 
 @dp.callback_query_handler(short_data.filter(property='to_courses'))
@@ -29,7 +31,7 @@ async def to_courses(
 
     kb = KeyboardGenerator(course_btns)
 
-    msg = 'Ваши курсы' if client.courses else 'Вы не записаны ни на один курс'
+    msg = _('Ваши курсы') if client.courses else _('Вы не записаны ни на один курс')
     await bot.edit_message_text(
         msg,
         cb.from_user.id,

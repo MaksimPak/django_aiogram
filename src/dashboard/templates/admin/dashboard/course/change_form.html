@@ -39,7 +39,7 @@
                             <input type="hidden" name="lesson_id" value="{{data.lesson.id}}">
                             {% for student in data.received %}
                                 {% if student not in data.viewed %}
-                                    <input type="hidden" name="_selected_action " value="{{student.id}}">
+                                    <input type="hidden" name="_selected_action" value="{{student.id}}">
                                     {% if student.is_client %}
                                     <a href="{% url 'admin:dashboard_client_change' student.id %}" style="font-size:11px;">
                                         {{student.short_name}}{% if not forloop.last%},{% endif %}

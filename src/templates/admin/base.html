@@ -1,6 +1,7 @@
 {% extends 'admin/base.html' %}
 
-{% block extrahead %}{{ block.super }}
+{% block extrastyle %}
+{{ block.super }}
 <style>
     .message {
     padding-left: 16px;
@@ -71,11 +72,9 @@
 </style>
 {% endblock %}
 
+
 {% block userlinks %}
 <a href="{% url 'web_signup' %}">Страница с регистрацией</a> /
 {{ block.super }}
 
 {% endblock %}
-
-
-

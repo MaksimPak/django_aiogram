@@ -16,8 +16,8 @@ class CategoryType(enum.Enum):
 
 class StudentTable(Base):
     class LanguageType(enum.Enum):
-        russian = '1'
-        uzbek = '2'
+        ru = '1'
+        uz = '2'
 
     class ApplicationType(enum.Enum):
         admin = '1'
@@ -31,7 +31,7 @@ class StudentTable(Base):
     last_name = Column(String(50), nullable=True)
     city = Column(String(50))
     tg_id = Column(Integer, nullable=True, unique=True)
-    language_type = Column(Enum(LanguageType, values_callable=lambda x: [e.value for e in x]), default=LanguageType.russian.value)
+    language_type = Column(Enum(LanguageType, values_callable=lambda x: [e.value for e in x]), default=LanguageType.ru.value)
     phone = Column(String(20), unique=True)
     chosen_field = Column(Enum(CategoryType, values_callable=lambda x: [e.value for e in x]))
     application_type = Column(Enum(ApplicationType, values_callable=lambda x: [e.value for e in x]), default=ApplicationType.admin.value)
