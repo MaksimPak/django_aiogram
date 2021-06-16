@@ -133,7 +133,7 @@ class ClientAdmin(admin.ModelAdmin):
     list_per_page = 20
     list_filter = ('studentcourse__course__name',)
     list_display_links = ('__str__',)
-    actions = ('send_message', 'send_checkout')
+    actions = ('send_message', 'send_checkout', 'assign_courses', 'assign_free_courses')
     readonly_fields = ('unique_code', 'checkout_date', 'invite_link', 'created_at',)
     search_fields = ('id', 'first_name', 'last_name')
     ordering = ('id',)
@@ -181,6 +181,30 @@ class ClientAdmin(admin.ModelAdmin):
                 'courses': client.courses.values_list('name', flat=True)
             }
         )
+
+    @admin.display(description='Назначить курсы')
+    def assign_courses(self, request, clients):
+        if 'assign' in request.POST:
+            courses = Course.objects.filter(pk__in=request.POST.getlist('course'))
+            for client in clients:
+                client.assign_courses(courses, True)
+            return HttpResponseRedirect(request.get_full_path())
+
+        courses = Course.objects.filter(is_free=False)
+        return render(request, 'dashboard/assign_courses.html',
+                      context={'entities': clients, 'courses': courses, 'action': 'assign_courses'})
+
+    @admin.display(description='Добавить бесплатных курсов')
+    def assign_free_courses(self, request, clients):
+        if 'assign' in request.POST:
+            courses = Course.objects.filter(pk__in=request.POST.getlist('course'))
+            for client in clients:
+                client.assign_courses(courses, True)
+            return HttpResponseRedirect(request.get_full_path())
+
+        courses = Course.objects.filter(is_free=True)
+        return render(request, 'dashboard/assign_courses.html',
+                      context={'entities': clients, 'courses': courses, 'action': 'assign_free_courses'})
 
 
 @admin.register(models.Course)
