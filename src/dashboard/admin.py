@@ -6,7 +6,6 @@ from django.contrib.auth.admin import UserAdmin
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.template.loader import render_to_string
-from django.urls import resolve
 from django.utils.html import format_html
 
 from dashboard import models
@@ -186,7 +185,7 @@ class ClientAdmin(admin.ModelAdmin):
 
 @admin.register(models.Course)
 class CourseAdmin(admin.ModelAdmin):
-    list_display = ('id', '__str__', 'course_info', 'is_started', 'category', 'difficulty', 'price')
+    list_display = ('id', '__str__', 'course_info', 'is_started', 'category', 'difficulty', 'price', 'student_count')
     list_display_links = ('__str__',)
     list_editable = ('is_started',)
     readonly_fields = ('date_started', 'date_finished', 'created_at',)
@@ -250,6 +249,10 @@ class CourseAdmin(admin.ModelAdmin):
                 lesson.save()
 
         self.message_user(request, '{0} курс(а) были успешно дублированны'.format(courses.count()), messages.SUCCESS)
+
+    @admin.display(description='Количество студентов')
+    def student_count(self, course):
+        return course.student_set.count()
 
     class Media:
         js = (
