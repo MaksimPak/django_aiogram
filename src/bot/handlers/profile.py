@@ -6,7 +6,7 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 from bot import repository as repo
 from bot.decorators import create_session
 from bot.misc import dp, bot, i18n
-from bot.models.dashboard import StudentTable, CategoryType
+from bot.models.dashboard import StudentTable
 from bot.models.db import SessionLocal
 from bot.serializers import KeyboardGenerator
 from bot.utils.callback_settings import short_data
@@ -37,7 +37,9 @@ PROFILE_FIELDS = (
     (_('Язык'), 'language_type', enum_renderer),
     (_('Телефон'), 'phone', default_renderer),
     (_('Город'), 'city', default_renderer),
-    (_('Отрасль'), 'chosen_field', enum_renderer)
+    (_('Отрасль'), 'category', enum_renderer)  # todo: Redo
+                                               # Category is not enum, but has its renderer
+                                               # since name of field is "name"
 )
 
 
@@ -69,7 +71,11 @@ async def my_profile(
     """
     Starting point for profile view/edit
     """
-    client = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
+    client = await repo.StudentRepository.load_with_category('tg_id', int(message.from_user.id), session)
+
+    async with session:
+        session.add(client)
+        await session.refresh(client)
 
     if not client:
         await message.reply(_('Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться'))
@@ -115,7 +121,7 @@ async def set_name(
     """
     data = await state.get_data()
 
-    client = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
+    client = await repo.StudentRepository.load_with_category('tg_id', int(message.from_user.id), session)
     await repo.StudentRepository.edit(client, {'first_name': message.text}, session)
 
     info, kb = await profile_kb(client)
@@ -164,7 +170,7 @@ async def set_last_name(
     Saves last_name into db
     """
     data = await state.get_data()
-    client = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
+    client = await repo.StudentRepository.load_with_category('tg_id', int(message.from_user.id), session)
     await repo.StudentRepository.edit(client, {'last_name': message.text}, session)
 
     info, kb = await profile_kb(client)
@@ -221,7 +227,7 @@ async def set_lang(
 
     data = await state.get_data()
 
-    client = await repo.StudentRepository.get('tg_id', int(cb.from_user.id), session)
+    client = await repo.StudentRepository.load_with_category('tg_id', int(cb.from_user.id), session)
 
     await repo.StudentRepository.edit(client, {'language_type': lang}, session)
 
@@ -277,7 +283,7 @@ async def set_phone(
     """
     data = await state.get_data()
 
-    client = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
+    client = await repo.StudentRepository.load_with_category('tg_id', int(message.from_user.id), session)
     await repo.StudentRepository.edit(client, {'phone': message.text}, session)
 
     info, kb = await profile_kb(client)
@@ -327,7 +333,7 @@ async def set_city(
     """
     data = await state.get_data()
 
-    client = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
+    client = await repo.StudentRepository.load_with_category('tg_id', int(message.from_user.id), session)
     await repo.StudentRepository.edit(client, {'city': message.text}, session)
 
     info, kb = await profile_kb(client)
@@ -342,10 +348,14 @@ async def set_city(
     await state.finish()
 
 
-@dp.callback_query_handler(short_data.filter(property='chosen_field'))
+@dp.callback_query_handler(short_data.filter(property='category'))
+@create_session
 async def change_field(
         cb: types.callback_query,
-        state: FSMContext
+        state: FSMContext,
+        session: SessionLocal,
+        *args,
+        **kwargs
 ):
     """
     Asks student for new field
@@ -354,8 +364,9 @@ async def change_field(
 
     async with state.proxy() as data:
         data['message_id'] = cb.message.message_id
+    categories = await repo.CategoryRepository.get_categories(session)
 
-    data = [(name.capitalize(), ('field', member.value)) for name, member in CategoryType.__members__.items()]
+    data = [(category.name, ('field', category.name)) for category in categories]
     kb = KeyboardGenerator(data).keyboard
 
     await bot.edit_message_text(
@@ -380,15 +391,14 @@ async def set_field(
     Saves field into db
     """
     await bot.answer_callback_query(cb.id)
-    field = callback_data['value']
+    field = await repo.CategoryRepository.get('name', callback_data['value'], session)
 
     data = await state.get_data()
 
-    client = await repo.StudentRepository.get('tg_id', int(cb.from_user.id), session)
-    await repo.StudentRepository.edit(client, {'chosen_field': field}, session)
+    client = await repo.StudentRepository.load_with_category('tg_id', int(cb.from_user.id), session)
+    await repo.StudentRepository.edit(client, {'chosen_field_id': field.id}, session)
 
-    # Adding object back to session since it is in detached state after edit
-    # and enum type value returns VARCHAR
+    # todo: Refreshing client because foreign key was changed
     async with session:
         session.add(client)
         await session.refresh(client)

@@ -13,10 +13,12 @@ user_redis = RedisStorage2(host=config.REDIS_HOST, port=config.REDIS_PORT, db=3,
 async def get_student_lang(tg_id, session=None):
     redis = await user_redis.redis()
     data = await redis.get(f'user_{tg_id}', encoding='utf8')
-    if not data:
-        user = await repo.StudentRepository.get('tg_id', int(tg_id), session)
+    user = await repo.StudentRepository.get('tg_id', int(tg_id), session)
+    if not data and user:
         await redis.set(f'user_{tg_id}', user.language_type.name, expire=15*60)
         data = user.language_type.name
+    else:
+        data = 'ru'
     return data
 
 

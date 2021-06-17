@@ -9,9 +9,13 @@ from sqlalchemy.orm import relationship
 from bot.models.db import Base
 
 
-class CategoryType(enum.Enum):
-    game_dev = '1'
-    web = '2'
+class CategoryType(Base):
+    __tablename__ = 'dashboard_categorytype'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50), unique=True)
+
+    student = relationship('StudentTable', back_populates='category')
 
 
 class StudentTable(Base):
@@ -33,7 +37,7 @@ class StudentTable(Base):
     tg_id = Column(Integer, nullable=True, unique=True)
     language_type = Column(Enum(LanguageType, values_callable=lambda x: [e.value for e in x]), default=LanguageType.ru.value)
     phone = Column(String(20), unique=True)
-    chosen_field = Column(Enum(CategoryType, values_callable=lambda x: [e.value for e in x]))
+    chosen_field_id = Column(Integer, ForeignKey('dashboard_categorytype.id', ondelete='RESTRICT'))
     application_type = Column(Enum(ApplicationType, values_callable=lambda x: [e.value for e in x]), default=ApplicationType.admin.value)
     is_client = Column(Boolean, default=False)
     checkout_date = Column(DateTime, nullable=True)
@@ -44,6 +48,7 @@ class StudentTable(Base):
 
     courses = relationship('StudentCourse', back_populates='students')
     lessons = relationship('StudentLesson', back_populates='student')
+    category = relationship('CategoryType', back_populates='student')
 
     @property
     def name(self):
@@ -62,7 +67,7 @@ class CourseTable(Base):
     name = Column(String(50))
     info = Column(TEXT, nullable=True)
     hashtag = Column(String(20), nullable=True)
-    category = Column(Enum(CategoryType, values_callable=lambda x: [e.value for e in x]))
+    category_id = Column(Integer, ForeignKey('dashboard_categorytype.id', ondelete='RESTRICT'))
     start_message = Column(String(200), nullable=True)
     end_message = Column(String(200), nullable=True)
     difficulty = Column(Enum(DifficultyType, values_callable=lambda x: [e.value for e in x]))
