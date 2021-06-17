@@ -172,13 +172,20 @@ async def set_first_name(
 
 
 @dp.message_handler(state=RegistrationState.phone)
+@create_session
 async def set_phone(
         message: types.Message,
-        state: FSMContext
+        state: FSMContext,
+        session: SessionLocal,
+        *args,
+        **kwargs
 ):
     async with state.proxy() as data:
         data['phone'] = message.text
-    data = [(name.capitalize(), ('field', member.value)) for name, member in CategoryType.__members__.items()]
+
+    categories = await repo.CategoryRepository.get_categories(session)
+
+    data = [(category.name, ('field', category.id)) for category in categories]
     kb = KeyboardGenerator(data).keyboard
 
     await bot.send_message(message.chat.id, _('В каком направлении вы хотите учиться?'), reply_markup=kb)
@@ -195,7 +202,7 @@ async def create_record(
         **kwargs
 ):
     await bot.answer_callback_query(cb.id)
-    field = callback_data['value']
+    field = int(callback_data['value'])
 
     data = await state.get_data()
     lead_data = {
@@ -204,7 +211,7 @@ async def create_record(
         'tg_id': cb.from_user.id,
         'language_type': data['lang'],
         'phone': data['phone'],
-        'chosen_field': field,
+        'chosen_field_id': field,
         'application_type': StudentTable.ApplicationType.telegram,
         'is_client': False
     }

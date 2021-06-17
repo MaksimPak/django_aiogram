@@ -57,11 +57,18 @@ class LessonList(admin.StackedInline):
     extra = 1
 
 
+@admin.register(models.CategoryType)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name')
+    list_per_page = 10
+    list_display_links = ('name',)
+
+
 @admin.register(models.Lead)
 class LeadAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__', 'tg_id', 'application_type', 'phone', 'language_type', 'chosen_field', 'checkout_date', 'get_courses')
     list_per_page = 20
-    list_filter = ('chosen_field', 'application_type')
+    list_filter = ('chosen_field__name', 'application_type',)
     list_display_links = ('__str__',)
     readonly_fields = ('unique_code', 'checkout_date', 'invite_link', 'created_at',)
     actions = ('send_message', 'send_checkout', 'assign_courses', 'assign_free_courses')
@@ -225,7 +232,7 @@ class CourseAdmin(admin.ModelAdmin):
     exclude = ('week_size', 'lesson_count',)
     list_per_page = 20
     search_fields = ('id', 'name')
-    list_filter = ('category', 'price',)
+    list_filter = ('category__name', 'price',)
     inlines = (LessonList, StudentCourseList, )
     ordering = ('id',)
     date_hierarchy = 'created_at'

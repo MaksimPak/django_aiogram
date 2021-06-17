@@ -4,7 +4,8 @@ from typing import Any
 from sqlalchemy import select, func, or_, and_
 from sqlalchemy.orm import selectinload
 
-from bot.models.dashboard import StudentTable, CourseTable, StudentCourse, LessonTable, LessonUrlTable, StudentLesson
+from bot.models.dashboard import StudentTable, CourseTable, StudentCourse, LessonTable, LessonUrlTable, StudentLesson, \
+    CategoryType
 from bot.models.db import SessionLocal
 
 
@@ -62,12 +63,21 @@ class StudentRepository(BaseRepository):
     table = StudentTable
 
     @staticmethod
+    async def load_with_category(attribute: str, value: any, session: SessionLocal):
+        async with session:
+            student = (await session.execute(
+                select(StudentTable).where(getattr(StudentTable, attribute) == value).options(
+                    selectinload(StudentTable.category)
+                )
+            )).scalar()
+            return student
+
+    @staticmethod
     async def get_course_inload(attribute: str, value: Any, session: SessionLocal):
         """
         Emits a second (or more) SELECT statement to load Courses at once from Student
         and StudentCourse tables
         """
-        # todo create deferred properties dynamically
         async with session:
             student = (await session.execute(
                 select(StudentTable).where(getattr(StudentTable, attribute) == value).options(
@@ -220,3 +230,14 @@ class StudentLessonRepository(BaseRepository):
                     selectinload(StudentLesson.student)))).scalar()
         return record
 
+
+class CategoryRepository(BaseRepository):
+    table = CategoryType
+
+    @staticmethod
+    async def get_categories(session):
+        async with session:
+            categories = (await session.execute(
+                select(CategoryType)
+            )).scalars()
+            return categories

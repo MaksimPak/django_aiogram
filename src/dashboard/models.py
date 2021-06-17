@@ -23,16 +23,22 @@ def lesson_upload_directory(instance, filename):
     return f'{instance.course.name}/{instance.title}/{filename}'
 
 
-class CategoryType(models.TextChoices):
-    game_dev = '1', 'Game Development'
-    web = '2', 'Web Development',
-
-
 class User(AbstractUser):
 
     class Meta:
         verbose_name = 'Админ'
         verbose_name_plural = 'Админы'
+
+
+class CategoryType(models.Model):
+    name = models.CharField(max_length=50, verbose_name='Название категории', unique=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
 
 
 class Student(models.Model):
@@ -51,7 +57,7 @@ class Student(models.Model):
     tg_id = models.BigIntegerField(verbose_name='Telegram ID', blank=True, null=True, unique=True)
     language_type = models.CharField(max_length=20, verbose_name='Язык ученика', choices=LanguageType.choices, default=LanguageType.ru)
     phone = models.CharField(max_length=20, verbose_name='Контактный телефон', unique=True)
-    chosen_field = models.CharField(max_length=20, verbose_name='Желанная отрасль', choices=CategoryType.choices)
+    chosen_field = models.ForeignKey(CategoryType, on_delete=models.PROTECT, verbose_name='Желанная отрасль')
     application_type = models.CharField(verbose_name='Как заполнил форму', max_length=20, choices=ApplicationType.choices, default=ApplicationType.admin)
     unique_code = models.CharField(max_length=255, verbose_name='Инвайт код', unique=True, null=True, blank=True)
     is_client = models.BooleanField(verbose_name='Клиент', default=False)
@@ -86,7 +92,6 @@ class Lead(Student):
 
     objects = LeadManager()
 
-
     class Meta:
         proxy = True
         verbose_name = 'Лид'
@@ -112,7 +117,7 @@ class Course(models.Model):
     name = models.CharField(max_length=50, verbose_name='Название курса')
     info = models.TextField(blank=True, null=True, verbose_name='Описание')
     hashtag = models.CharField(max_length=20, verbose_name='Хештег', null=True, blank=True, validators=[validate_hashtag])
-    category = models.CharField(max_length=20, choices=CategoryType.choices, verbose_name='Категория')
+    category = models.ForeignKey(CategoryType, on_delete=models.PROTECT, verbose_name='Категория')
     start_message = models.TextField(verbose_name='Сообщение для отправки студентам после начала курса', blank=True, null=True)
     end_message = models.TextField(verbose_name='Сообщение для отправки студентам после завершения курса', blank=True, null=True)
     difficulty = models.CharField(max_length=20, choices=DifficultyType.choices, verbose_name='Сложность')
