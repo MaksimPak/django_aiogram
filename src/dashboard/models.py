@@ -32,6 +32,9 @@ class User(AbstractUser):
 
 class CategoryType(models.Model):
     name = models.CharField(max_length=50, verbose_name='Название категории', unique=True)
+    
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
 
     def __str__(self):
         return self.name

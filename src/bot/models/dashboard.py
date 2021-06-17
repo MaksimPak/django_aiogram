@@ -15,6 +15,9 @@ class CategoryType(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(50), unique=True)
 
+    created_at = Column(DateTime, default=datetime.datetime.now)
+    updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
+
     student = relationship('StudentTable', back_populates='category')
 
 
