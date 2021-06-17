@@ -1,8 +1,8 @@
 import datetime
 from typing import Any
 
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload, with_parent
+from sqlalchemy import select, func, or_, and_
+from sqlalchemy.orm import selectinload
 
 from bot.models.dashboard import StudentTable, CourseTable, StudentCourse, LessonTable, LessonUrlTable, StudentLesson
 from bot.models.db import SessionLocal
@@ -72,6 +72,7 @@ class StudentRepository(BaseRepository):
             student = (await session.execute(
                 select(StudentTable).where(getattr(StudentTable, attribute) == value).options(
                     selectinload(StudentTable.courses).selectinload(StudentCourse.courses)
+                    .selectinload(CourseTable.lessons)
                 ))).scalar()
 
         return student
@@ -193,6 +194,21 @@ class StudentLessonRepository(BaseRepository):
         return studentlesson
 
     @staticmethod
+    async def finished_lesson_count(course_id, student_id, session):
+        async with session:
+            count = (await session.execute(select(func.count()).select_from(StudentLesson).where(
+                    StudentLesson.student_id == student_id,
+                ).join_from(StudentLesson, LessonTable, StudentLesson.lesson_id == LessonTable.id).filter(
+                    StudentLesson.date_sent != None,
+                    StudentLesson.date_watched != None,
+                    LessonTable.course_id == course_id,
+                    or_(and_(LessonTable.has_homework == True, StudentLesson.homework_sent != None),
+                        LessonTable.has_homework == None)
+                ))).scalar()
+
+            return count
+
+    @staticmethod
     async def get_lesson_student_inload(attribute, value, session):
         """
         Loads lesson and student from StudentLesson table, course from Lesson table
@@ -203,3 +219,4 @@ class StudentLessonRepository(BaseRepository):
                     selectinload(StudentLesson.lesson).selectinload(LessonTable.course)).options(
                     selectinload(StudentLesson.student)))).scalar()
         return record
+
