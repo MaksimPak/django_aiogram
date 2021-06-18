@@ -31,15 +31,17 @@ async def enum_renderer(client, key):
     return getattr(client, key).name
 
 
+async def model_renderer(client, key, model_key):
+
+    return getattr(getattr(client, key), model_key)
+
+
 PROFILE_FIELDS = (
     (_('Имя'), 'first_name', default_renderer),
     (_('Фамилия'), 'last_name', default_renderer),
     (_('Язык'), 'language_type', enum_renderer),
     (_('Телефон'), 'phone', default_renderer),
     (_('Город'), 'city', default_renderer),
-    (_('Отрасль'), 'category', enum_renderer)  # todo: Redo
-                                               # Category is not enum, but has its renderer
-                                               # since name of field is "name"
 )
 
 
@@ -342,71 +344,6 @@ async def set_city(
     await bot.edit_message_text(
         info,
         message.from_user.id,
-        data['message_id'],
-        reply_markup=kb
-    )
-    await state.finish()
-
-
-@dp.callback_query_handler(short_data.filter(property='category'))
-@create_session
-async def change_field(
-        cb: types.callback_query,
-        state: FSMContext,
-        session: SessionLocal,
-        *args,
-        **kwargs
-):
-    """
-    Asks student for new field
-    """
-    await bot.answer_callback_query(cb.id)
-
-    async with state.proxy() as data:
-        data['message_id'] = cb.message.message_id
-    categories = await repo.CategoryRepository.get_categories(session)
-
-    data = [(category.name, ('field', category.name)) for category in categories]
-    kb = KeyboardGenerator(data).keyboard
-
-    await bot.edit_message_text(
-        _('Выберите направление'),
-        cb.from_user.id,
-        cb.message.message_id,
-        reply_markup=kb
-    )
-    await ProfileChange.field.set()
-
-
-@dp.callback_query_handler(short_data.filter(property='field'), state=ProfileChange.field)
-@create_session
-async def set_field(
-        cb: types.callback_query,
-        state: FSMContext,
-        session: SessionLocal,
-        callback_data: dict,
-        **kwargs
-):
-    """
-    Saves field into db
-    """
-    await bot.answer_callback_query(cb.id)
-    field = await repo.CategoryRepository.get('name', callback_data['value'], session)
-
-    data = await state.get_data()
-
-    client = await repo.StudentRepository.load_with_category('tg_id', int(cb.from_user.id), session)
-    await repo.StudentRepository.edit(client, {'chosen_field_id': field.id}, session)
-
-    # todo: Refreshing client because foreign key was changed
-    async with session:
-        session.add(client)
-        await session.refresh(client)
-
-    info, kb = await profile_kb(client)
-    await bot.edit_message_text(
-        info,
-        cb.from_user.id,
         data['message_id'],
         reply_markup=kb
     )

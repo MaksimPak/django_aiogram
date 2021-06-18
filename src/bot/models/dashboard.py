@@ -13,12 +13,16 @@ class CategoryType(Base):
     __tablename__ = 'dashboard_categorytype'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(50), unique=True)
+    title = Column(String(50), unique=True)
+    uz_title = Column(String(50), unique=True, nullable=True)
 
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
 
     student = relationship('StudentTable', back_populates='category')
+
+    def get_title(self, lang: str):
+        return self.title if lang == 'ru' else self.uz_title
 
 
 class StudentTable(Base):

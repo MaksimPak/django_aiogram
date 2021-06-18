@@ -43,7 +43,7 @@ class KeyboardGenerator:
                     third_value=props[3],
                 )
             btns.append(
-                InlineKeyboardButton(title, callback_data=callback)
+                InlineKeyboardButton(str(title), callback_data=callback)
             )
         return btns
 

@@ -31,13 +31,14 @@ class User(AbstractUser):
 
 
 class CategoryType(models.Model):
-    name = models.CharField(max_length=50, verbose_name='Название категории', unique=True)
+    title = models.CharField(max_length=50, verbose_name='Название категории', unique=True)
+    uz_title = models.CharField(max_length=50, verbose_name='Узбекская версия', unique=True, blank=True, null=True)
     
     created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
 
     def __str__(self):
-        return self.name
+        return self.title
 
     class Meta:
         verbose_name = 'Категория'

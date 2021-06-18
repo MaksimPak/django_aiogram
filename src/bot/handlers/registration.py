@@ -184,8 +184,9 @@ async def set_phone(
         data['phone'] = message.text
 
     categories = await repo.CategoryRepository.get_categories(session)
+    lang = StudentTable.LanguageType(data['lang']).name
 
-    data = [(category.name, ('field', category.id)) for category in categories]
+    data = [(category.get_title(lang), ('field', category.id)) for category in categories]
     kb = KeyboardGenerator(data).keyboard
 
     await bot.send_message(message.chat.id, _('В каком направлении вы хотите учиться?'), reply_markup=kb)
