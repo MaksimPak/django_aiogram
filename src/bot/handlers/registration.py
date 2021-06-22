@@ -8,7 +8,7 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 from bot import repository as repo
 from bot.decorators import create_session
 from bot.misc import dp, bot, i18n
-from bot.models.dashboard import StudentTable, CategoryType
+from bot.models.dashboard import StudentTable
 from bot.models.db import SessionLocal
 from bot.serializers import KeyboardGenerator
 from bot.utils.callback_settings import short_data, simple_data
@@ -67,6 +67,40 @@ async def register_deep_link(
         await message.reply(_('Неверный инвайт код'))
     elif student and student.tg_id:
         await message.reply(_('Вы уже зарегистрированы. Выберите опцию'), reply_markup=kb)
+
+
+@dp.message_handler(CommandStart(re.compile(r'promo_\d+')), ChatTypeFilter(types.ChatType.PRIVATE))
+@create_session
+async def promo_deep_link(
+        message: types.Message,
+        state: FSMContext,
+        session: SessionLocal,
+        **kwargs
+):
+    promotion = await repo.PromotionRepository.get('unique_code', message.get_args().split('_')[1], session)
+    student = await repo.StudentRepository.get('tg_id', message.from_user.id, session)
+    await repo.PromotionRepository.edit(promotion, {'counter': promotion.counter+1}, session)
+
+    if promotion and not student:
+        data = [(name.capitalize(), ('lang', member.value))
+                for name, member in StudentTable.LanguageType.__members__.items()]
+        kb = KeyboardGenerator(data).keyboard
+
+        await message.reply(
+            _('Привет, спасибо что перешел по промо! Давай теперь тебя зарегаем. Укажи язык'),
+            reply_markup=kb
+        )
+
+        async with state.proxy() as data:
+            data['promo'] = promotion.id
+            data['promo_course'] = promotion.course_id
+
+        await RegistrationState.lang.set()
+
+    elif promotion and student:
+        await message.reply(_('Спасибо что перешли по промо'))
+    else:
+        await message.reply(_('Неверный инвайт код'))
 
 
 @dp.message_handler(CommandStart(), ChatTypeFilter(types.ChatType.PRIVATE))
@@ -214,13 +248,15 @@ async def create_record(
         'phone': data['phone'],
         'chosen_field_id': field,
         'application_type': StudentTable.ApplicationType.telegram,
-        'is_client': False
+        'is_client': False,
+        'promo_id': data.get('promo')
     }
+    student = await repo.StudentRepository.create(lead_data, session)
 
-    await repo.StudentRepository.create(lead_data, session)
+    if data.get('promo_course'):
+        await repo.StudentCourseRepository.create_record(student.id, data['promo_course'], session)
 
     reply_kb = await KeyboardGenerator.main_kb()
-
     await bot.send_message(cb.from_user.id, _('Вы зарегистрированы! В ближайшее время с вами свяжется наш оператор'),
                            reply_markup=reply_kb)
     await state.finish()

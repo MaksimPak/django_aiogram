@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Supersonic 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-06-15 08:01+0000\n"
+"POT-Creation-Date: 2021-06-24 11:40+0000\n"
 "PO-Revision-Date: 2021-06-15 10:48+0500\n"
 "Last-Translator: \n"
 "Language: uz\n"
@@ -18,64 +18,64 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.9.1\n"
 
-#: bot/handlers/back_buttons.py:34 bot/handlers/courses.py:111
+#: bot/handlers/back_buttons.py:34 bot/handlers/courses.py:120
 msgid "Ваши курсы"
 msgstr ""
 
-#: bot/handlers/back_buttons.py:34 bot/handlers/courses.py:111
+#: bot/handlers/back_buttons.py:34 bot/handlers/courses.py:120
 msgid "Вы не записаны ни на один курс"
 msgstr ""
 
-#: bot/handlers/courses.py:41
+#: bot/handlers/courses.py:42
 msgid "Идет обработка, пожалуйста, подождите ⌛"
 msgstr ""
 
-#: bot/handlers/courses.py:74 bot/handlers/courses.py:172
+#: bot/handlers/courses.py:75 bot/handlers/courses.py:181
 msgid "Отметить как просмотренное"
 msgstr ""
 
-#: bot/handlers/courses.py:103 bot/handlers/profile.py:75
+#: bot/handlers/courses.py:104 bot/handlers/profile.py:83
 msgid "Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться"
 msgstr ""
 
-#: bot/handlers/courses.py:140
+#: bot/handlers/courses.py:149
 msgid "Назад"
 msgstr ""
 
-#: bot/handlers/courses.py:142
+#: bot/handlers/courses.py:151
 msgid "Уроки курса"
 msgstr ""
 
-#: bot/handlers/courses.py:142
+#: bot/handlers/courses.py:151
 msgid "У курса нет уроков"
 msgstr ""
 
-#: bot/handlers/courses.py:220
+#: bot/handlers/courses.py:229
 msgid "Сдать дз"
 msgstr ""
 
-#: bot/handlers/courses.py:239
+#: bot/handlers/courses.py:248
 #, fuzzy
 msgid "Отмечено"
 msgstr "Bekor qilindi."
 
-#: bot/handlers/courses.py:263
+#: bot/handlers/courses.py:272
 msgid "Отправьте вашу работу"
 msgstr ""
 
-#: bot/handlers/courses.py:301 bot/handlers/courses.py:381
+#: bot/handlers/courses.py:310 bot/handlers/courses.py:390
 msgid "Неверный Chat id у курса {course_name}. Пожалуйста исправьте"
 msgstr ""
 
-#: bot/handlers/courses.py:314
+#: bot/handlers/courses.py:323
 msgid "Спасибо"
 msgstr ""
 
-#: bot/handlers/courses.py:345 bot/handlers/courses.py:416
+#: bot/handlers/courses.py:354 bot/handlers/courses.py:425
 msgid "Отправьте ваше сообщение"
 msgstr ""
 
-#: bot/handlers/courses.py:394 bot/handlers/courses.py:447
+#: bot/handlers/courses.py:403 bot/handlers/courses.py:456
 msgid "Отправлено"
 msgstr ""
 
@@ -83,52 +83,44 @@ msgstr ""
 msgid "Раздел в разработке"
 msgstr ""
 
-#: bot/handlers/profile.py:35
+#: bot/handlers/profile.py:40
 msgid "Имя"
 msgstr ""
 
-#: bot/handlers/profile.py:36
+#: bot/handlers/profile.py:41
 msgid "Фамилия"
 msgstr ""
 
-#: bot/handlers/profile.py:37
+#: bot/handlers/profile.py:42
 msgid "Язык"
 msgstr ""
 
-#: bot/handlers/profile.py:38
+#: bot/handlers/profile.py:43
 msgid "Телефон"
 msgstr ""
 
-#: bot/handlers/profile.py:39
+#: bot/handlers/profile.py:44
 msgid "Город"
 msgstr ""
 
-#: bot/handlers/profile.py:40
-msgid "Отрасль"
-msgstr ""
-
-#: bot/handlers/profile.py:97
+#: bot/handlers/profile.py:105
 msgid "Укажите новое имя"
 msgstr ""
 
-#: bot/handlers/profile.py:147
+#: bot/handlers/profile.py:155
 msgid "Укажите фамилию"
 msgstr ""
 
-#: bot/handlers/profile.py:199
+#: bot/handlers/profile.py:207
 msgid "Выберите язык"
 msgstr ""
 
-#: bot/handlers/profile.py:259
+#: bot/handlers/profile.py:267
 msgid "Укажите телефон"
 msgstr ""
 
-#: bot/handlers/profile.py:309
+#: bot/handlers/profile.py:317
 msgid "Укажите новый город"
-msgstr ""
-
-#: bot/handlers/profile.py:362
-msgid "Выберите направление"
 msgstr ""
 
 #: bot/handlers/registration.py:44
@@ -139,7 +131,8 @@ msgstr "Bekor qilindi."
 msgid "Спасибо {first_name},вы были успешно зарегистрированы в боте"
 msgstr "{first_name} uchun rahmat, siz botda muvaffaqiyatli ro’yxatdan o’tdingiz"
 
-#: bot/handlers/registration.py:67 bot/handlers/registration.py:117
+#: bot/handlers/registration.py:67 bot/handlers/registration.py:103
+#: bot/handlers/registration.py:151
 msgid "Неверный инвайт код"
 msgstr "Taklif kodi noto‘g‘ri"
 
@@ -147,47 +140,63 @@ msgstr "Taklif kodi noto‘g‘ri"
 msgid "Вы уже зарегистрированы. Выберите опцию"
 msgstr "Siz allaqachon ro’yxatdan o’tgansiz. Variantni tanlang"
 
-#: bot/handlers/registration.py:84
+#: bot/handlers/registration.py:90
+msgid ""
+"Привет, спасибо что перешел по промо! Давай теперь тебя зарегаем. Укажи "
+"язык"
+msgstr ""
+
+#: bot/handlers/registration.py:101
+msgid "Спасибо что перешли по промо"
+msgstr ""
+
+#: bot/handlers/registration.py:118
 msgid "Через бот"
 msgstr "Bot orqali"
 
-#: bot/handlers/registration.py:84
+#: bot/handlers/registration.py:118
 msgid "Через инвайт"
 msgstr "Invite orqali"
 
-#: bot/handlers/registration.py:85
+#: bot/handlers/registration.py:119
 msgid "Выберите способ регистрации"
 msgstr "Ro’yxatdan o’tish usulini tanlang"
 
-#: bot/handlers/registration.py:88
+#: bot/handlers/registration.py:122
 msgid "Выбери опцию"
 msgstr "Variantni tanlang"
 
-#: bot/handlers/registration.py:97
+#: bot/handlers/registration.py:131
 msgid "Введите инвайт код"
 msgstr "Taklif kodini kiriting"
 
-#: bot/handlers/registration.py:130
+#: bot/handlers/registration.py:164
 msgid "Привет! Выбери язык"
 msgstr ""
 
-#: bot/handlers/registration.py:146
+#: bot/handlers/registration.py:180
 msgid "Как тебя зовут?"
 msgstr ""
 
-#: bot/handlers/registration.py:158
+#: bot/handlers/registration.py:192
 msgid "Отлично, теперь напиши из какого ты города"
 msgstr ""
 
-#: bot/handlers/registration.py:170
+#: bot/handlers/registration.py:204
 msgid "Хорошо, теперь пожалуйста отправь свой номер"
 msgstr ""
 
-#: bot/handlers/registration.py:184
+#: bot/handlers/registration.py:226
 msgid "В каком направлении вы хотите учиться?"
 msgstr ""
 
-#: bot/handlers/registration.py:216
+#: bot/handlers/registration.py:260
 msgid "Вы зарегистрированы! В ближайшее время с вами свяжется наш оператор"
 msgstr ""
+
+#~ msgid "Отрасль"
+#~ msgstr ""
+
+#~ msgid "Выберите направление"
+#~ msgstr ""
 

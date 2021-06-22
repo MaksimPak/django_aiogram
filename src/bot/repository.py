@@ -5,7 +5,7 @@ from sqlalchemy import select, func, or_, and_
 from sqlalchemy.orm import selectinload
 
 from bot.models.dashboard import StudentTable, CourseTable, StudentCourse, LessonTable, LessonUrlTable, StudentLesson, \
-    CategoryType
+    CategoryType, PromotionTable
 from bot.models.db import SessionLocal
 
 
@@ -241,3 +241,20 @@ class CategoryRepository(BaseRepository):
                 select(CategoryType)
             )).scalars()
             return categories
+
+
+class PromotionRepository(BaseRepository):
+    table = PromotionTable
+
+
+class StudentCourseRepository(BaseRepository):
+    table = StudentCourse
+
+    @staticmethod
+    async def create_record(student_id, course_id, session):
+        async with session:
+            async with session:
+                instance = StudentCourse(student_id=student_id, course_id=course_id)
+                session.add(instance)
+                await session.commit()
+                return instance

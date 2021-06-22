@@ -4,9 +4,27 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models, transaction
 from django.template.defaultfilters import truncatewords
 
-from dashboard.validators import validate_video_extension, validate_photo_extension, validate_hashtag
+from dashboard.validators import validate_video_extension, validate_photo_extension, validate_hashtag, \
+    validate_file_size, validate_dimensions, validate_thumbnail_size
 
 COURSE_HELP_TEXT = 'Если вводится Chatid группы вам нужно создать группу, добавить туда бота, узнать её чат айди, и ввести его здесь. Боту надо дать админ права в группе чтобы он мог форвардить сообщения'
+THUMBNAIL_HELP_TEXT = 'The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail\'s width and height should not exceed 320.'
+
+
+def lesson_upload_directory(instance, filename):
+    return f'courses/{instance.course.name}/{instance.title}/{filename}'
+
+
+def promo_upload_directory(instance, filename):
+    return f'promos/{instance.title}/{filename}'
+
+
+class BaseModel(models.Model):
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
+
+    class Meta:
+        abstract = True
 
 
 class LeadManager(models.Manager):
@@ -19,10 +37,6 @@ class ClientManager(models.Manager):
         return super(ClientManager, self).get_queryset().filter(is_client=True)
 
 
-def lesson_upload_directory(instance, filename):
-    return f'{instance.course.name}/{instance.title}/{filename}'
-
-
 class User(AbstractUser):
 
     class Meta:
@@ -30,12 +44,9 @@ class User(AbstractUser):
         verbose_name_plural = 'Админы'
 
 
-class CategoryType(models.Model):
+class CategoryType(BaseModel):
     title = models.CharField(max_length=50, verbose_name='Название категории', unique=True)
     uz_title = models.CharField(max_length=50, verbose_name='Узбекская версия', unique=True, blank=True, null=True)
-    
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
-    updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
 
     def __str__(self):
         return self.title
@@ -45,7 +56,7 @@ class CategoryType(models.Model):
         verbose_name_plural = 'Категории'
 
 
-class Student(models.Model):
+class Student(BaseModel):
     class LanguageType(models.TextChoices):
         ru = '1', 'Russian'
         uz = '2', 'Uzbek'
@@ -69,9 +80,7 @@ class Student(models.Model):
     invite_link = models.CharField(max_length=255, editable=False, null=True, blank=True, verbose_name='Инвайт ссылка')
     courses = models.ManyToManyField('Course', through='StudentCourse')
     lessons = models.ManyToManyField('Lesson', through='StudentLesson')
-
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
-    updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
+    promo = models.ForeignKey('Promotion', on_delete=models.SET_NULL, verbose_name='Из какого промо пришел', null=True, blank=True)
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
@@ -112,7 +121,7 @@ class Client(Student):
         verbose_name_plural = 'Клиенты'
 
 
-class Course(models.Model):
+class Course(BaseModel):
     class DifficultyType(models.TextChoices):
         easy = '1', 'Beginner',
         medium = '2', 'Intermediate',
@@ -136,9 +145,6 @@ class Course(models.Model):
     date_started = models.DateTimeField(verbose_name='Дата начала курса', null=True, blank=True)
     date_finished = models.DateTimeField(verbose_name='Дата окончания курса', null=True, blank=True)
 
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
-    updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
-
     def __str__(self):
         return self.name
 
@@ -151,7 +157,27 @@ class Course(models.Model):
         verbose_name_plural = 'Курсы'
 
 
-class Lesson(models.Model):
+class Promotion(BaseModel):
+    title = models.CharField(max_length=50, verbose_name='Название')
+    video = models.FileField(verbose_name='Промо видео', upload_to=promo_upload_directory, validators=[validate_video_extension, validate_file_size], help_text='Не больше 50 мб')
+    thumbnail = models.ImageField(verbose_name='Промо превью', null=True, blank=True, upload_to=lesson_upload_directory, validators=[validate_dimensions, validate_thumbnail_size], help_text=THUMBNAIL_HELP_TEXT)
+    description = models.TextField(verbose_name='Описание')
+    course = models.ForeignKey(Course, on_delete=models.SET_NULL, verbose_name='Курс', null=True, blank=True)
+    counter = models.IntegerField('Подсчет просмотра', default=0)
+    registration_button = models.BooleanField(verbose_name='Кнопка регистрации', default=False)
+    link = models.CharField(max_length=255, editable=False, null=True, blank=True, verbose_name='Инвайт ссылка')
+    video_file_id = models.CharField(verbose_name='Video file ID', null=True, blank=True, editable=False, max_length=255)
+    unique_code = models.CharField(max_length=255, verbose_name='Инвайт код', unique=True, null=True, blank=True, editable=False)
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = 'Промо'
+        verbose_name_plural = 'Промо'
+
+
+class Lesson(BaseModel):
     title = models.CharField(max_length=50, verbose_name='Название урока')
     info = models.TextField(blank=True, null=True, verbose_name='Описание')
     image = models.ImageField(verbose_name='Картинка', null=True, blank=True, upload_to=lesson_upload_directory, validators=[validate_photo_extension])
@@ -161,9 +187,6 @@ class Lesson(models.Model):
     has_homework = models.BooleanField(verbose_name='Есть домашнее задание', default=False)
     homework_desc = models.TextField(verbose_name='Homework description', null=True, blank=True)
     date_sent = models.DateTimeField(verbose_name='Дата отсылки урока', null=True, blank=True, editable=False)
-
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
-    updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
 
     def __str__(self):
         return self.title
@@ -177,39 +200,30 @@ class Lesson(models.Model):
         verbose_name_plural = 'Уроки'
 
 
-class LessonUrl(models.Model):
+class LessonUrl(BaseModel):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, verbose_name='Студент')
     hash = models.CharField(max_length=36, default=uuid.uuid4, unique=True)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, verbose_name='Урок')
-
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
-    updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
 
     class Meta:
         unique_together = [['student', 'lesson']]
 
 
-class StudentCourse(models.Model):
+class StudentCourse(BaseModel):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
-    updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
 
     class Meta:
         unique_together = [['student', 'course']]
 
 
-class StudentLesson(models.Model):
+class StudentLesson(BaseModel):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
 
     date_sent = models.DateTimeField(verbose_name='Дата получения урока', null=True, blank=True)
     date_watched = models.DateTimeField(verbose_name='Дата дата просмотра урока', null=True, blank=True)
     homework_sent = models.DateTimeField(verbose_name='Дата отправки дз', null=True, blank=True)
-
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
-    updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
 
     class Meta:
         unique_together = [['student', 'lesson']]

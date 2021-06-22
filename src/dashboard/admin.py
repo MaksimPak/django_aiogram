@@ -11,7 +11,7 @@ from django.utils.html import format_html
 from dashboard import models
 from dashboard.forms import StudentAdmin
 from dashboard.models import Course
-from dashboard.telegram import Telegram
+from dashboard.utils.telegram import Telegram
 
 
 class StudentCourseList(admin.TabularInline):
@@ -64,9 +64,17 @@ class CategoryAdmin(admin.ModelAdmin):
     list_display_links = ('title',)
 
 
+@admin.register(models.Promotion)
+class PromoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'description', 'course', 'counter', 'link')
+    list_per_page = 10
+    list_display_links = ('title',)
+    readonly_fields = ('link',)
+
+
 @admin.register(models.Lead)
 class LeadAdmin(admin.ModelAdmin):
-    list_display = ('id', '__str__', 'tg_id', 'application_type', 'phone', 'language_type', 'chosen_field', 'checkout_date', 'get_courses')
+    list_display = ('id', '__str__', 'tg_id', 'application_type', 'phone', 'language_type', 'chosen_field', 'checkout_date', 'get_courses', 'promo')
     list_per_page = 20
     list_filter = ('chosen_field', 'application_type',)
     list_display_links = ('__str__',)

@@ -2,12 +2,13 @@ import datetime
 import json
 import os
 import random
+import subprocess
 
 from django.db.models.signals import post_save, post_init
 from django.dispatch import receiver
 
-from dashboard.models import Lead, Course
-from dashboard.telegram import Telegram
+from dashboard.models import Lead, Course, Promotion
+from dashboard.utils.telegram import Telegram
 
 
 def random_int():
@@ -53,9 +54,28 @@ def send_course_finish_message(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Lead)
 def lead_invite_data(sender, instance, created, **kwargs):
     """
-    Create a unique code and invite link for registration for a lead upon saving.
+    Create a unique code and invite link for registration for lead upon saving.
     """
     if created and not instance.unique_code:
         instance.unique_code = str(instance.id) + random_int()
         instance.invite_link = f'https://t.me/{os.getenv("BOT_NAME")}?start={instance.unique_code}'
+        instance.save()
+
+
+@receiver(post_save, sender=Promotion)
+def promo_invite_data(sender, instance, created, **kwargs):
+    """
+    Create a unique code and invite link for registration for promotion upon saving.
+    """
+    if created and not instance.link:
+        unique_code = str(instance.id) + random_int()
+        instance.unique_code = unique_code
+        instance.link = f'https://t.me/{os.getenv("BOT_NAME")}?start=promo_{unique_code}'
+
+        img_output_path = instance.thumbnail.storage.path(f'promos/{instance.title}/thumbnail.jpeg')
+        subprocess.run(['ffmpeg', '-i', instance.video.path, '-ss',
+                        '5', '-s', '320x320', '-frames:v', '1', img_output_path])
+
+        instance.thumbnail.name = f'promos/{instance.title}/thumbnail.jpeg'  # todo: hardcode
+
         instance.save()

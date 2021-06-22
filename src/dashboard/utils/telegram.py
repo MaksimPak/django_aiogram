@@ -6,7 +6,7 @@ import requests
 class Telegram:
     @staticmethod
     def send_single_message(data):
-        url = f"https://api.telegram.org/bot{os.getenv('BOT_TOKEN')}/sendMessage"
+        url = f'https://api.telegram.org/bot{os.getenv("BOT_TOKEN")}/sendMessage'
         return requests.post(url, data=data).json()
 
     @staticmethod
@@ -20,3 +20,9 @@ class Telegram:
             if kb:
                 data['reply_markup'] = kb
             Telegram.send_single_message(data=data)
+
+    @staticmethod
+    def video_to_person(data, thumb, video=None):
+        url = f'https://api.telegram.org/bot{os.getenv("BOT_TOKEN")}/sendVideo'
+        files = {'video': video, 'thumb': thumb}
+        return requests.post(url, files=files, data=data).json()
