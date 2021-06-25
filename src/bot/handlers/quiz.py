@@ -70,9 +70,10 @@ async def answer_first(
 
     kb = KeyboardGenerator(data).keyboard
 
-    await bot.send_message(
-        cb.from_user.id,
+    await bot.edit_message_text(
         'Какая игра изображена на картинке?',
+        cb.from_user.id,
+        cb.message.message_id,
         reply_markup=kb
     )
     await QuizState.second.set()
@@ -101,9 +102,10 @@ async def answer_second(
 
     kb = KeyboardGenerator(data).keyboard
 
-    await bot.send_message(
-        cb.from_user.id,
+    await bot.edit_message_text(
         'Какая игра изображена на картинке?',
+        cb.from_user.id,
+        cb.message.message_id,
         reply_markup=kb
     )
     await QuizState.third.set()
@@ -132,9 +134,10 @@ async def answer_third(
 
     kb = KeyboardGenerator(data).keyboard
 
-    await bot.send_message(
-        cb.from_user.id,
+    await bot.edit_message_text(
         'Самая продаваемая игра на PlayStation 1',
+        cb.from_user.id,
+        cb.message.message_id,
         reply_markup=kb
     )
     await QuizState.fourth.set()
@@ -163,11 +166,13 @@ async def answer_fourth(
 
     kb = KeyboardGenerator(data).keyboard
 
-    await bot.send_message(
-        cb.from_user.id,
+    await bot.edit_message_text(
         'Из какой игры этот скриншот?',
+        cb.from_user.id,
+        cb.message.message_id,
         reply_markup=kb
     )
+
     await QuizState.fifth.set()
 
 
@@ -194,11 +199,13 @@ async def answer_fifth(
 
     kb = KeyboardGenerator(data).keyboard
 
-    await bot.send_message(
-        cb.from_user.id,
+    await bot.edit_message_text(
         'Самая дорогая игра в разработке?',
+        cb.from_user.id,
+        cb.message.message_id,
         reply_markup=kb
     )
+
     await QuizState.sixth.set()
 
 
@@ -225,9 +232,10 @@ async def answer_sixth(
 
     kb = KeyboardGenerator(data).keyboard
 
-    await bot.send_message(
-        cb.from_user.id,
+    await bot.edit_message_text(
         'Какая игра изображена на картинке?',
+        cb.from_user.id,
+        cb.message.message_id,
         reply_markup=kb
     )
     await QuizState.seventh.set()
@@ -256,9 +264,10 @@ async def answer_seventh(
 
     kb = KeyboardGenerator(data).keyboard
 
-    await bot.send_message(
-        cb.from_user.id,
+    await bot.edit_message_text(
         'Назовите самый первый игровой движок',
+        cb.from_user.id,
+        cb.message.message_id,
         reply_markup=kb
     )
     await QuizState.eighth.set()
@@ -287,9 +296,10 @@ async def answer_eighth(
 
     kb = KeyboardGenerator(data).keyboard
 
-    await bot.send_message(
-        cb.from_user.id,
+    await bot.edit_message_text(
         'Какая игра изображена на картинке?',
+        cb.from_user.id,
+        cb.message.message_id,
         reply_markup=kb
     )
     await QuizState.nineth.set()
@@ -318,9 +328,10 @@ async def answer_nineth(
 
     kb = KeyboardGenerator(data).keyboard
 
-    await bot.send_message(
-        cb.from_user.id,
+    await bot.edit_message_text(
         'Самая продаваемая игровая приставка в мире?',
+        cb.from_user.id,
+        cb.message.message_id,
         reply_markup=kb
     )
     await QuizState.tenth.set()
@@ -343,9 +354,10 @@ async def answer_tenth(
             data['score'] += 1
         data['answers'] += str(answer)
 
-    await bot.send_message(
+    await bot.edit_message_text(
+        'Спасибо за участие',
         cb.from_user.id,
-        'Спасибо за участие'
+        cb.message.message_id
     )
 
     quiz = await repo.QuizAnswerRepository.get('id', data['quiz_id'], session)
