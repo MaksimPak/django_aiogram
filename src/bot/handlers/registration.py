@@ -109,6 +109,10 @@ async def promo_deep_link(
 
         await RegistrationState.lang.set()
     else:
+        if promotion.course_id:
+            studentcourse = await repo.StudentCourseRepository.get_record(student.id, promotion.course_id, session)
+            if not studentcourse:
+                await repo.StudentCourseRepository.create_record(student.id, promotion.course_id, session)
         await start_reg(message, **kwargs)
 
 

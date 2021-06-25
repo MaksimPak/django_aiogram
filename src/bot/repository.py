@@ -259,6 +259,17 @@ class StudentCourseRepository(BaseRepository):
                 await session.commit()
                 return instance
 
+    @staticmethod
+    async def get_record(student_id, course_id, session):
+        async with session:
+            record = (await session.execute(
+                select(StudentCourse).where(
+                    StudentCourse.student_id == student_id,
+                    StudentCourse.course_id == course_id,
+                ).options(selectinload(StudentCourse.students))
+                .options(selectinload(StudentCourse.courses)))).scalar()
+        return record
+
 
 class QuizAnswerRepository(BaseRepository):
     table = QuizAnswerTable

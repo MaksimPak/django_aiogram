@@ -38,7 +38,7 @@ async def start_quiz(
 
     kb = KeyboardGenerator(data).keyboard
 
-    await message.reply('Назовите самую первую игру', reply_markup=kb)
+    await message.reply('1. Назовите самую первую видео-игру', reply_markup=kb)
     await QuizState.first.set()
 
 
@@ -68,10 +68,10 @@ async def answer_first(
         ('Wolfenstein', ('quiz', 4))
     ]
 
-    kb = KeyboardGenerator(data).keyboard
+    kb = KeyboardGenerator(data, row_width=1).keyboard
 
     await bot.edit_message_text(
-        'Какая игра изображена на картинке?',
+        '2. Какая игра изображена на картинке?',
         cb.from_user.id,
         cb.message.message_id,
         reply_markup=kb
@@ -100,10 +100,10 @@ async def answer_second(
         ('Lineage II', ('quiz', 4))
     ]
 
-    kb = KeyboardGenerator(data).keyboard
+    kb = KeyboardGenerator(data, row_width=1).keyboard
 
     await bot.edit_message_text(
-        'Какая игра изображена на картинке?',
+        '3. Какая игра изображена на картинке?',
         cb.from_user.id,
         cb.message.message_id,
         reply_markup=kb
@@ -132,10 +132,10 @@ async def answer_third(
         ('Resident Evil 2', ('quiz', 4))
     ]
 
-    kb = KeyboardGenerator(data).keyboard
+    kb = KeyboardGenerator(data, row_width=1).keyboard
 
     await bot.edit_message_text(
-        'Самая продаваемая игра на PlayStation 1',
+        '4. Самая продаваемая игра на PlayStation 1',
         cb.from_user.id,
         cb.message.message_id,
         reply_markup=kb
@@ -164,10 +164,10 @@ async def answer_fourth(
         ('Fortnite', ('quiz', 4))
     ]
 
-    kb = KeyboardGenerator(data).keyboard
+    kb = KeyboardGenerator(data, row_width=1).keyboard
 
     await bot.edit_message_text(
-        'Из какой игры этот скриншот?',
+        '5. Из какой игры этот скриншот?',
         cb.from_user.id,
         cb.message.message_id,
         reply_markup=kb
@@ -197,10 +197,10 @@ async def answer_fifth(
         ('Unreal Tournament', ('quiz', 4))
     ]
 
-    kb = KeyboardGenerator(data).keyboard
+    kb = KeyboardGenerator(data, row_width=1).keyboard
 
     await bot.edit_message_text(
-        'Самая дорогая игра в разработке?',
+        '6. Самая дорогая игра в разработке?',
         cb.from_user.id,
         cb.message.message_id,
         reply_markup=kb
@@ -230,10 +230,10 @@ async def answer_sixth(
         ('GTA: V', ('quiz', 4))
     ]
 
-    kb = KeyboardGenerator(data).keyboard
+    kb = KeyboardGenerator(data, row_width=1).keyboard
 
     await bot.edit_message_text(
-        'Какая игра изображена на картинке?',
+        '7. Какая игра изображена на картинке?',
         cb.from_user.id,
         cb.message.message_id,
         reply_markup=kb
@@ -262,10 +262,10 @@ async def answer_seventh(
         ('Source', ('quiz', 4))
     ]
 
-    kb = KeyboardGenerator(data).keyboard
+    kb = KeyboardGenerator(data, row_width=1).keyboard
 
     await bot.edit_message_text(
-        'Назовите самый первый игровой движок',
+        '8. Назовите самый первый игровой движок',
         cb.from_user.id,
         cb.message.message_id,
         reply_markup=kb
@@ -294,10 +294,10 @@ async def answer_eighth(
         ('Radical Heights', ('quiz', 4))
     ]
 
-    kb = KeyboardGenerator(data).keyboard
+    kb = KeyboardGenerator(data, row_width=1).keyboard
 
     await bot.edit_message_text(
-        'Какая игра изображена на картинке?',
+        '9. Какая игра изображена на картинке?',
         cb.from_user.id,
         cb.message.message_id,
         reply_markup=kb
@@ -326,10 +326,10 @@ async def answer_nineth(
         ('Playstation 2', ('quiz', 4))
     ]
 
-    kb = KeyboardGenerator(data).keyboard
+    kb = KeyboardGenerator(data, row_width=1).keyboard
 
     await bot.edit_message_text(
-        'Самая продаваемая игровая приставка в мире?',
+        '10. Самая продаваемая игровая приставка в мире?',
         cb.from_user.id,
         cb.message.message_id,
         reply_markup=kb
