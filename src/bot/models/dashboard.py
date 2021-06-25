@@ -160,3 +160,11 @@ class StudentLesson(BaseModel):
 
     lesson = relationship('LessonTable', back_populates='students')
     student = relationship('StudentTable', back_populates='lessons')
+
+
+class QuizAnswerTable(BaseModel):
+    __tablename__ = 'dashboard_quizanswer'
+
+    student_id = Column(Integer, ForeignKey('dashboard_student.id', ondelete='CASCADE'), nullable=False)
+    score = Column(Integer, default=0)
+    answers = Column(TEXT, nullable=True)

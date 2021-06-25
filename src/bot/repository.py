@@ -5,7 +5,7 @@ from sqlalchemy import select, func, or_, and_
 from sqlalchemy.orm import selectinload
 
 from bot.models.dashboard import StudentTable, CourseTable, StudentCourse, LessonTable, LessonUrlTable, StudentLesson, \
-    CategoryType, PromotionTable
+    CategoryType, PromotionTable, QuizAnswerTable
 from bot.models.db import SessionLocal
 
 
@@ -258,3 +258,7 @@ class StudentCourseRepository(BaseRepository):
                 session.add(instance)
                 await session.commit()
                 return instance
+
+
+class QuizAnswerRepository(BaseRepository):
+    table = QuizAnswerTable

@@ -83,11 +83,11 @@ class Student(BaseModel):
     promo = models.ForeignKey('Promotion', on_delete=models.SET_NULL, verbose_name='Из какого промо пришел', null=True, blank=True)
 
     def __str__(self):
-        return f'{self.first_name} {self.last_name}'
+        return f'{self.first_name} {self.last_name or ""}'
 
     @property
     def short_name(self):
-        return f'{self.first_name[0]}.{self.last_name}'
+        return f'{self.first_name[0]}.{self.last_name or ""}'
 
     @transaction.atomic
     def assign_courses(self, courses, is_client=False):
@@ -227,3 +227,9 @@ class StudentLesson(BaseModel):
 
     class Meta:
         unique_together = [['student', 'lesson']]
+
+
+class QuizAnswer(BaseModel):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, verbose_name='Студент')
+    score = models.IntegerField(verbose_name='Баллы', default=0)
+    answers = models.TextField(blank=True, null=True, verbose_name='Ответы')

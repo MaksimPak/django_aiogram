@@ -328,4 +328,12 @@ class LessonAdmin(admin.ModelAdmin):
         )
 
 
+@admin.register(models.QuizAnswer)
+class QuizAnswerAdmin(admin.ModelAdmin):
+    list_display = ('id', 'student', 'score', 'created_at', 'updated_at')
+    list_display_links = ('student',)
+    list_per_page = 20
+    ordering = ('score',)
+
+
 admin.site.register(models.User, UserAdmin)
