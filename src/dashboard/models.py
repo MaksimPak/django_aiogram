@@ -233,3 +233,10 @@ class QuizAnswer(BaseModel):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, verbose_name='Студент')
     score = models.IntegerField(verbose_name='Баллы', default=0)
     answers = models.TextField(blank=True, null=True, verbose_name='Ответы')
+
+    def __str__(self):
+        return f'Ответ от {self.student.__str__()}'
+
+    class Meta:
+        verbose_name = 'Ответ на викторину'
+        verbose_name_plural = 'Ответы на викторину'

@@ -7,6 +7,8 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.utils.html import format_html
+from django.urls import reverse
+from django.utils.safestring import mark_safe
 
 from dashboard import models
 from dashboard.forms import StudentAdmin
@@ -334,6 +336,13 @@ class QuizAnswerAdmin(admin.ModelAdmin):
     list_display_links = ('student',)
     list_per_page = 20
     ordering = ('-score',)
+    readonly_fields = ('link_to_student',)
+
+    @admin.display(description='Ссылка на студента')
+    def link_to_student(self, obj):
+        change_url = 'admin:dashboard_client_change' if obj.student.is_client else 'admin:dashboard_lead_change'
+        link = reverse(change_url, args=(obj.student.id,))
+        return mark_safe(f'<a href="{link}">{obj.student}</a>')
 
 
 admin.site.register(models.User, UserAdmin)
