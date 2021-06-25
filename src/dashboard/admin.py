@@ -76,7 +76,7 @@ class PromoAdmin(admin.ModelAdmin):
 class LeadAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__', 'tg_id', 'application_type', 'phone', 'language_type', 'chosen_field', 'checkout_date', 'get_courses', 'promo')
     list_per_page = 20
-    list_filter = ('chosen_field', 'application_type',)
+    list_filter = ('chosen_field', 'application_type', 'promo')
     list_display_links = ('__str__',)
     readonly_fields = ('unique_code', 'checkout_date', 'invite_link', 'created_at',)
     actions = ('send_message', 'send_checkout', 'assign_courses', 'assign_free_courses')

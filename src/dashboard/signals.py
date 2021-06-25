@@ -72,10 +72,11 @@ def promo_invite_data(sender, instance, created, **kwargs):
         instance.unique_code = unique_code
         instance.link = f'https://t.me/{os.getenv("BOT_NAME")}?start=promo_{unique_code}'
 
-        img_output_path = instance.thumbnail.storage.path(f'promos/{instance.title}/thumbnail.jpeg')
-        subprocess.run(['ffmpeg', '-i', instance.video.path, '-ss',
-                        '5', '-s', '320x320', '-frames:v', '1', img_output_path])
+        if not instance.thumbnail:
+            img_output_path = instance.thumbnail.storage.path(f'promos/{instance.title}/thumbnail.jpeg')
+            subprocess.run(['ffmpeg', '-i', instance.video.path, '-ss',
+                            '5', '-s', '320x320', '-frames:v', '1', img_output_path])
 
-        instance.thumbnail.name = f'promos/{instance.title}/thumbnail.jpeg'  # todo: hardcode
+            instance.thumbnail.name = f'promos/{instance.title}/thumbnail.jpeg'  # todo: hardcode
 
         instance.save()

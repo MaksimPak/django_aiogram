@@ -3,6 +3,8 @@
 
 {% block object-tools-items %}
       {{block.super}}
+      {% if original.video_file_id %}
       <li><a href="{% url 'dashboard:send_promo' original.pk %}">Отправить студентам</a></li>
+      {% endif %}
       <li><a href="{% url 'dashboard:send_promo_myself' original.pk %}">Отправить себе</a></li>
 {% endblock %}

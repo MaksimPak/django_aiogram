@@ -7,7 +7,7 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 
 from bot import repository as repo
 from bot.decorators import create_session
-from bot.misc import dp, bot, i18n
+from bot.misc import dp, bot, i18n, jinja_env
 from bot.models.dashboard import StudentTable
 from bot.models.db import SessionLocal
 from bot.serializers import KeyboardGenerator
@@ -79,9 +79,21 @@ async def promo_deep_link(
 ):
     promotion = await repo.PromotionRepository.get('unique_code', message.get_args().split('_')[1], session)
     student = await repo.StudentRepository.get('tg_id', message.from_user.id, session)
+    if not promotion:
+        await message.reply(_('Неверный инвайт код'))
+
     await repo.PromotionRepository.edit(promotion, {'counter': promotion.counter+1}, session)
 
-    if promotion and not student:
+    text = jinja_env.get_template('promo_text.html').render(promo=promotion)
+
+    await bot.send_video(
+        message.from_user.id,
+        promotion.video_file_id,
+        caption=text,
+        parse_mode='html',
+    )
+
+    if not student:
         data = [(name.capitalize(), ('lang', member.value))
                 for name, member in StudentTable.LanguageType.__members__.items()]
         kb = KeyboardGenerator(data).keyboard
@@ -96,11 +108,8 @@ async def promo_deep_link(
             data['promo_course'] = promotion.course_id
 
         await RegistrationState.lang.set()
-
-    elif promotion and student:
-        await message.reply(_('Спасибо что перешли по промо'))
     else:
-        await message.reply(_('Неверный инвайт код'))
+        await start_reg(message, **kwargs)
 
 
 @dp.message_handler(CommandStart(), ChatTypeFilter(types.ChatType.PRIVATE))
