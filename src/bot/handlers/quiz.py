@@ -36,7 +36,7 @@ async def start_quiz(
         ('Space Invaders', ('quiz', 4))
     ]
 
-    kb = KeyboardGenerator(data).keyboard
+    kb = KeyboardGenerator(data, row_width=1).keyboard
 
     await message.reply('1. Назовите самую первую видео-игру', reply_markup=kb)
     await QuizState.first.set()
