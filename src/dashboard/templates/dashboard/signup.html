@@ -1,58 +1,29 @@
 {% extends 'dashboard/base.html' %}
 {% load bootstrap4 %}
 
-{% block extra_links %}
-<style>
-    body {
-    background-color: #FAEAE8;
-    }
-</style>
-{% endblock %}
-
 {% block title %} Зарегистрироваться {% endblock %}
+
 {% block content %}
 
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="beautify col-md-10 col-lg-7 col-12">
-                <div class="beautify-img"></div>
-            <div class="card my-2">
-                <div class="card-body border-card">
-                    <div class="card-title mb-3">Регистрация на курсы Megaskill</div>
-                    Курсы Game Development
-                </div>
-            </div>
-
-            <form action="" method="post" class="form">
-                {% csrf_token %}
-                {% for input in form %}
-                <div class="card my-2">
-                    <div class="card-body">
-
-                        {% bootstrap_field input placeholder=False form_group_class='form-group mb-0'%}
-
-                    </div>
-                </div>
-                {% endfor %}
-                {% buttons %}
-                <button type="submit" class="btn btn-primary my-2"> Зарегистрироваться </button>
-                {% endbuttons %}
-            </form>
-        </div>
+<div class="card my-2">
+    <div class="card-body border-card">
+        <div class="card-title mb-3">Регистрация на курсы Megaskill</div>
+        Курсы Game Development
     </div>
 </div>
 
-<div class="footer mb-4">
-    <div class="container-fluid">
-        <div class="row justify-content-center">
-            <div class="col-lg-7">
-                <div class="copyright">
-                    © Megaskill
-                </div>
-            </div>
+<form action="" method="post" class="form">
+    {% csrf_token %}
+    {% for input in form %}
+    <div class="card my-2">
+        <div class="card-body">
+            {% bootstrap_field input placeholder=False form_group_class='form-group mb-0'%}
         </div>
     </div>
-</div>
-
+    {% endfor %}
+    {% buttons %}
+    <button type="submit" class="btn btn-primary my-2"> Зарегистрироваться </button>
+    {% endbuttons %}
+</form>
 
 {% endblock %}

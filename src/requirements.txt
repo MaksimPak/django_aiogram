@@ -15,4 +15,4 @@ Pillow==8.2.0
 django-bootstrap4==3.0.1
 click==8.0.1
 loguru==0.5.3
-ffmpeg==1.4
+social-auth-core==4.1.0

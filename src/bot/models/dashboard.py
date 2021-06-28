@@ -58,6 +58,7 @@ class StudentTable(BaseModel):
     lessons = relationship('StudentLesson', back_populates='student')
     category = relationship('CategoryType', back_populates='student')
     promo = relationship('PromotionTable', back_populates='student')
+    lesson_url = relationship('LessonUrlTable', back_populates='student')
 
     @property
     def name(self):
@@ -128,6 +129,7 @@ class LessonTable(BaseModel):
 
     course = relationship('CourseTable', back_populates='lessons')
     students = relationship('StudentLesson', back_populates='lesson')
+    lesson_url = relationship('LessonUrlTable', back_populates='lesson')
 
 
 class LessonUrlTable(BaseModel):
@@ -136,6 +138,9 @@ class LessonUrlTable(BaseModel):
     student_id = Column(Integer, ForeignKey('dashboard_student.id'), primary_key=True)
     hash = Column(VARCHAR(length=36), nullable=False, unique=True, default=lambda: str(uuid.uuid4()))
     lesson_id = Column(Integer, ForeignKey('dashboard_lesson.id'), nullable=False)
+
+    lesson = relationship('LessonTable', back_populates='lesson_url')
+    student = relationship('StudentTable', back_populates='lesson_url')
 
 
 class StudentCourse(BaseModel):

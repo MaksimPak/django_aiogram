@@ -6,7 +6,7 @@ import requests
 from django.contrib import messages
 from django.db import IntegrityError
 from django.http import HttpResponseNotFound, HttpResponse, HttpResponseRedirect
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
 
@@ -52,15 +52,38 @@ def watch_video(request, uuid):
     """
     Handle video request that comes from telegram bot
     """
-    if request.META.get('HTTP_USER_AGENT') != TELEGRAM_AGENT:
-        lesson_url = get_object_or_404(LessonUrl, hash=uuid)
-        context = {'lesson': lesson_url.lesson}
-        if lesson_url:
-            # Delete record from database once user opens the link
-            lesson_url.delete()
-            return render(request, 'dashboard/watch_lesson.html', context)
-        else:
-            return HttpResponseNotFound('<h1>Page not found</h1>')  # todo change page not found
+    if request.META.get('HTTP_USER_AGENT') == TELEGRAM_AGENT:
+        return HttpResponseNotFound()
+
+    lesson_url = get_object_or_404(LessonUrl, hash=uuid)
+    context = {'lesson': lesson_url.lesson}
+    if lesson_url:
+        # Delete record from database once user opens the link
+        lesson_url.delete()
+        return render(request, 'dashboard/watch_lesson.html', context)
+    else:
+        return HttpResponseNotFound('<h1>Page not found</h1>')  # todo change page not found
+
+
+def auth_and_watch(request, lesson_id):
+    """
+    Authorize user with telegram and provide access to video
+    """
+
+    # authentificating
+    tg_id = request.GET.get('id')
+    if tg_id and Student.objects.filter(tg_id=tg_id).exists():
+        request.session['tg_id'] = tg_id
+        request.session.set_expiry(60 * 60)
+        return redirect('dashboard:auth_and_watch', lesson_id=lesson_id)
+
+    # authentificated and all ok
+    if request.session.get('tg_id'):
+        student = Student.objects.get(tg_id=request.session.get('tg_id'))
+        lesson = get_object_or_404(Lesson, pk=lesson_id)
+        return render(request, 'dashboard/watch_lesson.html', {'lesson': lesson, 'student': student})
+    else:
+        return render(request, 'dashboard/tg_auth.html', {'id': lesson_id})
 
 
 def signup(request):
@@ -224,4 +247,3 @@ def send_promo_myself(request, promo_id):
 
     messages.add_message(request, messages.INFO, 'Отправлено в общий chat id.')
     return HttpResponseRedirect(reverse('admin:dashboard_promotion_change', args=(promo_id,)))
-

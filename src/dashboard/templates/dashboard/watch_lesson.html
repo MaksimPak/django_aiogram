@@ -1,24 +1,44 @@
 {% extends 'dashboard/base.html' %}
-{% block title %}{{lesson.title}}{% endblock %}
+{% load bootstrap4 %}
+
+{% block title %}Урок {{ lesson.title }}{% endblock %}
 {% block extra_links %}
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@clappr/player@latest/dist/clappr.min.js"></script>
 {% endblock %}
 
 {% block content %}
 
-{{lesson.info}}
-<div id="player"></div>
+<div class="card my-2">
+    <div class="card-body border-card">
+        <div class="card-title mb-3">Урок {{ lesson.title }}</div>
+        {% if lesson.info %}
+         {{ lesson.info }}
+         <br>
+        {% endif %}
+        <div class="embed-responsive embed-responsive-16by9">
+            <div id="player" class="embed-responsive-item"></div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
 
 {% block extra_scripts %}
- <script>
-    var player = new Clappr.Player(
-        {
+<script>
+    $(function () {
+        $("#player").resize({
+            aspectRatio: 16 / 9,
+            maxHeight: 720,
+            maxWidth: 1280,
+            minHeight: 180,
+            minWidth: 320
+        });
+        var player = new Clappr.Player({
             source: '{{request.scheme}}://{{request.META.HTTP_HOST}}{{lesson.video.url}}',
             parentId: "#player",
-            autoPlay: true
-        }
-    );
-  </script>
+            height: "100%",
+            width: "100%"
+        });
+    });
+</script>
 {% endblock %}

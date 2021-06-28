@@ -1,3 +1,7 @@
+body {
+    background-color: #FAEAE8;
+}
+
 .beautify img{
     border-radius: 8px;
 }
@@ -45,4 +49,11 @@
 .copyright {
     text-align: center;
     font-size: 12px;
+}
+
+#player-wrapper {
+    display: inline-block;
+    padding-top: 10px;
+    width: 635px;
+    height: 360px;
 }

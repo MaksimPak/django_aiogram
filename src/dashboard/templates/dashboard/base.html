@@ -15,8 +15,27 @@
     <link href="/static/dashboard/css/app.css?v=1" rel="stylesheet">
 </head>
 <body>
-{% block content %} {% endblock %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="beautify col-md-10 col-lg-7 col-12">
+            <div class="beautify-img"></div>
+            {% block content %} {% endblock %}
+        </div>
+    </div>
+</div>
 
+
+<div class="footer mb-4">
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-lg-7">
+                <div class="copyright">
+                    © Megaskill
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% block extra_scripts %} {% endblock %}
 <script src="/static/dashboard/js/app.js?v=1"></script>
 </body>

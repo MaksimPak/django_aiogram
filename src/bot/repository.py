@@ -157,7 +157,8 @@ class LessonUrlRepository(BaseRepository):
         async with session:
             lesson_url = (await session.execute(
                 select(LessonUrlTable).where(LessonUrlTable.lesson_id == lesson_id,
-                                             LessonUrlTable.student_id == student_id))).scalar()
+                                             LessonUrlTable.student_id == student_id)
+            .options(selectinload(LessonUrlTable.lesson)))).scalar()
         return lesson_url
 
     @staticmethod
@@ -166,8 +167,10 @@ class LessonUrlRepository(BaseRepository):
             lesson_id, student_id, session)
 
         if not lesson_url:
-            lesson_url = await LessonUrlRepository.create(
-                {'student_id': student_id, 'lesson_id': lesson_id}, session)
+            await LessonUrlRepository.create(
+                {'student_id': student_id, 'lesson_id': lesson_id}, session
+            )
+            lesson_url = await LessonUrlRepository.get_one(lesson_id, student_id, session)
 
         return lesson_url
 
