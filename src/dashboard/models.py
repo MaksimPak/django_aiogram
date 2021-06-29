@@ -19,6 +19,10 @@ def promo_upload_directory(instance, filename):
     return f'promos/{instance.title}/{filename}'
 
 
+def generate_uuid():
+    return str(uuid.uuid4())[:8]
+
+
 class BaseModel(models.Model):
     created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
@@ -202,8 +206,9 @@ class Lesson(BaseModel):
 
 class LessonUrl(BaseModel):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, verbose_name='Студент')
-    hash = models.CharField(max_length=36, default=uuid.uuid4, unique=True)
+    hash = models.CharField(max_length=36, default=generate_uuid, unique=True)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, verbose_name='Урок')
+    hits = models.IntegerField(verbose_name='Количество возможных переховод по ссылке', default=0)
 
     class Meta:
         unique_together = [['student', 'lesson']]

@@ -136,8 +136,10 @@ class LessonUrlTable(BaseModel):
     __tablename__ = 'dashboard_lessonurl'
 
     student_id = Column(Integer, ForeignKey('dashboard_student.id'), primary_key=True)
-    hash = Column(VARCHAR(length=36), nullable=False, unique=True, default=lambda: str(uuid.uuid4()))
+    hash = Column(VARCHAR(length=36), nullable=False, unique=True, default=lambda: str(uuid.uuid4())[:8])
     lesson_id = Column(Integer, ForeignKey('dashboard_lesson.id'), nullable=False)
+    hits = Column(Integer, default=0)
+
 
     lesson = relationship('LessonTable', back_populates='lesson_url')
     student = relationship('StudentTable', back_populates='lesson_url')

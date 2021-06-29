@@ -5,6 +5,7 @@ import os
 import requests
 from django.contrib import messages
 from django.db import IntegrityError
+from django.db.models import F
 from django.http import HttpResponseNotFound, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
@@ -55,14 +56,25 @@ def watch_video(request, uuid):
     if request.META.get('HTTP_USER_AGENT') == TELEGRAM_AGENT:
         return HttpResponseNotFound()
 
-    lesson_url = get_object_or_404(LessonUrl, hash=uuid)
+    try:
+        lesson_url = LessonUrl.objects.get(hash=uuid)
+    except LessonUrl.DoesNotExist:
+        msg = 'Ошибка 404. Данный урок не найден - возможно он был удален. ' \
+              'Пожалуйста, зайдите в бот, откройте нужный курс и заново выберите требуемый урок.'
+        return render(request, 'dashboard/error.html', {'error': msg})
+
     context = {'lesson': lesson_url.lesson}
-    if lesson_url:
+
+    if lesson_url.hits >= 3:
         # Delete record from database once user opens the link
         lesson_url.delete()
-        return render(request, 'dashboard/watch_lesson.html', context)
+        msg = 'Ошибка 403. Ссылка на урок устарела. Если вы хотите просмотреть этот урок, ' \
+              'пожалуйста, зайдите в бот, откройте нужный курс и заново выберите требуемый урок.'
+        return render(request, 'dashboard/error.html', {'error': msg})
     else:
-        return HttpResponseNotFound('<h1>Page not found</h1>')  # todo change page not found
+        lesson_url.hits += 1
+        lesson_url.save()
+    return render(request, 'dashboard/watch_lesson.html', context)
 
 
 def auth_and_watch(request, lesson_id):
