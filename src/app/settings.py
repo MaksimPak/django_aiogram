@@ -143,6 +143,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'dashboard.User'
 
+# Celery config
+CELERY_BROKER_URL = f'redis://{os.getenv("REDIS_HOST", "redis")}:{os.getenv("REDIS_PORT", 6379)}/0'
+CELERY_TIMEZONE = 'Asia/Tashkent'
+
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
