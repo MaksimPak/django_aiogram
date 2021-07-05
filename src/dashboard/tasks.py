@@ -18,7 +18,6 @@ def send_single_message_task(data):
     Telegram.send_single_message(data)
 
 
-
 @shared_task
 def send_promo_task(config):
     students = Student.objects.all()
@@ -62,7 +61,8 @@ def message_students_task(config):
         data = {
             'chat_id': student.tg_id,
             'parse_mode': 'html',
-            'text': config['message'],
-            'reply_markup': json.dumps(kb)
+            'text': config['message']
         }
+        if kb:
+            data['reply_markup'] = json.dumps(kb)
         send_single_message_task.delay(data)
