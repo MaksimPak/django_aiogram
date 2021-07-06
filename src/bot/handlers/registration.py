@@ -132,6 +132,8 @@ async def start_reg(
         await bot.send_message(message.from_user.id, _('Выберите способ регистрации'), reply_markup=kb)
     else:
         kb = await KeyboardGenerator.main_kb()
+        if student.blocked_bot:
+            await repo.StudentRepository.edit(student, {'blocked_bot': False}, session)
         await bot.send_message(message.from_user.id, _('Выбери опцию'),
                                reply_markup=kb)
 

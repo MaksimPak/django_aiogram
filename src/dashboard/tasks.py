@@ -3,14 +3,30 @@ import json
 from celery import shared_task
 from django.core.exceptions import ValidationError
 
-from dashboard.models import Student, Promotion
+from dashboard.models import Student, Promotion, SendingReport
 from dashboard.utils.telegram import Telegram
 from dashboard.utils.helpers import prepare_promo_data
 
 
 @shared_task
 def send_video_task(data, thumb, video):
-    Telegram.video_to_person(data, thumb, video)
+    student = Student.objects.get(pk=data['student_id'])
+    report = SendingReport.objects.get(pk=data['report_id'])
+
+    if not student.blocked_bot:
+        res = Telegram.video_to_person(data, thumb, video)
+    else:
+        return
+
+    if res['ok']:
+        report.received += 1
+    else:
+        report.failed += 1
+
+        student.blocked_bot = True
+        student.save()
+
+    report.save()
 
 
 @shared_task
@@ -28,6 +44,8 @@ def send_promo_task(config):
     video = promotion.video.path
     thumb = promotion.thumbnail.path if promotion.thumbnail else None
 
+    report = SendingReport.objects.create(promotion=promotion, sent=students.count())
+
     for student in students:
         data = prepare_promo_data(
             student.tg_id,
@@ -36,9 +54,10 @@ def send_promo_task(config):
             config['duration'],
             config['width'],
             config['height'],
-            promotion.registration_button
+            promotion.registration_button,
         )
-
+        data['report_id'] = report.id
+        data['student_id'] = student.id
         send_video_task.delay(data, thumb, video)
 
 

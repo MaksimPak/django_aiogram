@@ -52,6 +52,18 @@ class StudentCourseList(admin.TabularInline):
         }
 
 
+class PromotionReport(admin.TabularInline):
+    model = models.SendingReport
+    fields = ('sent', 'received',)
+    readonly_fields = ('sent', 'received',)
+    can_delete = False
+    extra = 0
+    classes = ('collapse',)
+
+    def has_add_permission(self, request, obj):
+        return False
+
+
 class LessonList(admin.StackedInline):
     model = models.Lesson
     classes = ('collapse',)
@@ -72,6 +84,7 @@ class PromoAdmin(admin.ModelAdmin):
     list_per_page = 10
     list_display_links = ('title',)
     readonly_fields = ('link',)
+    inlines = (PromotionReport,)
 
 
 @admin.register(models.Lead)

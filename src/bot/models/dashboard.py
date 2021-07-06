@@ -53,6 +53,7 @@ class StudentTable(BaseModel):
     checkout_date = Column(DateTime, nullable=True)
     unique_code = Column(String(255), nullable=True, unique=True)
     promo_id = Column(Integer, ForeignKey('dashboard_promotion.id', ondelete='SET NULL'), nullable=True)
+    blocked_bot = Column(Boolean, default=False)
 
     courses = relationship('StudentCourse', back_populates='students')
     lessons = relationship('StudentLesson', back_populates='student')

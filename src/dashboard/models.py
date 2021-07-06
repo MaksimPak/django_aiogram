@@ -85,6 +85,7 @@ class Student(BaseModel):
     courses = models.ManyToManyField('Course', through='StudentCourse')
     lessons = models.ManyToManyField('Lesson', through='StudentLesson')
     promo = models.ForeignKey('Promotion', on_delete=models.SET_NULL, verbose_name='Из какого промо пришел', null=True, blank=True)
+    blocked_bot = models.BooleanField(verbose_name='Заблокировал бота', default=False)
 
     def __str__(self):
         return f'{self.first_name} {self.last_name or ""}'
@@ -245,3 +246,17 @@ class QuizAnswer(BaseModel):
     class Meta:
         verbose_name = 'Ответ на викторину'
         verbose_name_plural = 'Ответы на викторину'
+
+
+class SendingReport(BaseModel):
+    promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE, verbose_name='Промо')
+    sent = models.IntegerField(verbose_name='Количетсво отправок', default=0)
+    received = models.IntegerField(verbose_name='Получило', default=0)
+    failed = models.IntegerField(verbose_name='Не получило', default=0)
+
+    def __str__(self):
+        return f'Отправка №{self.id}'
+
+    class Meta:
+        verbose_name_plural = 'Отчеты'
+        verbose_name = 'Отчет'
