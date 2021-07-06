@@ -250,8 +250,8 @@ class QuizAnswer(BaseModel):
 
 class SendingReport(BaseModel):
     promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE, verbose_name='Промо')
-    sent = models.IntegerField(verbose_name='Количество отправок', default=0)
-    received = models.IntegerField(verbose_name='Получило', default=0)
+    sent = models.IntegerField(verbose_name='Кол-во получателей', default=0)
+    received = models.IntegerField(verbose_name='Итого отправлено', default=0)
     failed = models.IntegerField(verbose_name='Не получило', default=0)
 
     def __str__(self):

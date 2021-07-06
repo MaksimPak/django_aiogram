@@ -54,11 +54,15 @@ class StudentCourseList(admin.TabularInline):
 
 class PromotionReport(admin.TabularInline):
     model = models.SendingReport
-    fields = ('sent', 'received', 'failed',)
-    readonly_fields = ('sent', 'received', 'failed',)
+    fields = ('sent', 'received', 'failed', 'date_sent',)
+    readonly_fields = ('sent', 'received', 'failed', 'date_sent',)
     can_delete = False
     extra = 0
     classes = ('collapse',)
+
+    @admin.display(description='Дата отправки')
+    def date_sent(self, instance):
+        return instance.created_at
 
     def has_add_permission(self, request, obj):
         return False
