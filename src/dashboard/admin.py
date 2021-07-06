@@ -144,7 +144,7 @@ class LeadAdmin(admin.ModelAdmin):
                 lead.assign_courses(courses, True)
             return HttpResponseRedirect(request.get_full_path())
 
-        courses = Course.objects.filter(is_free=False)
+        courses = Course.objects.filter(is_free=False, is_started=False, is_finished=False)
         return render(request, 'dashboard/assign_courses.html',
                       context={'entities': leads, 'courses': courses, 'action': 'assign_courses'})
 
@@ -156,7 +156,7 @@ class LeadAdmin(admin.ModelAdmin):
                 lead.assign_courses(courses)
             return HttpResponseRedirect(request.get_full_path())
 
-        courses = Course.objects.filter(is_free=True)
+        courses = Course.objects.filter(is_free=True, is_started=False, is_finished=False)
         return render(request, 'dashboard/assign_courses.html',
                       context={'entities': leads, 'courses': courses, 'action': 'assign_free_courses'})
 
@@ -233,7 +233,7 @@ class ClientAdmin(admin.ModelAdmin):
                 client.assign_courses(courses, True)
             return HttpResponseRedirect(request.get_full_path())
 
-        courses = Course.objects.filter(is_free=False)
+        courses = Course.objects.filter(is_free=False, is_started=False, is_finished=False)
         return render(request, 'dashboard/assign_courses.html',
                       context={'entities': clients, 'courses': courses, 'action': 'assign_courses'})
 
@@ -245,7 +245,7 @@ class ClientAdmin(admin.ModelAdmin):
                 client.assign_courses(courses, True)
             return HttpResponseRedirect(request.get_full_path())
 
-        courses = Course.objects.filter(is_free=True)
+        courses = Course.objects.filter(is_free=True, is_started=False, is_finished=False)
         return render(request, 'dashboard/assign_courses.html',
                       context={'entities': clients, 'courses': courses, 'action': 'assign_free_courses'})
 
