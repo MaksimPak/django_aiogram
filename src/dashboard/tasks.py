@@ -2,6 +2,7 @@ import json
 
 from celery import shared_task
 from django.core.exceptions import ValidationError
+from django.db.models import F
 
 from dashboard.models import Student, Promotion, SendingReport
 from dashboard.utils.telegram import Telegram
@@ -11,7 +12,7 @@ from dashboard.utils.helpers import prepare_promo_data
 @shared_task
 def send_video_task(data, thumb, video):
     student = Student.objects.get(pk=data['student_id'])
-    report = SendingReport.objects.get(pk=data['report_id'])
+    SendingReport.objects.get(pk=data['report_id'])
 
     if not student.blocked_bot:
         res = Telegram.video_to_person(data, thumb, video)
@@ -19,14 +20,11 @@ def send_video_task(data, thumb, video):
         return
 
     if res['ok']:
-        report.received += 1
+        SendingReport.objects.filter(pk=data['report_id']).update(received=F('received') + 1)
     else:
-        report.failed += 1
+        SendingReport.objects.filter(pk=data['report_id']).update(failed=F('failed') + 1)
 
-        student.blocked_bot = True
-        student.save()
-
-    report.save()
+        Student.objects.filter(pk=data['report_id']).update(blocked_bot=True)
 
 
 @shared_task
