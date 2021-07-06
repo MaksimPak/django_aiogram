@@ -11,17 +11,12 @@ from dashboard.utils.helpers import prepare_promo_data
 
 @shared_task
 def send_video_task(data, thumb, video):
-    student = Student.objects.get(pk=data['student_id'])
-    SendingReport.objects.get(pk=data['report_id'])
-
-    if not student.blocked_bot:
-        res = Telegram.video_to_person(data, thumb, video)
-    else:
-        return
+    res = Telegram.video_to_person(data, thumb, video)
 
     if res['ok']:
         SendingReport.objects.filter(pk=data['report_id']).update(received=F('received') + 1)
-    else:
+
+    if not res['ok'] and res['error_code'] == 403:
         SendingReport.objects.filter(pk=data['report_id']).update(failed=F('failed') + 1)
 
         Student.objects.filter(pk=data['report_id']).update(blocked_bot=True)
@@ -56,7 +51,8 @@ def send_promo_task(config):
         )
         data['report_id'] = report.id
         data['student_id'] = student.id
-        send_video_task.delay(data, thumb, video)
+
+        student.blocked_bot or send_video_task.delay(data, thumb, video)
 
 
 @shared_task
