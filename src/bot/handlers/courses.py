@@ -142,8 +142,6 @@ async def course_lessons(
     async with state.proxy() as data:
         data['course_id'] = course_id
 
-    if course.is_free:
-        lessons = course.lessons
     lessons_data = [(lesson.title, ('lesson', lesson.id)) for lesson in lessons]
     markup = KeyboardGenerator(lessons_data).add((_('Назад'), ('to_courses', client.id))).keyboard
 
