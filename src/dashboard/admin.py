@@ -54,8 +54,8 @@ class StudentCourseList(admin.TabularInline):
 
 class PromotionReport(admin.TabularInline):
     model = models.SendingReport
-    fields = ('sent', 'received',)
-    readonly_fields = ('sent', 'received',)
+    fields = ('sent', 'received', 'failed',)
+    readonly_fields = ('sent', 'received', 'failed',)
     can_delete = False
     extra = 0
     classes = ('collapse',)
