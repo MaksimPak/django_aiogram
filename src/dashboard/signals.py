@@ -30,7 +30,12 @@ def send_course_add_message(sender, instance, created, **kwargs):
     Check if is_started variable has been set to True after editing. If yes, send start message to all students
     """
     if instance._is_started != instance.is_started and instance.is_started is True:
-        kb = json.dumps({'inline_keyboard': [[{'text': 'Начать Курс', 'callback_data': f'data|get_course|{instance.id}'}]]})
+        kb = json.dumps(
+            {'inline_keyboard': [[
+                {'text': 'Начать Курс',
+                 'callback_data': f'data|get_course|{instance.id}'}
+            ]]}) if instance.autosend else None
+
         people = instance.student_set.all()
         Telegram.send_to_people(people, instance.start_message, kb)
 

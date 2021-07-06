@@ -144,7 +144,7 @@ def send_lesson(request, course_id, lesson_id):
 
     for student in students:
         # todo studentlesson create record
-        kb['inline_keyboard'][0][0]['text'] = 'Посмотреть урок' if student.language_type == Student.LanguageType.ru \
+        kb['inline_keyboard'][0][0]['text'] = 'Получить урок' if student.language_type == Student.LanguageType.ru \
             else 'Darsni tomosha qiling'
         data = {
             'chat_id': student.tg_id,

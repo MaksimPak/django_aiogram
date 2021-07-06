@@ -18,7 +18,7 @@ from dashboard.utils.telegram import Telegram
 
 class StudentCourseList(admin.TabularInline):
     model = models.StudentCourse
-    fields = ('student_display', 'created_at', 'message_student')
+    fields = ('student_display', 'created_at', 'message_student', 'has_paid')
     readonly_fields = ('student_display', 'created_at', 'message_student')
     can_delete = False
     extra = 0

@@ -218,6 +218,7 @@ class LessonUrl(BaseModel):
 class StudentCourse(BaseModel):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    has_paid = models.BooleanField(verbose_name='Оплатил курс', default=False)
 
     class Meta:
         unique_together = [['student', 'course']]
