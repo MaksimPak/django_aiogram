@@ -54,8 +54,8 @@ class StudentCourseList(admin.TabularInline):
 
 class PromotionReport(admin.TabularInline):
     model = models.SendingReport
-    fields = ('sent', 'received', 'failed', 'date_sent',)
-    readonly_fields = ('sent', 'received', 'failed', 'date_sent',)
+    fields = ('lang', 'sent', 'received', 'failed', 'date_sent',)
+    readonly_fields = ('lang', 'sent', 'received', 'failed', 'date_sent',)
     can_delete = False
     extra = 0
     classes = ('collapse',)
@@ -89,6 +89,14 @@ class PromoAdmin(admin.ModelAdmin):
     list_display_links = ('title',)
     readonly_fields = ('link',)
     inlines = (PromotionReport,)
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+
+        extra_context['student_model'] = models.Student
+        return super().change_view(
+            request, object_id, form_url, extra_context=extra_context,
+        )
 
 
 @admin.register(models.Lead)

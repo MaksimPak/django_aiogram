@@ -4,7 +4,10 @@
 {% block object-tools-items %}
       {{block.super}}
       {% if original.video_file_id %}
-      <li><a href="{% url 'dashboard:send_promo' original.pk %}">Отправить студентам</a></li>
+      {% for lang in student_model.LanguageType.choices %}
+      <li><a href="{% url 'dashboard:send_promo' original.pk lang.0 %}">Отправить {{lang.1}}</a></li>
+      {% endfor %}
       {% endif %}
+      <li><a href="{% url 'dashboard:send_promo' original.pk 'all' %}">Отправить всем</a></li>
       <li><a href="{% url 'dashboard:send_promo_myself' original.pk %}">Отправить себе</a></li>
 {% endblock %}

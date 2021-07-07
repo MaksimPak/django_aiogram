@@ -250,6 +250,12 @@ class QuizAnswer(BaseModel):
 
 
 class SendingReport(BaseModel):
+    class LanguageType(models.TextChoices):
+        all = 'all', 'Всем'
+        ru = '1', 'Russian'
+        uz = '2', 'Uzbek'
+
+    lang = models.CharField(max_length=20, choices=LanguageType.choices, verbose_name='Язык отправки')
     promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE, verbose_name='Промо')
     sent = models.IntegerField(verbose_name='Кол-во получателей', default=0)
     received = models.IntegerField(verbose_name='Итого отправлено', default=0)

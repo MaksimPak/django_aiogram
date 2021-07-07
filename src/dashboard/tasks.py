@@ -29,7 +29,11 @@ def send_single_message_task(data):
 
 @shared_task
 def send_promo_task(config):
-    students = Student.objects.all()
+    if config['lang'] != 'all':
+        students = Student.objects.filter(language_type=config['lang'])
+    else:
+        students = Student.objects.all()
+
     promotion = Promotion.objects.get(pk=config['promo_id'])
     if not promotion.video_file_id:
         raise ValidationError('Video file id is required')
@@ -37,7 +41,7 @@ def send_promo_task(config):
     video = promotion.video.path
     thumb = promotion.thumbnail.path if promotion.thumbnail else None
 
-    report = SendingReport.objects.create(promotion=promotion, sent=students.count())
+    report = SendingReport.objects.create(lang=config['lang'], promotion=promotion, sent=students.count())
 
     for student in students:
         data = prepare_promo_data(

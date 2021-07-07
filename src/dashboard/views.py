@@ -172,7 +172,7 @@ def send_lesson(request, course_id, lesson_id):
     return HttpResponseRedirect(reverse('admin:dashboard_course_change', args=(course_id,)))
 
 
-def send_promo(request, promo_id):
+def send_promo(request, promo_id, lang):
     promotion = get_object_or_404(Promotion, pk=promo_id)
     message = render_to_string('dashboard/promo_text.html', {'promo': promotion})
 
@@ -185,6 +185,7 @@ def send_promo(request, promo_id):
         'duration': duration,
         'width': width,
         'height': height,
+        'lang': lang
     }
     send_promo_task.delay(config)
 
