@@ -141,7 +141,6 @@ class LessonUrlTable(BaseModel):
     lesson_id = Column(Integer, ForeignKey('dashboard_lesson.id'), nullable=False)
     hits = Column(Integer, default=0)
 
-
     lesson = relationship('LessonTable', back_populates='lesson_url')
     student = relationship('StudentTable', back_populates='lesson_url')
 

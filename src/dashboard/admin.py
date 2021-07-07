@@ -75,7 +75,9 @@ class LessonList(admin.StackedInline):
     extra = 1
 
     def has_add_permission(self, request, course):
-        return False if course.is_started else True
+        if course:
+            return False if course.is_started else True
+        return True
 
 
 @admin.register(models.CategoryType)

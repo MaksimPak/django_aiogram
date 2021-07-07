@@ -2,7 +2,7 @@ import datetime
 from typing import Any
 
 from sqlalchemy import select, func, or_, and_
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, with_parent
 
 from bot.models.dashboard import StudentTable, CourseTable, StudentCourse, LessonTable, LessonUrlTable, StudentLesson, \
     CategoryType, PromotionTable, QuizAnswerTable
@@ -272,6 +272,19 @@ class StudentCourseRepository(BaseRepository):
                 ).options(selectinload(StudentCourse.students))
                 .options(selectinload(StudentCourse.courses)))).scalar()
         return record
+
+    @staticmethod
+    async def filter_from_relationship(relationship, session: SessionLocal):
+        # todo rewrite
+        async with session:
+            stmt = select(func.count(LessonTable.id), CourseTable, StudentCourse)\
+                .join_from(StudentCourse, CourseTable, StudentCourse.course_id == CourseTable.id)\
+                .join_from(StudentCourse, LessonTable, LessonTable.course_id == StudentCourse.course_id).where(
+                with_parent(relationship, StudentTable.courses),
+                CourseTable.is_started == False).group_by(LessonTable.course_id, CourseTable.id, StudentCourse.id)
+            filtered = (await session.execute(stmt)).all()
+
+            return filtered
 
 
 class QuizAnswerRepository(BaseRepository):
