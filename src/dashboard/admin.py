@@ -24,7 +24,7 @@ class StudentCourseList(admin.TabularInline):
     extra = 0
     classes = ('collapse',)
 
-    def has_add_permission(self, request, obj):
+    def has_add_permission(self, request, course):
         return False
 
     @admin.display(description='Студент')
@@ -73,6 +73,9 @@ class LessonList(admin.StackedInline):
     classes = ('collapse',)
     readonly_fields = ('date_sent',)
     extra = 1
+
+    def has_add_permission(self, request, course):
+        return False if course.is_started else True
 
 
 @admin.register(models.CategoryType)

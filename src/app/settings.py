@@ -33,7 +33,7 @@ DEBUG = env('DEBUG', cast=bool, default=(APP_ENVIRONMENT not
                                          in ('production', 'staging')))
 
 
-ALLOWED_HOSTS = env('ALLOWED_HOSTS', cast=tuple, default=('0.0.0.0', '127.0.0.1', '42e3e894021c.ngrok.io'))
+ALLOWED_HOSTS = env('ALLOWED_HOSTS', cast=tuple, default=('0.0.0.0', '127.0.0.1'))
 
 
 # Application definition
