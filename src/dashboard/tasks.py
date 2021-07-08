@@ -44,11 +44,9 @@ def send_promo_task(config):
 
     report = SendingReport.objects.create(lang=config['lang'], promotion=promotion, sent=students.count())
 
-    msgs = 0
-    for student in students:
-        if msgs == 25:
+    for i, student in enumerate(students):
+        if i % 25 == 0:
             time.sleep(1)
-            msgs = 0
         data = prepare_promo_data(
             student.tg_id,
             promotion.video_file_id,
@@ -61,9 +59,7 @@ def send_promo_task(config):
         data['report_id'] = report.id
         data['student_id'] = student.id
 
-        if not student.blocked_bot:
-            send_video_task.delay(data, thumb, video)
-            msgs += 1
+        student.blocked_bot or send_video_task.delay(data, thumb, video)
 
 
 @shared_task
