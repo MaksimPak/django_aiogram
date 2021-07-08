@@ -1,4 +1,5 @@
 import json
+import time
 
 from celery import shared_task
 from django.core.exceptions import ValidationError
@@ -43,7 +44,11 @@ def send_promo_task(config):
 
     report = SendingReport.objects.create(lang=config['lang'], promotion=promotion, sent=students.count())
 
+    msgs = 0
     for student in students:
+        if msgs == 25:
+            time.sleep(1)
+            msgs = 0
         data = prepare_promo_data(
             student.tg_id,
             promotion.video_file_id,
@@ -56,7 +61,9 @@ def send_promo_task(config):
         data['report_id'] = report.id
         data['student_id'] = student.id
 
-        student.blocked_bot or send_video_task.delay(data, thumb, video)
+        if not student.blocked_bot:
+            send_video_task.delay(data, thumb, video)
+            msgs += 1
 
 
 @shared_task
