@@ -1,6 +1,7 @@
 import uuid
 
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.template.defaultfilters import truncatewords
 
@@ -153,6 +154,10 @@ class Course(BaseModel):
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        if self.is_started and not self.lesson_set.all():
+            raise ValidationError('Нельзя начать курс, если нет уроков')
 
     @property
     def course_info(self):
