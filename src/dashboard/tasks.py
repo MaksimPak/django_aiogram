@@ -5,9 +5,16 @@ from celery import shared_task
 from django.core.exceptions import ValidationError
 from django.db.models import F
 
+from app.celery import app
 from dashboard.models import Student, Promotion, SendingReport
 from dashboard.utils.telegram import Telegram
 from dashboard.utils.helpers import prepare_promo_data
+
+
+@app.task
+def add(x, y):
+    time.sleep(3)
+    return x + y
 
 
 @shared_task
