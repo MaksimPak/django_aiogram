@@ -281,7 +281,7 @@ class StudentCourseRepository(BaseRepository):
                 .join_from(StudentCourse, CourseTable, StudentCourse.course_id == CourseTable.id)\
                 .join_from(StudentCourse, LessonTable, LessonTable.course_id == StudentCourse.course_id).where(
                 with_parent(relationship, StudentTable.courses),
-                CourseTable.is_started == False).group_by(LessonTable.course_id, CourseTable.id, StudentCourse.id)
+                CourseTable.is_started == True).group_by(LessonTable.course_id, CourseTable.id, StudentCourse.id)
             filtered = (await session.execute(stmt)).all()
 
             return filtered

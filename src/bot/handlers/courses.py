@@ -6,15 +6,12 @@ from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import ContentType
 from aiogram.utils.exceptions import ChatNotFound
-from sqlalchemy import select
-from sqlalchemy.orm import with_parent
 
 from bot import config
 from bot import repository as repo
 from bot.decorators import create_session
 from bot.misc import dp, bot, i18n
 from bot.misc import jinja_env
-from bot.models.dashboard import CourseTable, StudentTable, StudentCourse
 from bot.models.db import SessionLocal
 from bot.serializers import KeyboardGenerator
 from bot.utils.callback_settings import short_data, two_valued_data, three_valued_data
@@ -108,14 +105,14 @@ async def my_courses(
 
     course_btns = []
 
-    data = await repo.StudentCourseRepository.filter_from_relationship(client, session)
-    # todo rewrite
-    for record in data:
+    courses = client.courses    # todo rewrite
+    for studentcourse in courses:
         watch_count = await repo.StudentLessonRepository.finished_lesson_count(
-            record[1].id, client.id, session
+            studentcourse.courses.id, client.id, session
         )
-        txt = record[1].name + ' ✅' if watch_count == record[0] else record[1].name
-        course_btns.append((txt, ('get_course', record[1].id)))
+        lesson_count = len(studentcourse.courses.lessons)
+        txt = studentcourse.courses.name + ' ✅' if watch_count == lesson_count else studentcourse.courses.name
+        course_btns.append((txt, ('get_course', studentcourse.courses.id)))
 
     kb = KeyboardGenerator(course_btns)
 
@@ -145,10 +142,10 @@ async def course_lessons(
     async with state.proxy() as data:
         data['course_id'] = course_id
 
-    lessons_data = [(lesson.title, ('lesson', lesson.id)) for lesson in lessons]
+    lessons_data = [(lesson.title, ('lesson', lesson.id)) for lesson in lessons] if course.is_started else None
     markup = KeyboardGenerator(lessons_data).add((_('Назад'), ('to_courses', client.id))).keyboard
 
-    msg = _('Уроки курса') if lessons else _('У курса нет уроков')
+    msg = _('Уроки курса') if lessons_data else _('Курс ещё не начат')
     await bot.edit_message_text(
         msg,
         cb.from_user.id,

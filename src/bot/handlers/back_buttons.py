@@ -28,14 +28,14 @@ async def to_courses(
 
     course_btns = []
 
-    data = await repo.StudentCourseRepository.filter_from_relationship(client, session)
-    # todo rewrite
-    for record in data:
+    courses = client.courses    # todo rewrite
+    for studentcourse in courses:
         watch_count = await repo.StudentLessonRepository.finished_lesson_count(
-            record[1].id, client.id, session
+            studentcourse.courses.id, client.id, session
         )
-        txt = record[1].name + ' ✅' if watch_count == record[0] else record[1].name
-        course_btns.append((txt, ('get_course', record[1].id)))
+        lesson_count = len(studentcourse.courses.lessons)
+        txt = studentcourse.courses.name + ' ✅' if watch_count == lesson_count else studentcourse.courses.name
+        course_btns.append((txt, ('get_course', studentcourse.courses.id)))
 
     kb = KeyboardGenerator(course_btns)
 
