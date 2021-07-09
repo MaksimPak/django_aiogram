@@ -150,6 +150,7 @@ class StudentCourse(BaseModel):
 
     course_id = Column(Integer, ForeignKey('dashboard_course.id'), nullable=False)
     student_id = Column(Integer, ForeignKey('dashboard_student.id'), nullable=False)
+    has_paid = Column(Boolean, default=False)
 
     courses = relationship('CourseTable', back_populates='students')
     students = relationship('StudentTable', back_populates='courses')

@@ -1,9 +1,11 @@
 import re
+from contextlib import suppress
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import CommandStart, Text, ChatTypeFilter
 from aiogram.dispatcher.filters.state import StatesGroup, State
+from aiogram.utils.exceptions import Unauthorized
 
 from bot import repository as repo
 from bot.decorators import create_session
@@ -82,38 +84,38 @@ async def promo_deep_link(
     if not promotion:
         await message.reply(_('Неверный инвайт код'))
 
-    await repo.PromotionRepository.edit(promotion, {'counter': promotion.counter+1}, session)
-
     text = jinja_env.get_template('promo_text.html').render(promo=promotion)
 
-    await bot.send_video(
-        message.from_user.id,
-        promotion.video_file_id,
-        caption=text,
-        parse_mode='html',
-    )
-
-    if not student:
-        data = [(name.capitalize(), ('lang', member.value))
-                for name, member in StudentTable.LanguageType.__members__.items()]
-        kb = KeyboardGenerator(data).keyboard
-
-        await message.reply(
-            _('Привет, спасибо что перешел по промо! Давай теперь тебя зарегаем. Укажи язык'),
-            reply_markup=kb
+    with suppress(Unauthorized):
+        await repo.PromotionRepository.edit(promotion, {'counter': promotion.counter + 1}, session)
+        await bot.send_video(
+            message.from_user.id,
+            promotion.video_file_id,
+            caption=text,
+            parse_mode='html',
         )
 
-        async with state.proxy() as data:
-            data['promo'] = promotion.id
-            data['promo_course'] = promotion.course_id
+        if not student:
+            data = [(name.capitalize(), ('lang', member.value))
+                    for name, member in StudentTable.LanguageType.__members__.items()]
+            kb = KeyboardGenerator(data).keyboard
 
-        await RegistrationState.lang.set()
-    else:
-        if promotion.course_id:
-            studentcourse = await repo.StudentCourseRepository.get_record(student.id, promotion.course_id, session)
-            if not studentcourse:
-                await repo.StudentCourseRepository.create_record(student.id, promotion.course_id, session)
-        await start_reg(message, **kwargs)
+            await message.reply(
+                _('Привет, спасибо что перешел по промо! Давай теперь тебя зарегаем. Укажи язык'),
+                reply_markup=kb
+            )
+
+            async with state.proxy() as data:
+                data['promo'] = promotion.id
+                data['promo_course'] = promotion.course_id
+
+            await RegistrationState.lang.set()
+        else:
+            if promotion.course_id:
+                studentcourse = await repo.StudentCourseRepository.get_record(student.id, promotion.course_id, session)
+                if not studentcourse:
+                    await repo.StudentCourseRepository.create_record(student.id, promotion.course_id, session)
+            await start_reg(message, **kwargs)
 
 
 @dp.message_handler(CommandStart(), ChatTypeFilter(types.ChatType.PRIVATE))
