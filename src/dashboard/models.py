@@ -266,6 +266,8 @@ class SendingReport(BaseModel):
     sent = models.IntegerField(verbose_name='Кол-во получателей', default=0)
     received = models.IntegerField(verbose_name='Итого отправлено', default=0)
     failed = models.IntegerField(verbose_name='Не получило', default=0)
+    celery_id = models.CharField(verbose_name='Celery group uuid', max_length=36, editable=False)
+    status = models.CharField(verbose_name='Статус отправки', max_length=50, null=True, blank=True)
 
     def __str__(self):
         return f'Отправка №{self.id}'

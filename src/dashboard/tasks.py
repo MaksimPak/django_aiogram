@@ -1,7 +1,7 @@
 import json
 import time
 
-from celery import shared_task
+from celery import shared_task, group
 from django.core.exceptions import ValidationError
 from django.db.models import F
 
@@ -19,6 +19,7 @@ def add(x, y):
 
 @shared_task
 def send_video_task(data, thumb, video):
+    time.sleep(10)
     res = Telegram.video_to_person(data, thumb, video)
 
     if res['ok']:
@@ -51,6 +52,7 @@ def send_promo_task(config):
 
     report = SendingReport.objects.create(lang=config['lang'], promotion=promotion, sent=students.count())
 
+    tasks = []
     for i, student in enumerate(students):
         if i % 25 == 0:
             time.sleep(1)
@@ -66,7 +68,9 @@ def send_promo_task(config):
         data['report_id'] = report.id
         data['student_id'] = student.id
 
-        student.blocked_bot or send_video_task.delay(data, thumb, video)
+        student.blocked_bot or tasks.append(send_video_task.s(data, thumb, video))
+    result = group(tasks)().save()
+    SendingReport.objects.filter(pk=data['report_id']).update(celery_id=result.id)
 
 
 @shared_task

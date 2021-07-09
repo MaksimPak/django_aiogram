@@ -175,3 +175,19 @@ class QuizAnswerTable(BaseModel):
     student_id = Column(Integer, ForeignKey('dashboard_student.id', ondelete='CASCADE'), nullable=False)
     score = Column(Integer, default=0)
     answers = Column(TEXT, nullable=True)
+
+
+class SendingReportTable(BaseModel):
+    class ReportStatus(enum.Enum):
+        pending = 'PENDING'
+        done = 'DONE'
+
+    __tablename__ = 'dashboard_sendingreport'
+
+    lang = Column(String(255), nullable=True)
+    promotion_id = Column(Integer, ForeignKey('dashboard_student.id'))
+    sent = Column(Integer, nullable=False, default=0)
+    received = Column(Integer, nullable=False, default=0)
+    failed = Column(Integer, nullable=False, default=0)
+    celery_id = Column(VARCHAR(length=36), nullable=False, unique=True)
+    status = Column(Enum(ReportStatus, values_callable=lambda x: [e.value for e in x]), default=ReportStatus.pending.value)
