@@ -146,6 +146,7 @@ AUTH_USER_MODEL = 'dashboard.User'
 # Celery config
 CELERY_BROKER_URL = f'redis://{os.getenv("REDIS_HOST", "redis")}:{os.getenv("REDIS_PORT", 6379)}/0'
 CELERY_TIMEZONE = 'Asia/Tashkent'
+CELERY_RESULT_BACKEND = f'redis://{os.getenv("REDIS_HOST", "redis")}:{os.getenv("REDIS_PORT", 6379)}/0'
 
 
 LOGGING = {

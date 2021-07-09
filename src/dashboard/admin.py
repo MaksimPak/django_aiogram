@@ -1,6 +1,7 @@
 import datetime
 import json
 
+from celery.result import GroupResult
 from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.http import HttpResponseRedirect
@@ -9,6 +10,7 @@ from django.template.loader import render_to_string
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+
 
 from dashboard import models
 from dashboard.forms import StudentAdmin
@@ -54,8 +56,8 @@ class StudentCourseList(admin.TabularInline):
 
 class PromotionReport(admin.TabularInline):
     model = models.SendingReport
-    fields = ('lang', 'sent', 'received', 'failed', 'date_sent',)
-    readonly_fields = ('lang', 'sent', 'received', 'failed', 'date_sent',)
+    fields = ('lang', 'sent', 'received', 'failed', 'date_sent', 'report_status')
+    readonly_fields = ('lang', 'sent', 'received', 'failed', 'date_sent', 'report_status')
     can_delete = False
     extra = 0
     classes = ('collapse',)
@@ -63,6 +65,22 @@ class PromotionReport(admin.TabularInline):
     @admin.display(description='Дата отправки')
     def date_sent(self, instance):
         return instance.created_at
+
+    @admin.display(description='Статус отправки')
+    def report_status(self, instance):
+        if instance.status:
+            return instance.status
+
+        result = GroupResult.restore(instance.celery_id)
+        if not result:
+            return 'Нет статуса'
+
+        if result.ready():
+            instance.status = 'Отправлено'
+            instance.save()
+            return instance.status
+        else:
+            return 'Отправляется'
 
     def has_add_permission(self, request, obj):
         return False
