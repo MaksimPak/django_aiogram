@@ -2,7 +2,6 @@ import datetime
 import json
 import os
 import random
-import subprocess
 
 from django.db.models.signals import post_save, post_init
 from django.dispatch import receiver
@@ -16,7 +15,7 @@ def random_int():
 
 
 @receiver(post_init, sender=Course)
-def set_is_started_copy(sender, instance, *args, **kwargs):
+def course_locals_copy(sender, instance, *args, **kwargs):
     """
     Setting local variable _is_started to track if course was started during editing of the course
     """
@@ -61,27 +60,33 @@ def lead_invite_data(sender, instance, created, **kwargs):
     """
     Create a unique code and invite link for registration for lead upon saving.
     """
-    if created and not instance.unique_code:
-        instance.unique_code = str(instance.id) + random_int()
-        instance.invite_link = f'https://t.me/{os.getenv("BOT_NAME")}?start={instance.unique_code}'
-        instance.save()
+    if created:
+        unique_code = str(instance.id) + random_int()
+        invite_link = f'https://t.me/{os.getenv("BOT_NAME")}?start={instance.unique_code}'
+
+        Lead.objects.filter(pk=instance.id).update(unique_code=unique_code, invite_link=invite_link)
+
+
+@receiver(post_init, sender=Promotion)
+def promo_locals_copy(sender, instance, *args, **kwargs):
+    """
+    Setting local variable _is_started to track if course was started during editing of the course
+    """
+    instance._video = instance.video.name
 
 
 @receiver(post_save, sender=Promotion)
-def promo_invite_data(sender, instance, created, **kwargs):
+def promo_modify_data(sender, instance, created, **kwargs):
     """
     Create a unique code and invite link for registration for promotion upon saving.
     """
-    if created and not instance.link:
+    if created:
         unique_code = str(instance.id) + random_int()
+        link = f'https://t.me/{os.getenv("BOT_NAME")}?start=promo_{unique_code}'
         instance.unique_code = unique_code
-        instance.link = f'https://t.me/{os.getenv("BOT_NAME")}?start=promo_{unique_code}'
+        instance.link = link
 
-        # if not instance.thumbnail:
-        #     img_output_path = instance.thumbnail.storage.path(f'promos/{instance.title}/thumbnail.jpeg')
-        #     subprocess.run(['ffmpeg', '-i', instance.video.path, '-ss',
-        #                     '5', '-s', '320x320', '-frames:v', '1', img_output_path])
-        #
-        #     instance.thumbnail.name = f'promos/{instance.title}/thumbnail.jpeg'  # todo: hardcode
-
-        instance.save()
+        Promotion.objects.filter(pk=instance.id).update(unique_code=unique_code, link=link)
+    else:
+        if instance._video != instance.video.name and instance.video.name is not None:
+            Promotion.objects.filter(pk=instance.id).update(video_file_id=None)
