@@ -3,6 +3,7 @@ import json
 import os
 import random
 import subprocess
+import time
 
 from django.db.models.signals import post_save, post_init
 from django.dispatch import receiver
@@ -73,6 +74,7 @@ def promo_invite_data(sender, instance, created, **kwargs):
     Create a unique code and invite link for registration for promotion upon saving.
     """
     if created and not instance.link:
+        time.sleep(60*5)
         unique_code = str(instance.id) + random_int()
         instance.unique_code = unique_code
         instance.link = f'https://t.me/{os.getenv("BOT_NAME")}?start=promo_{unique_code}'
