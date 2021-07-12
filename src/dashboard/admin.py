@@ -12,8 +12,7 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 
 
-from dashboard import models
-from dashboard.forms import StudentAdmin
+from dashboard import models, forms
 from dashboard.models import Course
 from dashboard.utils.telegram import Telegram
 
@@ -52,6 +51,25 @@ class StudentCourseList(admin.TabularInline):
         css = {
             'all': ('dashboard/css/studentcourse.css',)
         }
+
+
+class FormAnswerList(admin.StackedInline):
+    model = models.FormAnswer
+    fk_name = 'question'
+
+
+class FormQuestionList(admin.TabularInline):
+    model = models.FormQuestion
+    fields = ('multi_answer', 'text', 'changeform_link')
+    readonly_fields = ('changeform_link', )
+
+    @admin.display(description='')
+    def changeform_link(self, object):
+        if object.id:
+            changeform_url = reverse(
+                'admin:dashboard_formquestion_change', args=(object.id,)
+            )
+            return mark_safe(f'<a href="{changeform_url}" target="_blank">Создать Ответы</a>')
 
 
 class PromotionReport(admin.TabularInline):
@@ -162,7 +180,7 @@ class LeadAdmin(admin.ModelAdmin):
     search_fields = ('id', 'first_name', 'last_name')
     ordering = ('id',)
     date_hierarchy = 'created_at'
-    form = StudentAdmin
+    form = forms.StudentAdmin
     change_form_template = 'admin/dashboard/student/change_form.html'
 
     @admin.display(description='Массовая рассылка')
@@ -241,7 +259,7 @@ class ClientAdmin(admin.ModelAdmin):
     search_fields = ('id', 'first_name', 'last_name')
     ordering = ('id',)
     date_hierarchy = 'created_at'
-    form = StudentAdmin
+    form = forms.StudentAdmin
     change_form_template = 'admin/dashboard/student/change_form.html'
 
     @admin.display(description='Массовая рассылка')
@@ -420,6 +438,19 @@ class QuizAnswerAdmin(admin.ModelAdmin):
         change_url = 'admin:dashboard_client_change' if obj.student.is_client else 'admin:dashboard_lead_change'
         link = reverse(change_url, args=(obj.student.id,))
         return mark_safe(f'<a href="{link}">{obj.student}</a>')
+
+
+@admin.register(models.FormQuestion)
+class FormQuestionAdmin(admin.ModelAdmin):
+    inlines = (FormAnswerList,)
+
+
+@admin.register(models.Form)
+class FormAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'type', 'mode', 'created_at')
+    list_display_links = ('name',)
+    list_per_page = 20
+    inlines = (FormQuestionList,)
 
 
 admin.site.register(models.User, UserAdmin)

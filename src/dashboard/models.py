@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.template.defaultfilters import truncatewords
+from django.urls import reverse
 
 from dashboard.validators import validate_video_extension, validate_photo_extension, validate_hashtag, \
     validate_file_size, validate_dimensions, validate_thumbnail_size
@@ -289,3 +290,51 @@ class SendingReport(BaseModel):
     class Meta:
         verbose_name_plural = 'Отчеты'
         verbose_name = 'Отчет'
+
+
+class Form(BaseModel):
+    class FormType(models.TextChoices):
+        private = 'private', 'Закрытый'
+        public = 'public', 'Открытый'
+
+    class FormMode(models.TextChoices):
+        quiz = 'quiz', 'Викторина'
+        questionnaire = 'questionnaire', 'Вопросник'
+
+    name = models.CharField(max_length=50, verbose_name='Название')
+    type = models.CharField(max_length=20, verbose_name='Тип', default=FormType.public, choices=FormType.choices)
+    mode = models.CharField(max_length=20, verbose_name='Режим работы', choices=FormMode.choices)
+    unique_code = models.IntegerField(verbose_name='Уникальный код', null=True, blank=True)
+    link = models.CharField(max_length=50, verbose_name='Линк', null=True, blank=True)
+    start_message = models.CharField(max_length=50, verbose_name='Сообщение для отправки при старте', null=True, blank=True)
+    start_end = models.CharField(max_length=50, verbose_name='Сообщение для отправки при завершении', null=True, blank=True)
+    is_started = models.BooleanField(verbose_name='Форма начата', default=False)
+    is_finished = models.BooleanField(verbose_name='Форма закончена', default=False)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Форма'
+        verbose_name_plural = 'Формы'
+
+
+class FormQuestion(BaseModel):
+    form = models.ForeignKey(Form, on_delete=models.CASCADE, verbose_name='Форма')
+    multi_answer = models.BooleanField(verbose_name='Мульти-ответ', default=False)
+    text = models.CharField(max_length=50, verbose_name='Текст')
+
+    def __str__(self):
+        return f'Форма[{self.form.name}]: {self.text} '
+
+    class Meta:
+        verbose_name = 'Вопрос'
+        verbose_name_plural = 'Вопросы'
+
+
+class FormAnswer(BaseModel):
+    question = models.ForeignKey(FormQuestion, on_delete=models.CASCADE, verbose_name='Вопрос', related_name='questions')
+    is_correct = models.BooleanField(verbose_name='Правильный ответ', default=False)
+    text = models.CharField(max_length=50, verbose_name='Текст ответа')
+    jump_to = models.ForeignKey(FormQuestion, on_delete=models.CASCADE, verbose_name='Ведет к вопросу', null=True, blank=True, related_name='jumps')
+    ordering = models.IntegerField(verbose_name='Позиция')
