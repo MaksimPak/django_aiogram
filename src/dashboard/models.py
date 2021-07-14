@@ -307,9 +307,10 @@ class Form(BaseModel):
     unique_code = models.IntegerField(verbose_name='Уникальный код', null=True, blank=True)
     link = models.CharField(max_length=50, verbose_name='Линк', null=True, blank=True)
     start_message = models.CharField(max_length=50, verbose_name='Сообщение для отправки при старте', null=True, blank=True)
-    start_end = models.CharField(max_length=50, verbose_name='Сообщение для отправки при завершении', null=True, blank=True)
+    end_message = models.CharField(max_length=50, verbose_name='Сообщение для отправки при завершении', null=True, blank=True)
     is_started = models.BooleanField(verbose_name='Форма начата', default=False)
     is_finished = models.BooleanField(verbose_name='Форма закончена', default=False)
+    one_off = models.BooleanField(verbose_name='Одноразовая форма', default=False)
 
     def __str__(self):
         return self.name
@@ -323,6 +324,8 @@ class FormQuestion(BaseModel):
     form = models.ForeignKey(Form, on_delete=models.CASCADE, verbose_name='Форма')
     multi_answer = models.BooleanField(verbose_name='Мульти-ответ', default=False)
     text = models.CharField(max_length=50, verbose_name='Текст')
+    image = models.ImageField(verbose_name='Картинка', blank=True, null=True)
+    image_file_id = models.CharField(verbose_name='Image ID', null=True, blank=True, editable=False, max_length=255)
 
     def __str__(self):
         return f'Форма[{self.form.name}]: {self.text} '
@@ -338,3 +341,9 @@ class FormAnswer(BaseModel):
     text = models.CharField(max_length=50, verbose_name='Текст ответа')
     jump_to = models.ForeignKey(FormQuestion, on_delete=models.CASCADE, verbose_name='Ведет к вопросу', null=True, blank=True, related_name='jumps')
     ordering = models.IntegerField(verbose_name='Позиция')
+
+
+class StudentForm(BaseModel):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    form = models.ForeignKey(Form, on_delete=models.CASCADE)
+    score = models.IntegerField(verbose_name='Бал', null=True, blank=True)

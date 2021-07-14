@@ -7,10 +7,9 @@ from django.contrib.auth.admin import UserAdmin
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.template.loader import render_to_string
-from django.utils.html import format_html
 from django.urls import reverse
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-
 
 from dashboard import models, forms
 from dashboard.models import Course
@@ -56,6 +55,18 @@ class StudentCourseList(admin.TabularInline):
 class FormAnswerList(admin.StackedInline):
     model = models.FormAnswer
     fk_name = 'question'
+
+    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+
+        field = super(FormAnswerList, self).formfield_for_foreignkey(db_field, request, **kwargs)
+
+        if db_field.name == 'jump_to':
+            if request._obj_ is not None:
+                field.queryset = field.queryset.filter(form=request._obj_.form)
+            else:
+                field.queryset = field.queryset.none()
+
+        return field
 
 
 class FormQuestionList(admin.TabularInline):
@@ -443,6 +454,11 @@ class QuizAnswerAdmin(admin.ModelAdmin):
 @admin.register(models.FormQuestion)
 class FormQuestionAdmin(admin.ModelAdmin):
     inlines = (FormAnswerList,)
+
+    def get_form(self, request, obj=None, **kwargs):
+        # just save obj reference for future processing in Inline
+        request._obj_ = obj
+        return super(FormQuestionAdmin, self).get_form(request, obj, **kwargs)
 
 
 @admin.register(models.Form)

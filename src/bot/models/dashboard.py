@@ -202,3 +202,54 @@ class SendingReportTable(BaseModel):
     failed = Column(Integer, nullable=False, default=0)
     celery_id = Column(VARCHAR(length=36), nullable=False, unique=True)
     status = Column(Enum(ReportStatus, values_callable=lambda x: [e.value for e in x]), default=ReportStatus.pending.value)
+
+
+class FormTable(BaseModel):
+    class FormType(enum.Enum):
+        private = 'private'
+        public = 'public'
+
+    class FormMode(enum.Enum):
+        quiz = 'quiz'
+        questionnaire = 'questionnaire'
+
+    __tablename__ = 'dashboard_form'
+
+    name = Column(String(50), nullable=False)
+    type = Column(Enum(FormType, values_callable=lambda x: [e.value for e in x]), nullable=False, default=FormType.public.value)
+    mode = Column(Enum(FormMode, values_callable=lambda x: [e.value for e in x]), nullable=False)
+    unique_code = Column(Integer, nullable=True)
+    link = Column(String(50), nullable=True)
+    start_message = Column(String(50), nullable=True)
+    end_message = Column(String(50), nullable=True)
+    is_started = Column(Boolean, default=False)
+    is_finished = Column(Boolean, default=False)
+    one_off = Column(Boolean, default=False)
+
+
+class FormQuestionTable(BaseModel):
+    __tablename__ = 'dashboard_formquestion'
+
+    form_id = Column(Integer, ForeignKey('dashboard_form.id', ondelete='CASCADE'))
+    multi_answer = Column(Boolean, default=False)
+    text = Column(String(50))
+    image = Column(String(255), nullable=True)
+    image_file_id = Column(String(255), nullable=True)
+
+
+class FormAnswer(BaseModel):
+    __tablename__ = 'dashboard_formanswer'
+
+    question_id = Column(Integer, ForeignKey('dashboard_formquestion.id', ondelete='CASCADE'), nullable=False)
+    is_correct = Column(Boolean, default=False)
+    text = Column(String(50), nullable=False)
+    jump_to_id = Column(Integer, ForeignKey('dashboard_formquestion.id', ondelete='CASCADE'), nullable=True)
+    ordering = Column(Integer, nullable=False)
+
+
+class StudentForm(BaseModel):
+    __tablename__ = 'dashboard_studentform'
+
+    student_id = Column(Integer, ForeignKey('dashboard_student.id', ondelete='CASCADE'), nullable=False)
+    form_id = Column(Integer, ForeignKey('dashboard_form.id', ondelete='CASCADE'), nullable=False)
+    score = Column(Integer, nullable=True)
