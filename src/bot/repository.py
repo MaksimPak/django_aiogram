@@ -312,3 +312,13 @@ class StudentCourseRepository(BaseRepository):
 
 class QuizAnswerRepository(BaseRepository):
     table = QuizAnswerTable
+
+
+class FormRepository(BaseRepository):
+    table = FormTable
+
+    @staticmethod
+    async def get_all(session: SessionLocal):
+        async with session:
+            forms = (await session.execute(select(FormTable).where(FormTable.type == 'public'))).scalars()
+            return forms

@@ -53,7 +53,7 @@ class KeyboardGenerator:
             KeyboardButton('📝 Курсы'),
             KeyboardButton('🧑‍🎓 Профиль'),
             KeyboardButton('📚 Домашка'),
-            KeyboardButton('🤔 Викторина'),
+            KeyboardButton('🤔 Опросники'),
         ]
         kb = ReplyKeyboardMarkup(resize_keyboard=True)
         kb.add(*btns)
