@@ -2,7 +2,7 @@ import datetime
 from typing import Any
 
 from sqlalchemy import select, func, or_, and_
-from sqlalchemy.orm import selectinload, with_parent
+from sqlalchemy.orm import selectinload, with_parent, joinedload
 
 from bot.models.dashboard import (
     StudentTable, CourseTable, StudentCourse,
@@ -318,7 +318,19 @@ class FormRepository(BaseRepository):
     table = FormTable
 
     @staticmethod
-    async def get_all(session: SessionLocal):
+    async def get_public(session: SessionLocal):
         async with session:
-            forms = (await session.execute(select(FormTable).where(FormTable.type == 'public'))).scalars()
+            forms = (
+                await session.execute(
+                    select(FormTable).where(FormTable.type == 'public'))).scalars()
             return forms
+
+    @staticmethod
+    async def get_with_first_question(form_id, session):
+        async with session:
+            form = (
+                await session.execute(
+                    select(FormTable).where(FormTable.id == form_id)
+                .options(selectinload(FormTable.questions)))
+            ).scalar()
+            return form

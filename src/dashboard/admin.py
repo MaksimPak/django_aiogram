@@ -71,7 +71,7 @@ class FormAnswerList(admin.StackedInline):
 
 class FormQuestionList(admin.TabularInline):
     model = models.FormQuestion
-    fields = ('multi_answer', 'text', 'changeform_link')
+    fields = ('multi_answer', 'text', 'image', 'changeform_link')
     readonly_fields = ('changeform_link', )
 
     @admin.display(description='')
@@ -467,6 +467,7 @@ class FormAdmin(admin.ModelAdmin):
     list_display_links = ('name',)
     list_per_page = 20
     inlines = (FormQuestionList,)
+    readonly_fields = ('unique_code', 'link',)
 
 
 admin.site.register(models.User, UserAdmin)

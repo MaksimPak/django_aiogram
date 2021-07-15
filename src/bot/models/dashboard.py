@@ -226,6 +226,8 @@ class FormTable(BaseModel):
     is_finished = Column(Boolean, default=False)
     one_off = Column(Boolean, default=False)
 
+    questions = relationship('FormQuestionTable', back_populates='form')
+
 
 class FormQuestionTable(BaseModel):
     __tablename__ = 'dashboard_formquestion'
@@ -235,6 +237,8 @@ class FormQuestionTable(BaseModel):
     text = Column(String(50))
     image = Column(String(255), nullable=True)
     image_file_id = Column(String(255), nullable=True)
+
+    form = relationship('FormTable', back_populates='questions')
 
 
 class FormAnswer(BaseModel):
