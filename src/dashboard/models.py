@@ -61,6 +61,20 @@ class CategoryType(BaseModel):
         verbose_name_plural = 'Категории'
 
 
+class Contact(BaseModel):
+    first_name = models.CharField(verbose_name='ТГ Имя', max_length=255)
+    last_name = models.CharField(verbose_name='ТГ Фамилия', max_length=255, null=True, blank=True)
+    tg_id = models.BigIntegerField(verbose_name='Telegram ID', blank=True, null=True, unique=True)
+    data = models.JSONField(null=True, blank=True, default=dict)
+
+    def __str__(self):
+        return f'TG[{self.first_name}]'
+
+    class Meta:
+        verbose_name = 'Пре Лид'
+        verbose_name_plural = 'Пре Лиды'
+
+
 class Student(BaseModel):
     class LanguageType(models.TextChoices):
         ru = '1', 'Russian'
@@ -175,10 +189,10 @@ class Promotion(BaseModel):
     description = models.TextField(verbose_name='Описание')
     course = models.ForeignKey(Course, on_delete=models.SET_NULL, verbose_name='Курс', null=True, blank=True)
     counter = models.IntegerField('Подсчет просмотра', default=0)
-    registration_button = models.BooleanField(verbose_name='Кнопка регистрации', default=False)
     link = models.CharField(max_length=255, editable=False, null=True, blank=True, verbose_name='Инвайт ссылка')
     video_file_id = models.CharField(verbose_name='Video file ID', null=True, blank=True, editable=False, max_length=255)
     unique_code = models.CharField(max_length=255, verbose_name='Инвайт код', unique=True, null=True, blank=True, editable=False)
+    start_message = models.TextField(verbose_name='Сообщение после регистрации на курс')
 
     def __str__(self):
         return self.title

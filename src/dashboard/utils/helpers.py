@@ -1,6 +1,3 @@
-import json
-
-
 def prepare_promo_data(
         chat_id,
         video_id,
@@ -8,7 +5,6 @@ def prepare_promo_data(
         duration,
         width,
         height,
-        is_markup=False
 ):
     data = {
         'chat_id': chat_id,
@@ -22,8 +18,4 @@ def prepare_promo_data(
     if video_id:
         data['video'] = video_id
 
-    if is_markup:
-        data['reply_markup'] = json.dumps(
-            {'inline_keyboard': [[{'text': 'Регистрация', 'callback_data': 'data|tg_reg'}]]}
-        )
     return data

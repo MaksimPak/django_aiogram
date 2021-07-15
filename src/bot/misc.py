@@ -12,7 +12,7 @@ import sentry_sdk
 from bot import config
 
 bot = Bot(token=config.BOT_TOKEN)
-redis = RedisStorage2(host=config.REDIS_HOST, port=config.REDIS_PORT, db=2)
+redis = RedisStorage2(host=config.REDIS_HOST, port=config.REDIS_PORT, state_ttl=60*5, db=2)
 dp = Dispatcher(bot, storage=redis)
 jinja_env = Environment(
     loader=PackageLoader('bot'),

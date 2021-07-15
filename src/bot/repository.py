@@ -4,8 +4,11 @@ from typing import Any
 from sqlalchemy import select, func, or_, and_
 from sqlalchemy.orm import selectinload, with_parent
 
-from bot.models.dashboard import StudentTable, CourseTable, StudentCourse, LessonTable, LessonUrlTable, StudentLesson, \
-    CategoryType, PromotionTable, QuizAnswerTable
+from bot.models.dashboard import (
+    StudentTable, CourseTable, StudentCourse,
+    LessonTable, LessonUrlTable, StudentLesson,
+    CategoryType, PromotionTable, QuizAnswerTable, ContactTable
+)
 from bot.models.db import SessionLocal
 
 
@@ -57,6 +60,16 @@ class BaseRepository:
             session.add(instance)
             await session.commit()
             return instance
+
+    @classmethod
+    async def delete(cls, instance, session):
+        async with session:
+            await session.delete(instance)
+            await session.commit()
+
+
+class ContactRepository(BaseRepository):
+    table = ContactTable
 
 
 class StudentRepository(BaseRepository):
@@ -252,6 +265,16 @@ class PromotionRepository(BaseRepository):
 
 class StudentCourseRepository(BaseRepository):
     table = StudentCourse
+
+    @staticmethod
+    async def bunch_create(student_id, courses, session):
+        async with session:
+            session.add_all(
+                [
+                    StudentCourse(student_id=student_id, course_id=course) for course in courses
+                ]
+            )
+            await session.commit()
 
     @staticmethod
     async def create_record(student_id, course_id, session):

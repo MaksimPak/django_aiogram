@@ -208,7 +208,6 @@ def send_promo_myself(request, promo_id):
         duration,
         width,
         height,
-        promotion.registration_button
     )
 
     resp = Telegram.video_to_person(data, thumb, video)

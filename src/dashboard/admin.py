@@ -122,6 +122,35 @@ class PromoAdmin(admin.ModelAdmin):
         )
 
 
+@admin.register(models.Contact)
+class ContactAdmin(admin.ModelAdmin):
+    list_display = ('id', 'first_name', 'tg_id', 'data', 'created_at', 'updated_at')
+    list_display_links = ('first_name',)
+    list_per_page = 20
+    actions = ('send_message',)
+    readonly_fields = ('data',)
+
+    @admin.display(description='Массовая рассылка')
+    def send_message(self, request, contacts):
+        if 'send' in request.POST:
+            is_feedback = request.POST.get('is_feedback')
+            if is_feedback:
+                for contact in contacts:
+                    kb = {'inline_keyboard': [[{'text': 'Ответить', 'callback_data': f'data|feedback_student|{contact.id}'}]]}
+                    data = {
+                        'chat_id': contact.tg_id,
+                        'parse_mode': 'html',
+                        'text': request.POST['message'],
+                        'reply_markup': json.dumps(kb)
+                    }
+                    Telegram.send_single_message(data)
+            else:
+                Telegram.send_to_people(contacts, request.POST['message'])
+            return HttpResponseRedirect(request.get_full_path())
+
+        return render(request, 'dashboard/send_intermediate.html', context={'entities': contacts})
+
+
 @admin.register(models.Lead)
 class LeadAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__', 'tg_id', 'application_type', 'phone', 'language_type', 'chosen_field', 'checkout_date', 'get_courses', 'promo')

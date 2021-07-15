@@ -2,8 +2,9 @@ import datetime
 import enum
 import uuid
 
+import sqlalchemy_json
 from sqlalchemy import Column, String, Enum, Boolean, ForeignKey, DateTime, Integer
-from sqlalchemy.dialects.postgresql import TEXT, VARCHAR
+from sqlalchemy.dialects.postgresql import TEXT, VARCHAR, JSONB
 from sqlalchemy.orm import relationship
 
 from bot.models.db import Base
@@ -27,6 +28,15 @@ class CategoryType(BaseModel):
 
     def get_title(self, lang: str):
         return self.title if lang == 'ru' else self.uz_title
+
+
+class ContactTable(BaseModel):
+    __tablename__ = 'dashboard_contact'
+
+    first_name = Column(String(255))
+    last_name = Column(String(255), nullable=True)
+    tg_id = Column(Integer, nullable=True, unique=True)
+    data = Column(sqlalchemy_json.mutable_json_type(dbtype=JSONB, nested=True), nullable=True, default=dict)
 
 
 class StudentTable(BaseModel):
@@ -106,10 +116,10 @@ class PromotionTable(BaseModel):
     description = Column(TEXT)
     course_id = Column(Integer, ForeignKey('dashboard_course.id', ondelete='SET NULL'), nullable=True)
     counter = Column(Integer, default=0)
-    registration_button = Column(Boolean, default=False)
     link = Column(String(255), nullable=True)
     video_file_id = Column(String(255), nullable=True)
     unique_code = Column(String(255), nullable=True, unique=True)
+    start_message = Column(TEXT, nullable=False)
 
     student = relationship('StudentTable', back_populates='promo')
     course = relationship('CourseTable', back_populates='promo')

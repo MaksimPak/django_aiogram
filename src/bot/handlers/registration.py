@@ -6,6 +6,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import CommandStart, Text, ChatTypeFilter
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.utils.exceptions import Unauthorized
+from sqlalchemy.exc import IntegrityError
 
 from bot import repository as repo
 from bot.decorators import create_session
@@ -96,25 +97,39 @@ async def promo_deep_link(
         )
 
         if not student:
-            data = [(name.capitalize(), ('lang', member.value))
-                    for name, member in StudentTable.LanguageType.__members__.items()]
-            kb = KeyboardGenerator(data).keyboard
+            contact = await repo.ContactRepository.get('tg_id', message.from_user.id, session)
+            if not contact:
+                await repo.ContactRepository.create({
+                    'first_name': message.from_user.first_name,
+                    'last_name': message.from_user.last_name,
+                    'tg_id': message.from_user.id,
+                    'data': {
+                        'promo': promotion.id,
+                        'courses': [promotion.course_id] if promotion.course_id else []
+                    }
+                }, session)
+            else:
+                if promotion.course_id and promotion.course_id not in contact.data['courses']:
+                    contact.data['courses'].append(promotion.course_id)
+
+                await repo.ContactRepository.edit(contact, {
+                    'data': {
+                        'promo': promotion.id,
+                        'courses': contact.data['courses']
+                    }
+                }, session)
 
             await message.reply(
-                _('Привет, спасибо что перешел по промо! Давай теперь тебя зарегаем. Укажи язык'),
-                reply_markup=kb
+                _('Спасибо за ваш интерес! Пройдите регистрацию нажав '
+                  '/start и получите мгновенный доступ к бесплатным курсам Megaskill'),
             )
 
-            async with state.proxy() as data:
-                data['promo'] = promotion.id
-                data['promo_course'] = promotion.course_id
-
-            await RegistrationState.lang.set()
         else:
             if promotion.course_id:
                 studentcourse = await repo.StudentCourseRepository.get_record(student.id, promotion.course_id, session)
                 if not studentcourse:
                     await repo.StudentCourseRepository.create_record(student.id, promotion.course_id, session)
+            await message.reply(promotion.start_message)
             await start_reg(message, **kwargs)
 
 
@@ -130,6 +145,12 @@ async def start_reg(
     """
     student = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
     if not student:
+        with suppress(IntegrityError):
+            await repo.ContactRepository.create({
+                'first_name': message.from_user.first_name,
+                'last_name': message.from_user.last_name,
+                'tg_id': message.from_user.id
+            }, session)
         kb = KeyboardGenerator([(_('Через бот'), ('tg_reg',)), (_('Через инвайт'), ('invite_reg',))]).keyboard
         await bot.send_message(message.from_user.id, _('Выберите способ регистрации'), reply_markup=kb)
     else:
@@ -255,7 +276,7 @@ async def create_record(
 ):
     await bot.answer_callback_query(cb.id)
     field = int(callback_data['value'])
-
+    contact = await repo.ContactRepository.get('tg_id', cb.from_user.id, session)
     data = await state.get_data()
     lead_data = {
         'first_name': data['first_name'],
@@ -266,13 +287,16 @@ async def create_record(
         'chosen_field_id': field,
         'application_type': StudentTable.ApplicationType.telegram,
         'is_client': False,
-        'promo_id': data.get('promo')
     }
+    if contact:
+        lead_data['promo_id'] = contact.data.get('promo')
+
     student = await repo.StudentRepository.create(lead_data, session)
 
-    if data.get('promo_course'):
-        await repo.StudentCourseRepository.create_record(student.id, data['promo_course'], session)
+    if contact and contact.data.get('courses'):
+        await repo.StudentCourseRepository.bunch_create(student.id, contact.data['courses'], session)
 
+    not contact or await repo.ContactRepository.delete(contact, session)
     reply_kb = await KeyboardGenerator.main_kb()
     await bot.send_message(cb.from_user.id, _('Вы зарегистрированы! В ближайшее время с вами свяжется наш оператор'),
                            reply_markup=reply_kb)

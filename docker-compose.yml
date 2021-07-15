@@ -30,7 +30,7 @@ services:
       - redis
   celery:
     image: parcel-image
-    command: celery -A app worker -l info
+    command: celery -A app worker -l info --pool=gevent --concurrency=10
     volumes:
       - ./src:/parcel
     depends_on:

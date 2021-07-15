@@ -418,10 +418,13 @@ async def get_student_feedback(
     async with state.proxy() as data:
         data['student_id'] = student_id
 
-    await bot.send_message(
+    await bot.edit_message_text(
+        _('Отправьте ваше сообщение'),
         cb.from_user.id,
-        _('Отправьте ваше сообщение')
+        cb.message.message_id,
+        reply_markup=None
     )
+
     await Feedback.feedback_student.set()
 
 

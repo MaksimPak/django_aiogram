@@ -63,7 +63,6 @@ def send_promo_task(config):
             config['duration'],
             config['width'],
             config['height'],
-            promotion.registration_button,
         )
         data['report_id'] = report.id
         data['student_id'] = student.id
