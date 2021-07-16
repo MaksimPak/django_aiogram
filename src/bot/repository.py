@@ -2,12 +2,13 @@ import datetime
 from typing import Any
 
 from sqlalchemy import select, func, or_, and_
-from sqlalchemy.orm import selectinload, with_parent, joinedload
+from sqlalchemy.orm import selectinload, with_parent
 
 from bot.models.dashboard import (
     StudentTable, CourseTable, StudentCourse,
     LessonTable, LessonUrlTable, StudentLesson,
-    CategoryType, PromotionTable, QuizAnswerTable, ContactTable
+    CategoryType, PromotionTable, QuizAnswerTable,
+    ContactTable, FormTable, FormQuestionTable, FormAnswerTable
 )
 from bot.models.db import SessionLocal
 
@@ -326,11 +327,15 @@ class FormRepository(BaseRepository):
             return forms
 
     @staticmethod
-    async def get_with_first_question(form_id, session):
+    async def get_questions(form_id, session):
         async with session:
             form = (
                 await session.execute(
                     select(FormTable).where(FormTable.id == form_id)
-                .options(selectinload(FormTable.questions)))
+                .options(selectinload(FormTable.questions).selectinload(FormQuestionTable.answers)))
             ).scalar()
             return form
+
+
+class FormAnswerRepository(BaseRepository):
+    table = FormAnswerTable

@@ -239,16 +239,21 @@ class FormQuestionTable(BaseModel):
     image_file_id = Column(String(255), nullable=True)
 
     form = relationship('FormTable', back_populates='questions')
+    answers = relationship('FormAnswerTable', back_populates='question', foreign_keys='FormAnswerTable.question_id')
+    jump_answers = relationship('FormAnswerTable', back_populates='jump_to_question', foreign_keys='FormAnswerTable.jump_to_id')
 
 
-class FormAnswer(BaseModel):
+class FormAnswerTable(BaseModel):
     __tablename__ = 'dashboard_formanswer'
 
-    question_id = Column(Integer, ForeignKey('dashboard_formquestion.id', ondelete='CASCADE'), nullable=False)
     is_correct = Column(Boolean, default=False)
     text = Column(String(50), nullable=False)
-    jump_to_id = Column(Integer, ForeignKey('dashboard_formquestion.id', ondelete='CASCADE'), nullable=True)
     ordering = Column(Integer, nullable=False)
+    question_id = Column(Integer, ForeignKey('dashboard_formquestion.id', ondelete='CASCADE'), nullable=False)
+    jump_to_id = Column(Integer, ForeignKey('dashboard_formquestion.id', ondelete='CASCADE'), nullable=True)
+
+    question = relationship('FormQuestionTable', back_populates='answers', foreign_keys=[question_id])
+    jump_to_question = relationship('FormQuestionTable', back_populates='jump_answers', foreign_keys=[jump_to_id])
 
 
 class StudentForm(BaseModel):
