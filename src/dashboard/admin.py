@@ -475,7 +475,7 @@ class StudentFormAdmin(admin.ModelAdmin):
     list_display = ('id', 'student', 'form', 'score')
     list_display_links = ('student',)
     list_per_page = 20
-    readonly_fields = ('student', 'form', 'score')
+    readonly_fields = ('student', 'form', 'score', 'data')
 
 
 admin.site.register(models.User, UserAdmin)

@@ -262,3 +262,4 @@ class StudentFormTable(BaseModel):
     student_id = Column(Integer, ForeignKey('dashboard_student.id', ondelete='CASCADE'), nullable=False)
     form_id = Column(Integer, ForeignKey('dashboard_form.id', ondelete='CASCADE'), nullable=False)
     score = Column(Integer, nullable=True)
+    data = Column(sqlalchemy_json.mutable_json_type(dbtype=JSONB, nested=True), nullable=True, default=dict)

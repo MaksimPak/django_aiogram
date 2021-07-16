@@ -21,6 +21,10 @@ def promo_upload_directory(instance, filename):
     return f'promos/{instance.title}/{filename}'
 
 
+def form_question_directory(instance, filename):
+    return f'form_questions/{instance.id}/{filename}'
+
+
 def generate_uuid():
     return str(uuid.uuid4())[:8]
 
@@ -324,7 +328,7 @@ class FormQuestion(BaseModel):
     form = models.ForeignKey(Form, on_delete=models.CASCADE, verbose_name='Форма')
     multi_answer = models.BooleanField(verbose_name='Мульти-ответ', default=False)
     text = models.CharField(max_length=50, verbose_name='Текст')
-    image = models.ImageField(verbose_name='Картинка', blank=True, null=True)
+    image = models.ImageField(verbose_name='Картинка', blank=True, null=True, upload_to=form_question_directory)
     image_file_id = models.CharField(verbose_name='Image ID', null=True, blank=True, editable=False, max_length=255)
 
     def __str__(self):
@@ -347,6 +351,7 @@ class StudentForm(BaseModel):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     form = models.ForeignKey(Form, on_delete=models.CASCADE)
     score = models.IntegerField(verbose_name='Бал', null=True, blank=True)
+    data = models.JSONField(verbose_name='Данные', null=True, blank=True, default=dict)
 
     class Meta:
         verbose_name = 'Ответ на форму'

@@ -337,7 +337,7 @@ class FormRepository(BaseRepository):
             return form
 
 
-class FornQuestionRepository(BaseRepository):
+class FormQuestionRepository(BaseRepository):
     table = FormQuestionTable
 
     @staticmethod
@@ -348,6 +348,7 @@ class FornQuestionRepository(BaseRepository):
                     FormQuestionTable.form_id == form_id,
                     FormQuestionTable.id > question_id
                 ).options(selectinload(FormQuestionTable.answers))
+                .options(selectinload(FormQuestionTable.form))
             )
         ).scalar()
         return next_question
