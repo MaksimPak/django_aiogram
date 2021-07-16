@@ -339,3 +339,14 @@ class FormRepository(BaseRepository):
 
 class FormAnswerRepository(BaseRepository):
     table = FormAnswerTable
+
+    @staticmethod
+    async def load_all_relationships(answer_id, session):
+        async with session:
+            answer = (
+                await session.execute(
+                    select(FormAnswerTable).where(FormAnswerTable.id == answer_id)
+                        .options(selectinload(FormAnswerTable.question).selectinload(FormQuestionTable.form))
+                        )
+            ).scalar()
+            return answer

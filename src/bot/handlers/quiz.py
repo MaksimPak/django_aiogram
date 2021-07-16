@@ -9,7 +9,7 @@ from bot.misc import dp, i18n, bot
 from bot.models.db import SessionLocal
 from bot import repository as repo
 from bot.serializers import KeyboardGenerator
-from bot.utils.callback_settings import short_data
+from bot.utils.callback_settings import short_data, two_valued_data
 
 # todo: need to localize
 _ = i18n.gettext
@@ -51,18 +51,22 @@ async def start_form(
         return
     elif not form:
         await cb.message.reply(_('Ошибка системы. Получите опросники снова'))
-    await send_question(form_id, cb.from_user.id)
+    await send_question(form_id, cb.from_user.id, state)
 
 
 @create_session
 async def send_question(
         form_id: int,
         chat_id: int,
+        state: FSMContext,
         session: SessionLocal,
-        answers: Optional = None,
+        answer: Optional = None,
 ):
-    if not answers:
-        form = await repo.FormRepository.get_questions(int(form_id), session)
+    form = await repo.FormRepository.get_questions(int(form_id), session)
+    if not answer:
+        async with state.proxy() as data:
+            data['score'] = 0
+
         data = [(answer.text, ('answer', answer.id)) for answer in form.questions[0].answers]
 
         kb = KeyboardGenerator(data)
@@ -72,7 +76,7 @@ async def send_question(
             reply_markup=kb.keyboard
         )
     else:
-        pass
+        print(answer.questions)
 
 
 @dp.callback_query_handler(short_data.filter(property='answer'))
@@ -80,12 +84,14 @@ async def send_question(
 async def get_answer(
         cb: types.callback_query,
         session: SessionLocal,
+        state: FSMContext,
         callback_data: dict = None,
         **kwargs
 ):
     await cb.answer()
-    answer_id = callback_data['value']
-    answer = await repo.FormAnswerRepository.get('id', int(answer_id), session)
-    print(answer)
+    answer = await repo.FormAnswerRepository.load_all_relationships(int(callback_data['value']), session)
+    async with state.proxy() as data:
+        if answer.is_correct:
+            data['score'] += 1
 
-
+    await send_question(answer.question.form.id, cb.from_user.id, state, answer=answer.id)
