@@ -76,7 +76,32 @@ async def send_question(
             reply_markup=kb.keyboard
         )
     else:
-        print(answer.questions)
+        await send_next_question(answer, chat_id, state)
+
+
+@create_session
+async def send_next_question(answer, chat_id, state, session=None):
+    next_question = await repo.FornQuestionRepository.next_question(
+            answer.question.id,
+            answer.question.form_id,
+            session
+        )
+    if next_question:
+        data = [(answer.text, ('answer', answer.id)) for answer in next_question.answers]
+
+        kb = KeyboardGenerator(data)
+
+        await bot.send_message(
+            chat_id,
+            next_question.text,
+            reply_markup=kb.keyboard
+        )
+    else:
+        await bot.send_message(
+            chat_id,
+            'Спасибо за то что прошли опросник',
+        )
+        await state.finish()
 
 
 @dp.callback_query_handler(short_data.filter(property='answer'))
@@ -94,4 +119,4 @@ async def get_answer(
         if answer.is_correct:
             data['score'] += 1
 
-    await send_question(answer.question.form.id, cb.from_user.id, state, answer=answer.id)
+    await send_question(answer.question.form.id, cb.from_user.id, state, answer=answer)

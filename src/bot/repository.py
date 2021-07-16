@@ -337,6 +337,22 @@ class FormRepository(BaseRepository):
             return form
 
 
+class FornQuestionRepository(BaseRepository):
+    table = FormQuestionTable
+
+    @staticmethod
+    async def next_question(question_id, form_id, session):
+        next_question = (
+            await session.execute(
+                select(FormQuestionTable).where(
+                    FormQuestionTable.form_id == form_id,
+                    FormQuestionTable.id > question_id
+                ).options(selectinload(FormQuestionTable.answers))
+            )
+        ).scalar()
+        return next_question
+
+
 class FormAnswerRepository(BaseRepository):
     table = FormAnswerTable
 
@@ -346,7 +362,11 @@ class FormAnswerRepository(BaseRepository):
             answer = (
                 await session.execute(
                     select(FormAnswerTable).where(FormAnswerTable.id == answer_id)
-                        .options(selectinload(FormAnswerTable.question).selectinload(FormQuestionTable.form))
+                        .options(
+                        selectinload(FormAnswerTable.question)
+                        .selectinload(FormQuestionTable.form)
+                        .selectinload(FormTable.questions)
+                    )
                         )
             ).scalar()
             return answer
