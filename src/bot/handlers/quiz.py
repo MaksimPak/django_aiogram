@@ -4,15 +4,76 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 
+from bot import repository as repo
 from bot.decorators import create_session
 from bot.misc import dp, i18n, bot
 from bot.models.db import SessionLocal
-from bot import repository as repo
 from bot.serializers import KeyboardGenerator
-from bot.utils.callback_settings import short_data, two_valued_data
+from bot.utils.callback_settings import short_data
 
 # todo: need to localize
 _ = i18n.gettext
+
+
+@create_session
+async def send_question(
+        form_id: int,
+        chat_id: int,
+        state: FSMContext,
+        session: SessionLocal,
+        answer: Optional = None,
+):
+    form = await repo.FormRepository.get_questions(int(form_id), session)
+    if not answer:
+        async with state.proxy() as data:
+            data['score'] = 0
+            data['form_id'] = form_id
+
+        data = [(answer.text, ('answer', answer.id)) for answer in form.questions[0].answers]
+
+        kb = KeyboardGenerator(data)
+        await bot.send_message(
+            chat_id,
+            form.questions[0].text,
+            reply_markup=kb.keyboard
+        )
+    else:
+        await next_question(answer, chat_id, state)
+
+
+@create_session
+async def next_question(answer, chat_id, state, session=None):
+    question = await repo.FornQuestionRepository.next_question(
+            answer.question.id,
+            answer.question.form_id,
+            session
+        )
+    if question:
+        data = [(answer.text, ('answer', answer.id)) for answer in question.answers]
+
+        kb = KeyboardGenerator(data)
+
+        await bot.send_message(
+            chat_id,
+            question.text,
+            reply_markup=kb.keyboard
+        )
+    else:
+        student = await repo.StudentRepository.get('tg_id', chat_id, session)
+        data = await state.get_data()
+        await repo.StudentFormRepository.create(
+            {
+                'student_id': student.id,
+                'form_id': int(data['form_id']),
+                'score':  int(data['score'])
+            },
+            session
+        )
+        await bot.send_message(
+            chat_id,
+            'Спасибо за то что прошли опросник',
+        )
+        await state.finish()
 
 
 @dp.message_handler(Text(equals='🤔 Опросники'))
@@ -52,56 +113,6 @@ async def start_form(
     elif not form:
         await cb.message.reply(_('Ошибка системы. Получите опросники снова'))
     await send_question(form_id, cb.from_user.id, state)
-
-
-@create_session
-async def send_question(
-        form_id: int,
-        chat_id: int,
-        state: FSMContext,
-        session: SessionLocal,
-        answer: Optional = None,
-):
-    form = await repo.FormRepository.get_questions(int(form_id), session)
-    if not answer:
-        async with state.proxy() as data:
-            data['score'] = 0
-
-        data = [(answer.text, ('answer', answer.id)) for answer in form.questions[0].answers]
-
-        kb = KeyboardGenerator(data)
-        await bot.send_message(
-            chat_id,
-            form.questions[0].text,
-            reply_markup=kb.keyboard
-        )
-    else:
-        await send_next_question(answer, chat_id, state)
-
-
-@create_session
-async def send_next_question(answer, chat_id, state, session=None):
-    next_question = await repo.FornQuestionRepository.next_question(
-            answer.question.id,
-            answer.question.form_id,
-            session
-        )
-    if next_question:
-        data = [(answer.text, ('answer', answer.id)) for answer in next_question.answers]
-
-        kb = KeyboardGenerator(data)
-
-        await bot.send_message(
-            chat_id,
-            next_question.text,
-            reply_markup=kb.keyboard
-        )
-    else:
-        await bot.send_message(
-            chat_id,
-            'Спасибо за то что прошли опросник',
-        )
-        await state.finish()
 
 
 @dp.callback_query_handler(short_data.filter(property='answer'))

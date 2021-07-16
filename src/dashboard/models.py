@@ -347,3 +347,7 @@ class StudentForm(BaseModel):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     form = models.ForeignKey(Form, on_delete=models.CASCADE)
     score = models.IntegerField(verbose_name='Бал', null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Ответ на форму'
+        verbose_name_plural = 'Ответы на форму'

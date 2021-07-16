@@ -256,7 +256,7 @@ class FormAnswerTable(BaseModel):
     jump_to_question = relationship('FormQuestionTable', back_populates='jump_answers', foreign_keys=[jump_to_id])
 
 
-class StudentForm(BaseModel):
+class StudentFormTable(BaseModel):
     __tablename__ = 'dashboard_studentform'
 
     student_id = Column(Integer, ForeignKey('dashboard_student.id', ondelete='CASCADE'), nullable=False)

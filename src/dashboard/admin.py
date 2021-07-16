@@ -470,4 +470,12 @@ class FormAdmin(admin.ModelAdmin):
     readonly_fields = ('unique_code', 'link',)
 
 
+@admin.register(models.StudentForm)
+class StudentFormAdmin(admin.ModelAdmin):
+    list_display = ('id', 'student', 'form', 'score')
+    list_display_links = ('student',)
+    list_per_page = 20
+    readonly_fields = ('student', 'form', 'score')
+
+
 admin.site.register(models.User, UserAdmin)

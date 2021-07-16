@@ -8,7 +8,7 @@ from bot.models.dashboard import (
     StudentTable, CourseTable, StudentCourse,
     LessonTable, LessonUrlTable, StudentLesson,
     CategoryType, PromotionTable, QuizAnswerTable,
-    ContactTable, FormTable, FormQuestionTable, FormAnswerTable
+    ContactTable, FormTable, FormQuestionTable, FormAnswerTable, StudentFormTable
 )
 from bot.models.db import SessionLocal
 
@@ -370,3 +370,7 @@ class FormAnswerRepository(BaseRepository):
                         )
             ).scalar()
             return answer
+
+
+class StudentFormRepository(BaseRepository):
+    table = StudentFormTable
