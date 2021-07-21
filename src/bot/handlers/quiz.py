@@ -1,8 +1,9 @@
+import re
 from typing import Optional
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters import Text
+from aiogram.dispatcher.filters import Text, Regexp
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import InlineKeyboardMarkup
 
@@ -131,6 +132,33 @@ async def display_forms(
     markup = KeyboardGenerator(form_data).keyboard
 
     await message.reply('Выберите опросник', reply_markup=markup)
+
+
+@dp.message_handler(Regexp(re.compile('^\/quiz(\d*)')))
+@create_session
+async def secret_form(
+        message: types.Message,
+        regexp: re.Match,
+        state: FSMContext,
+        session: SessionLocal,
+        **kwargs
+):
+    form_id = regexp.group(1)
+    client = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
+    form = await repo.FormRepository.get('id', int(form_id), session)
+    is_record = await repo.StudentFormRepository.exists(client.id, int(form_id), session)
+
+    async with state.proxy() as data:
+        data['form_id'] = form_id
+
+    if not client:
+        return await message.reply(_('Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться'))
+    elif not form:
+        return await message.reply(_('Ошибка системы. Получите опросники снова'))
+    elif form.one_off and is_record:
+        return await message.reply(_('Данный опросник нельзя пройти дважды'))
+
+    await send_question(form_id, message.from_user.id, message.message_id, state)
 
 
 @dp.callback_query_handler(short_data.filter(property='form'))
