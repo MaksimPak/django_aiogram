@@ -4,11 +4,12 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import StatesGroup, State
+from aiogram.types import InlineKeyboardMarkup
 
 from bot import repository as repo
 from bot.decorators import create_session
 from bot.misc import dp, i18n, bot
-from bot.models.dashboard import FormTable
+from bot.models.dashboard import FormTable, FormAnswerTable
 from bot.models.db import SessionLocal
 from bot.serializers import KeyboardGenerator, FormButtons, MessageSender
 from bot.utils.callback_settings import short_data
@@ -95,6 +96,26 @@ async def next_question(
         await state.finish()
 
 
+async def process_multianswer(
+        cb: types.CallbackQuery,
+        answer: FormAnswerTable,
+        state: FSMContext,
+        keyboard: InlineKeyboardMarkup
+):
+    async with state.proxy() as data:
+        if 'answers' not in data:
+            data['answers'] = [answer.is_correct]
+        else:
+            data['answers'].append(answer.is_correct)
+    kb = await FormButtons(answer.question.form_id).mark_selected(
+        answer.id,
+        answer.question_id,
+        keyboard.to_python()
+    )
+
+    await cb.message.edit_reply_markup(kb)
+
+
 @dp.message_handler(Text(equals='🤔 Опросники'))
 @create_session
 async def display_forms(
@@ -113,7 +134,7 @@ async def display_forms(
 @dp.callback_query_handler(short_data.filter(property='form'))
 @create_session
 async def start_form(
-        cb: types.callback_query,
+        cb: types.CallbackQuery,
         session: SessionLocal,
         state: FSMContext,
         callback_data: dict,
@@ -140,8 +161,8 @@ async def start_form(
 
 @dp.callback_query_handler(short_data.filter(property='answer'))
 @create_session
-async def get_answer(
-        cb: types.callback_query,
+async def get_inline_answer(
+        cb: types.CallbackQuery,
         session: SessionLocal,
         state: FSMContext,
         callback_data: dict = None,
@@ -149,11 +170,32 @@ async def get_answer(
 ):
     await cb.answer()
     answer = await repo.FormAnswerRepository.load_all_relationships(int(callback_data['value']), session)
-    async with state.proxy() as data:
-        if answer.is_correct:
-            data['score'] += 1
+    multi_answer = answer.question.multi_answer
+    if multi_answer:
+        await process_multianswer(cb, answer, state, cb.message.reply_markup)
+    else:
+        async with state.proxy() as data:
+            if answer.is_correct:
+                data['score'] += 1
 
-    await send_question(answer.question.form.id, cb.from_user.id, state, answer=answer)
+        await send_question(answer.question.form.id, cb.from_user.id, state, answer=answer)
+
+
+@dp.callback_query_handler(short_data.filter(property='proceed'))
+@create_session
+async def proceed(
+        cb: types.CallbackQuery,
+        state: FSMContext,
+        callback_data: dict = None,
+        **kwargs
+):
+    await cb.answer()
+    async with state.proxy() as data:
+        if all(data['answers']):
+            data['score'] += 1
+        data['current_question_id'] = callback_data['value']
+
+    await next_question(cb.from_user.id, state)
 
 
 @dp.message_handler(state=QuestionnaireMode.accept_text)

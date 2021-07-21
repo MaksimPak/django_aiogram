@@ -26,17 +26,20 @@ question_redis = RedisStorage2(
 )
 
 
-@dataclass
 class MessageSender:
-    chat_id: int
-    text: str = None
-    photo: str = None
-    video: str = None
-    duration: int = None
-    width: int = None
-    height: int = None
-    thumbnail: Union[int, str] = None
-    markup: Union[ReplyKeyboardMarkup, InlineKeyboardMarkup] = None
+    def __init__(self, chat_id: int, text: str = None, photo: str = None,
+                 video: str = None, duration: int = None, width: int = None,
+                 height: int = None, thumbnail: Union[int, str] = None,
+                 markup: Union[ReplyKeyboardMarkup, InlineKeyboardMarkup] = None):
+        self.chat_id = chat_id
+        self.text = text
+        self.photo = photo
+        self.video = video
+        self.duration = duration
+        self.width = width
+        self.height = height
+        self.thumbnail = thumbnail
+        self.markup = markup
 
     def set_media(self, attr, value):
         setattr(self, attr, value)
@@ -100,8 +103,11 @@ class MessageSender:
 
 
 class KeyboardGenerator:
-    def __init__(self, data: Iterable = None, **kwargs):
-        self.keyboard = InlineKeyboardMarkup(**kwargs)
+    def __init__(self, data: Iterable = None, keyboard=None, **kwargs):
+        if keyboard:
+            self.keyboard = keyboard
+        else:
+            self.keyboard = InlineKeyboardMarkup(**kwargs)
         if data:
             self.add(data)
 
@@ -165,10 +171,27 @@ class KeyboardGenerator:
 
 
 @dataclass
-class FormButtons:
+class FormButtons(KeyboardGenerator):
     form: FormTable
     question: FormQuestionTable = None
     answer: FormAnswerTable = None
+
+    async def mark_selected(
+            self,
+            answer_id: int,
+            question_id: int,
+            keyboard: dict
+    ):
+        for key in keyboard['inline_keyboard'][0]:
+            if int(key['callback_data'][-1]) == answer_id and key['text'][0] != '✅':
+                key['text'] = '✅ ' + key['text']
+            elif int(key['callback_data'][-1]) == answer_id and key['text'][0] == '✅':
+                key['text'] = key['text'][1:]
+        self.keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard['inline_keyboard'])
+        if self.keyboard.inline_keyboard[-1][-1].text != 'Следующий вопрос':
+            self.add(('Следующий вопрос', ('proceed', question_id)))
+
+        return self.keyboard
 
     async def question_buttons(self):
         kb = None
