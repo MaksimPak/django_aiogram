@@ -134,7 +134,7 @@ async def display_forms(
     await message.reply('Выберите опросник', reply_markup=markup)
 
 
-@dp.message_handler(Regexp(re.compile('^\/quiz(\d*)')))
+@dp.message_handler(Regexp(re.compile('^\/quiz(\d+)')))
 @create_session
 async def secret_form(
         message: types.Message,
