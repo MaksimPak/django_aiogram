@@ -26,6 +26,7 @@ class QuestionnaireMode(StatesGroup):
 async def send_question(
         form_id: int,
         chat_id: int,
+        message_id: int,
         state: FSMContext,
         session: SessionLocal,
         answer: Optional = None,
@@ -52,6 +53,7 @@ async def send_question(
         ).send()
 
     else:
+        await bot.edit_message_reply_markup(chat_id, message_id)
         await next_question(chat_id, state)
 
 
@@ -156,7 +158,7 @@ async def start_form(
         return
     elif not form:
         await cb.message.reply(_('Ошибка системы. Получите опросники снова'))
-    await send_question(form_id, cb.from_user.id, state)
+    await send_question(form_id, cb.from_user.id, cb.message.message_id, state)
 
 
 @dp.callback_query_handler(short_data.filter(property='answer'))
@@ -178,7 +180,13 @@ async def get_inline_answer(
             if answer.is_correct:
                 data['score'] += 1
 
-        await send_question(answer.question.form.id, cb.from_user.id, state, answer=answer)
+        await send_question(
+            answer.question.form.id,
+            cb.from_user.id,
+            cb.message.message_id,
+            state,
+            answer=answer
+        )
 
 
 @dp.callback_query_handler(short_data.filter(property='proceed'))
@@ -190,6 +198,7 @@ async def proceed(
         **kwargs
 ):
     await cb.answer()
+    await cb.message.edit_reply_markup(None)
     async with state.proxy() as data:
         if all(data['answers']):
             data['score'] += 1
