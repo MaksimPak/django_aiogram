@@ -149,15 +149,18 @@ async def start_form(
     form_id = callback_data['value']
     client = await repo.StudentRepository.get('tg_id', int(cb.from_user.id), session)
     form = await repo.FormRepository.get('id', int(form_id), session)
+    is_record = await repo.StudentFormRepository.exists(client.id, int(form_id), session)
 
     async with state.proxy() as data:
         data['form_id'] = form_id
 
     if not client:
-        await cb.message.reply(_('Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться'))
-        return
+        return await cb.message.reply(_('Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться'))
     elif not form:
-        await cb.message.reply(_('Ошибка системы. Получите опросники снова'))
+        return await cb.message.reply(_('Ошибка системы. Получите опросники снова'))
+    elif form.one_off and is_record:
+        return await cb.message.reply(_('Данный опросник нельзя пройти дважды'))
+
     await send_question(form_id, cb.from_user.id, cb.message.message_id, state)
 
 

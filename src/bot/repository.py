@@ -375,3 +375,14 @@ class FormAnswerRepository(BaseRepository):
 
 class StudentFormRepository(BaseRepository):
     table = StudentFormTable
+
+    @staticmethod
+    async def exists(student_id, form_id, session):
+        async with session:
+            is_record = (await session.execute(
+                select(StudentFormTable.id).where(
+                    StudentFormTable.student_id == student_id,
+                    StudentFormTable.form_id == form_id
+                )
+            )).first()
+            return is_record
