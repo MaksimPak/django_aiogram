@@ -1,5 +1,5 @@
 import re
-from typing import Optional
+from typing import Optional, Union
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
@@ -135,47 +135,25 @@ async def display_forms(
 
 
 @dp.message_handler(Regexp(re.compile('^\/quiz(\d+)')))
-@create_session
-async def secret_form(
-        message: types.Message,
-        regexp: re.Match,
-        state: FSMContext,
-        session: SessionLocal,
-        **kwargs
-):
-    form_id = regexp.group(1)
-    client = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
-    form = await repo.FormRepository.get('id', int(form_id), session)
-    is_record = await repo.StudentFormRepository.exists(client.id, int(form_id), session)
-
-    async with state.proxy() as data:
-        data['form_id'] = form_id
-
-    if not client:
-        return await message.reply(_('Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться'))
-    elif not form:
-        return await message.reply(_('Ошибка системы. Получите опросники снова'))
-    elif form.one_off and is_record:
-        return await message.reply(_('Данный опросник нельзя пройти дважды'))
-
-    await send_question(form_id, message.from_user.id, message.message_id, state)
-
-
 @dp.callback_query_handler(short_data.filter(property='form'))
 @create_session
 async def start_form(
-        cb: types.CallbackQuery,
+        response: Union[types.CallbackQuery, types.Message],
         session: SessionLocal,
         state: FSMContext,
-        callback_data: dict,
+        callback_data: dict = None,
+        regexp: re.Match = None,
         **kwargs: dict
 ):
     """
     Start the form for student
     """
-    await cb.answer()
-    form_id = callback_data['value']
-    client = await repo.StudentRepository.get('tg_id', int(cb.from_user.id), session)
+    if type(response) == types.CallbackQuery:
+        await response.answer()
+    message_id = response.message.message_id if type(response) == types.CallbackQuery else response.message_id
+
+    form_id = callback_data['value'] if type(response) == types.CallbackQuery else regexp.group(1)
+    client = await repo.StudentRepository.get('tg_id', int(response.from_user.id), session)
     form = await repo.FormRepository.get('id', int(form_id), session)
     is_record = await repo.StudentFormRepository.exists(client.id, int(form_id), session)
 
@@ -183,13 +161,25 @@ async def start_form(
         data['form_id'] = form_id
 
     if not client:
-        return await cb.message.reply(_('Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться'))
+        return await bot.send_message(
+            response.from_user.id,
+            'Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться',
+            reply_to_message_id=message_id
+        )
     elif not form:
-        return await cb.message.reply(_('Ошибка системы. Получите опросники снова'))
+        return await bot.send_message(
+            response.from_user.id,
+            'Ошибка системы. Получите опросники снова',
+            reply_to_message_id=message_id
+        )
     elif form.one_off and is_record:
-        return await cb.message.reply(_('Данный опросник нельзя пройти дважды'))
+        return await bot.send_message(
+            response.from_user.id,
+            'Данный опросник нельзя пройти дважды',
+            reply_to_message_id=message_id
+        )
 
-    await send_question(form_id, cb.from_user.id, cb.message.message_id, state)
+    await send_question(form_id, response.from_user.id, message_id, state)
 
 
 @dp.callback_query_handler(short_data.filter(property='answer'))
