@@ -124,16 +124,26 @@ async def process_multianswer(
 @dp.message_handler(Text(equals='🤔 Опросники'))
 @create_session
 async def display_forms(
-        message: types.Message,
+        response: Union[types.Message, types.CallbackQuery],
         session: SessionLocal,
         **kwargs: dict
 
 ):
+    if type(response) == types.CallbackQuery:
+        await response.answer()
+
     forms = await repo.FormRepository.get_public(session)
     form_data = [(form.name, ('form', form.id)) for form in forms]
     markup = KeyboardGenerator(form_data).keyboard
+    message_id = response.message_id if type(response) == types.Message else None
 
-    await message.reply('Выберите опросник', reply_markup=markup, allow_sending_without_reply=True)
+    await bot.send_message(
+        response.from_user.id,
+        'Выберите опросник',
+        reply_to_message_id=message_id,
+        allow_sending_without_reply=True,
+        reply_markup=markup
+    )
 
 
 @dp.message_handler(CommandStart(re.compile(r'^quiz(\d+)')), ChatTypeFilter(types.ChatType.PRIVATE))
