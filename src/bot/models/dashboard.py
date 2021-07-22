@@ -217,7 +217,7 @@ class FormTable(BaseModel):
     is_active = Column(Boolean, default=False)
     one_off = Column(Boolean, default=False)
 
-    questions = relationship('FormQuestionTable', back_populates='form')
+    questions = relationship('FormQuestionTable', back_populates='form', order_by='[FormQuestionTable.position, FormQuestionTable.id]')
 
 
 class FormQuestionTable(BaseModel):
@@ -227,6 +227,7 @@ class FormQuestionTable(BaseModel):
     multi_answer = Column(Boolean, default=False)
     text = Column(String(50))
     image = Column(String(255), nullable=True)
+    position = Column(Integer, nullable=False)
 
     form = relationship('FormTable', back_populates='questions')
     answers = relationship('FormAnswerTable', back_populates='question', foreign_keys='FormAnswerTable.question_id')
@@ -238,7 +239,6 @@ class FormAnswerTable(BaseModel):
 
     is_correct = Column(Boolean, default=False)
     text = Column(String(50), nullable=False)
-    ordering = Column(Integer, nullable=False)
     question_id = Column(Integer, ForeignKey('dashboard_formquestion.id', ondelete='CASCADE'), nullable=False)
     jump_to_id = Column(Integer, ForeignKey('dashboard_formquestion.id', ondelete='CASCADE'), nullable=True)
 

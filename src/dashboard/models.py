@@ -314,6 +314,7 @@ class FormQuestion(BaseModel):
     multi_answer = models.BooleanField(verbose_name='Мульти-ответ', default=False)
     text = models.CharField(max_length=50, verbose_name='Текст')
     image = models.ImageField(verbose_name='Картинка', blank=True, null=True, upload_to=form_question_directory)
+    position = models.IntegerField(verbose_name='Нумерация')
 
     def __str__(self):
         return f'Форма[{self.form.name}]: {self.text} '
@@ -321,6 +322,7 @@ class FormQuestion(BaseModel):
     class Meta:
         verbose_name = 'Вопрос'
         verbose_name_plural = 'Вопросы'
+        ordering = ('position', 'id')
 
 
 class FormAnswer(BaseModel):
@@ -328,7 +330,6 @@ class FormAnswer(BaseModel):
     is_correct = models.BooleanField(verbose_name='Правильный ответ', default=False)
     text = models.CharField(max_length=50, verbose_name='Текст ответа')
     jump_to = models.ForeignKey(FormQuestion, on_delete=models.CASCADE, verbose_name='Ведет к вопросу', null=True, blank=True, related_name='jumps')
-    ordering = models.IntegerField(verbose_name='Позиция')
 
 
 class StudentForm(BaseModel):

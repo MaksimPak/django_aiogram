@@ -71,10 +71,10 @@ class FormAnswerList(admin.StackedInline):
 
 class FormQuestionList(admin.TabularInline):
     model = models.FormQuestion
-    fields = ('multi_answer', 'text', 'image', 'changeform_link')
+    fields = ('multi_answer', 'text', 'image', 'position', 'changeform_link')
     readonly_fields = ('changeform_link', )
 
-    @admin.display(description='')
+    @admin.display(description='Дополнительно')
     def changeform_link(self, object):
         if object.id:
             changeform_url = reverse(
