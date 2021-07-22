@@ -6,7 +6,7 @@ import random
 from django.db.models.signals import post_save, post_init
 from django.dispatch import receiver
 
-from dashboard.models import Lead, Course, Promotion
+from dashboard.models import Lead, Course, Promotion, Form
 from dashboard.utils.telegram import Telegram
 
 
@@ -90,3 +90,17 @@ def promo_modify_data(sender, instance, created, **kwargs):
     else:
         if instance._video != instance.video.name and instance.video.name is not None:
             Promotion.objects.filter(pk=instance.id).update(video_file_id=None)
+
+
+@receiver(post_save, sender=Form)
+def promo_modify_data(sender, instance, created, **kwargs):
+    """
+    Create a unique code and invite link for registration for promotion upon saving.
+    """
+    if created:
+        unique_code = str(instance.id) + random_int()
+        link = f'https://t.me/{os.getenv("BOT_NAME")}?start=promo_{unique_code}'
+        instance.unique_code = unique_code
+        instance.link = link
+
+        Form.objects.filter(pk=instance.id).update(unique_code=unique_code, link=link)

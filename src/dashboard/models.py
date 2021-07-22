@@ -22,7 +22,7 @@ def promo_upload_directory(instance, filename):
 
 
 def form_question_directory(instance, filename):
-    return f'form_questions/{instance.id}/{filename}'
+    return f'form_questions/{instance.text}/{filename}'
 
 
 def generate_uuid():
@@ -299,7 +299,7 @@ class Form(BaseModel):
     link = models.CharField(max_length=50, verbose_name='Линк', null=True, blank=True)
     start_message = models.CharField(max_length=50, verbose_name='Сообщение для отправки при старте', null=True, blank=True)
     end_message = models.CharField(max_length=50, verbose_name='Сообщение для отправки при завершении', null=True, blank=True)
-    is_active = models.BooleanField(verbose_name='Форма начата', default=False)
+    is_active = models.BooleanField(verbose_name='Активна', default=False)
     one_off = models.BooleanField(verbose_name='Одноразовая форма', default=False)
 
     def __str__(self):

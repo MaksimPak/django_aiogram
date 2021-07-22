@@ -452,7 +452,12 @@ class FormAdmin(admin.ModelAdmin):
     list_display_links = ('name',)
     list_per_page = 20
     inlines = (FormQuestionList,)
-    readonly_fields = ('unique_code', 'link',)
+    readonly_fields = ('bot_command', 'link',)
+    exclude = ('unique_code',)
+
+    @admin.display(description='Бот команда')
+    def bot_command(self, form):
+        return f'/quiz{form.unique_code}' if form.unique_code else '-'
 
 
 @admin.register(models.StudentForm)
