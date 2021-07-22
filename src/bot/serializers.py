@@ -9,6 +9,7 @@ from aiogram.types import (
 )
 
 from bot import config
+from bot.config import DATABASES
 from bot.misc import bot
 from bot.models.dashboard import FormTable, FormQuestionTable, FormAnswerTable
 from bot.utils.callback_settings import (
@@ -17,12 +18,11 @@ from bot.utils.callback_settings import (
     two_valued_data,
     three_valued_data
 )
-from bot.utils.redis_connections import DATABASES
 
 question_redis = RedisStorage2(
     host=config.REDIS_HOST,
     port=config.REDIS_PORT,
-    db=DATABASES['QUESTION_DATA']
+    db=DATABASES['CUSTOM_DATA']
 )
 
 

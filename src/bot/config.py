@@ -18,3 +18,8 @@ REDIS_HOST = os.environ.get('REDIS_HOST', 'redis')
 REDIS_PORT = os.environ.get('REDIS_PORT', 6379)
 
 CHAT_ID = os.environ.get('CHAT_ID')
+
+DATABASES = {
+    'FSM': 2,
+    'CUSTOM_DATA': 4
+}

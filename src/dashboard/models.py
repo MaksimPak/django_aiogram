@@ -4,7 +4,6 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.template.defaultfilters import truncatewords
-from django.urls import reverse
 
 from dashboard.validators import validate_video_extension, validate_photo_extension, validate_hashtag, \
     validate_file_size, validate_dimensions, validate_thumbnail_size
@@ -14,15 +13,15 @@ THUMBNAIL_HELP_TEXT = 'The thumbnail should be in JPEG format and less than 200 
 
 
 def lesson_upload_directory(instance, filename):
-    return f'courses/{instance.course.name}/{instance.title}/{filename}'
+    return f'courses/{instance.course.id}/{filename}'
 
 
 def promo_upload_directory(instance, filename):
-    return f'promos/{instance.title}/{filename}'
+    return f'promos/{instance.course.id}/{filename}'
 
 
 def form_question_directory(instance, filename):
-    return f'form_questions/{instance.text}/{filename}'
+    return f'form_questions/{instance.form.id}/{filename}'
 
 
 def generate_uuid():
@@ -190,7 +189,7 @@ class Course(BaseModel):
 class Promotion(BaseModel):
     title = models.CharField(max_length=50, verbose_name='Название')
     video = models.FileField(verbose_name='Промо видео', upload_to=promo_upload_directory, validators=[validate_video_extension, validate_file_size], help_text='Не больше 50 мб')
-    thumbnail = models.ImageField(verbose_name='Промо превью', null=True, blank=True, upload_to=lesson_upload_directory, validators=[validate_dimensions, validate_thumbnail_size], help_text=THUMBNAIL_HELP_TEXT)
+    thumbnail = models.ImageField(verbose_name='Промо превью', null=True, blank=True, upload_to=promo_upload_directory, validators=[validate_dimensions, validate_thumbnail_size], help_text=THUMBNAIL_HELP_TEXT)
     description = models.TextField(verbose_name='Описание')
     course = models.ForeignKey(Course, on_delete=models.SET_NULL, verbose_name='Курс', null=True, blank=True)
     counter = models.IntegerField('Подсчет просмотра', default=0)

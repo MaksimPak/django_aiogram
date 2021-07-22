@@ -1,9 +1,10 @@
 import re
+import typing
 from typing import Optional, Union
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters import Text, Regexp
+from aiogram.dispatcher.filters import Text, Regexp, CommandStart, ChatTypeFilter
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import InlineKeyboardMarkup
 
@@ -24,7 +25,7 @@ class QuestionnaireMode(StatesGroup):
 
 
 @create_session
-async def send_question(
+async def start_question_sending(
         form_id: int,
         chat_id: int,
         message_id: int,
@@ -134,7 +135,8 @@ async def display_forms(
     await message.reply('Выберите опросник', reply_markup=markup)
 
 
-@dp.message_handler(Regexp(re.compile('^\/quiz(\d+)')))
+@dp.message_handler(CommandStart(re.compile(r'^quiz(\d+)')), ChatTypeFilter(types.ChatType.PRIVATE))
+@dp.message_handler(Regexp(re.compile(r'^/quiz(\d+)')))
 @dp.callback_query_handler(short_data.filter(property='form'))
 @create_session
 async def start_form(
@@ -143,6 +145,7 @@ async def start_form(
         state: FSMContext,
         callback_data: dict = None,
         regexp: re.Match = None,
+        deep_link: re.Match = None,
         **kwargs: dict
 ):
     """
@@ -152,13 +155,15 @@ async def start_form(
         await response.answer()
     message_id = response.message.message_id if type(response) == types.CallbackQuery else response.message_id
 
-    form_id = callback_data['value'] if type(response) == types.CallbackQuery else regexp.group(1)
-    client = await repo.StudentRepository.get('tg_id', int(response.from_user.id), session)
-    form = await repo.FormRepository.get('id', int(form_id), session)
-    is_record = await repo.StudentFormRepository.exists(client.id, int(form_id), session)
+    if type(response) == types.CallbackQuery:
+        form_id = callback_data['value']
+    else:
+        form_id = regexp.group(1) if regexp else deep_link.group(1)
 
-    async with state.proxy() as data:
-        data['form_id'] = form_id
+    search_field = 'id' if type(response) == types.CallbackQuery else 'unique_code'
+    client = await repo.StudentRepository.get('tg_id', int(response.from_user.id), session)
+    form = await repo.FormRepository.get(search_field, int(form_id), session)
+    is_record = await repo.StudentFormRepository.exists(client.id, int(form_id), session)
 
     if not client:
         return await bot.send_message(
@@ -179,7 +184,10 @@ async def start_form(
             reply_to_message_id=message_id
         )
 
-    await send_question(form_id, response.from_user.id, message_id, state)
+    async with state.proxy() as data:
+        data['form_id'] = form.id
+
+    await start_question_sending(form.id, response.from_user.id, message_id, state)
 
 
 @dp.callback_query_handler(short_data.filter(property='answer'))
@@ -201,7 +209,7 @@ async def get_inline_answer(
             if answer.is_correct:
                 data['score'] += 1
 
-        await send_question(
+        await start_question_sending(
             answer.question.form.id,
             cb.from_user.id,
             cb.message.message_id,

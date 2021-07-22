@@ -1,3 +1,0 @@
-DATABASES = {
-    'QUESTION_DATA': 4
-}

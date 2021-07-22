@@ -214,8 +214,7 @@ class FormTable(BaseModel):
     link = Column(String(50), nullable=True)
     start_message = Column(String(50), nullable=True)
     end_message = Column(String(50), nullable=True)
-    is_started = Column(Boolean, default=False)
-    is_finished = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=False)
     one_off = Column(Boolean, default=False)
 
     questions = relationship('FormQuestionTable', back_populates='form')
@@ -228,7 +227,6 @@ class FormQuestionTable(BaseModel):
     multi_answer = Column(Boolean, default=False)
     text = Column(String(50))
     image = Column(String(255), nullable=True)
-    image_file_id = Column(String(255), nullable=True)
 
     form = relationship('FormTable', back_populates='questions')
     answers = relationship('FormAnswerTable', back_populates='question', foreign_keys='FormAnswerTable.question_id')

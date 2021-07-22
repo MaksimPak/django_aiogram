@@ -1,18 +1,16 @@
+from pathlib import Path
+
+import sentry_sdk
 from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.redis import RedisStorage2
 from jinja2 import Environment, PackageLoader, select_autoescape
 from loguru import logger
-from bot.middlewares.i18n import I18nMiddleware
-
-from pathlib import Path
-
-import sentry_sdk
-
 
 from bot import config
+from bot.middlewares.i18n import I18nMiddleware
 
 bot = Bot(token=config.BOT_TOKEN)
-redis = RedisStorage2(host=config.REDIS_HOST, port=config.REDIS_PORT, state_ttl=60*5, db=2)
+redis = RedisStorage2(host=config.REDIS_HOST, port=config.REDIS_PORT, state_ttl=60*5, db=config.DATABASES['FSM'])
 dp = Dispatcher(bot, storage=redis)
 jinja_env = Environment(
     loader=PackageLoader('bot'),

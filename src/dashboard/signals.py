@@ -93,13 +93,13 @@ def promo_modify_data(sender, instance, created, **kwargs):
 
 
 @receiver(post_save, sender=Form)
-def promo_modify_data(sender, instance, created, **kwargs):
+def form_modify_data(sender, instance, created, **kwargs):
     """
     Create a unique code and invite link for registration for promotion upon saving.
     """
     if created:
         unique_code = str(instance.id) + random_int()
-        link = f'https://t.me/{os.getenv("BOT_NAME")}?start=promo_{unique_code}'
+        link = f'https://t.me/{os.getenv("BOT_NAME")}?start=quiz{unique_code}'
         instance.unique_code = unique_code
         instance.link = link
 
