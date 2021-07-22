@@ -1,5 +1,4 @@
 import re
-import typing
 from typing import Optional, Union
 
 from aiogram import types
@@ -14,7 +13,7 @@ from bot.misc import dp, i18n, bot
 from bot.models.dashboard import FormTable, FormAnswerTable
 from bot.models.db import SessionLocal
 from bot.serializers import KeyboardGenerator, FormButtons, MessageSender
-from bot.utils.callback_settings import short_data
+from bot.utils.callback_settings import short_data, simple_data
 
 # todo: need to localize
 _ = i18n.gettext
@@ -84,6 +83,7 @@ async def next_question(
     else:
         student = await repo.StudentRepository.get('tg_id', chat_id, session)
         data = await state.get_data()
+        form = await repo.FormRepository.get('id', data['form_id'], session)
         await repo.StudentFormRepository.create(
             {
                 'student_id': student.id,
@@ -95,7 +95,7 @@ async def next_question(
         )
         await bot.send_message(
             chat_id,
-            'Спасибо за то что прошли опросник',
+            form.end_message,
         )
         await state.finish()
 
@@ -120,6 +120,7 @@ async def process_multianswer(
     await cb.message.edit_reply_markup(kb)
 
 
+@dp.callback_query_handler(simple_data.filter(value='forms'))
 @dp.message_handler(Text(equals='🤔 Опросники'))
 @create_session
 async def display_forms(
@@ -132,30 +133,23 @@ async def display_forms(
     form_data = [(form.name, ('form', form.id)) for form in forms]
     markup = KeyboardGenerator(form_data).keyboard
 
-    await message.reply('Выберите опросник', reply_markup=markup)
+    await message.reply('Выберите опросник', reply_markup=markup, allow_sending_without_reply=True)
 
 
 @dp.message_handler(CommandStart(re.compile(r'^quiz(\d+)')), ChatTypeFilter(types.ChatType.PRIVATE))
 @dp.message_handler(Regexp(re.compile(r'^/quiz(\d+)')))
 @dp.callback_query_handler(short_data.filter(property='form'))
 @create_session
-async def start_form(
+async def form_initial(
         response: Union[types.CallbackQuery, types.Message],
         session: SessionLocal,
-        state: FSMContext,
         callback_data: dict = None,
         regexp: re.Match = None,
         deep_link: re.Match = None,
-        **kwargs: dict
+        **kwargs
 ):
-    """
-    Start the form for student
-    """
     if type(response) == types.CallbackQuery:
         await response.answer()
-    message_id = response.message.message_id if type(response) == types.CallbackQuery else response.message_id
-
-    if type(response) == types.CallbackQuery:
         form_id = callback_data['value']
     else:
         form_id = regexp.group(1) if regexp else deep_link.group(1)
@@ -164,6 +158,7 @@ async def start_form(
     client = await repo.StudentRepository.get('tg_id', int(response.from_user.id), session)
     form = await repo.FormRepository.get(search_field, int(form_id), session)
     is_record = await repo.StudentFormRepository.exists(client.id, int(form_id), session)
+    message_id = response.message.message_id if type(response) == types.CallbackQuery else response.message_id
 
     if not client:
         return await bot.send_message(
@@ -183,11 +178,36 @@ async def start_form(
             'Данный опросник нельзя пройти дважды',
             reply_to_message_id=message_id
         )
+    data = [('Начать', ('start_form', form.id)), ('Назад', ('forms',))]
+    kb = KeyboardGenerator(data, row_width=1).keyboard
+
+    await bot.send_message(
+        response.from_user.id,
+        form.start_message,
+        reply_to_message_id=message_id,
+        reply_markup=kb
+    )
+
+
+@dp.callback_query_handler(short_data.filter(property='start_form'))
+@create_session
+async def start_form(
+        cb: types.CallbackQuery,
+        state: FSMContext,
+        callback_data: dict = None,
+        **kwargs
+):
+    """
+    Start the form for student
+    """
+    await cb.answer()
+    message_id = cb.message.message_id
+    form_id = int(callback_data['value'])
 
     async with state.proxy() as data:
-        data['form_id'] = form.id
+        data['form_id'] = form_id
 
-    await start_question_sending(form.id, response.from_user.id, message_id, state)
+    await start_question_sending(form_id, cb.from_user.id, message_id, state)
 
 
 @dp.callback_query_handler(short_data.filter(property='answer'))

@@ -296,8 +296,8 @@ class Form(BaseModel):
     mode = models.CharField(max_length=20, verbose_name='Режим работы', choices=FormMode.choices)
     unique_code = models.IntegerField(verbose_name='Уникальный код', null=True, blank=True)
     link = models.CharField(max_length=50, verbose_name='Линк', null=True, blank=True)
-    start_message = models.CharField(max_length=50, verbose_name='Сообщение для отправки при старте', null=True, blank=True)
-    end_message = models.CharField(max_length=50, verbose_name='Сообщение для отправки при завершении', null=True, blank=True)
+    start_message = models.CharField(max_length=50, verbose_name='Сообщение для отправки при старте')
+    end_message = models.CharField(max_length=50, verbose_name='Сообщение для отправки при завершении')
     is_active = models.BooleanField(verbose_name='Активна', default=False)
     one_off = models.BooleanField(verbose_name='Одноразовая форма', default=False)
 

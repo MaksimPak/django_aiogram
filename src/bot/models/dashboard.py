@@ -212,8 +212,8 @@ class FormTable(BaseModel):
     mode = Column(Enum(FormMode, values_callable=lambda x: [e.value for e in x]), nullable=False)
     unique_code = Column(Integer, nullable=True)
     link = Column(String(50), nullable=True)
-    start_message = Column(String(50), nullable=True)
-    end_message = Column(String(50), nullable=True)
+    start_message = Column(String(50), nullable=False)
+    end_message = Column(String(50), nullable=False)
     is_active = Column(Boolean, default=False)
     one_off = Column(Boolean, default=False)
 

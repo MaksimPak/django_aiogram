@@ -71,7 +71,7 @@ async def send_next_lesson(studentlesson, user_id, session):
 
     new_studentlesson = await repo.StudentLessonRepository.get_or_create(
         next_lesson.id, int(studentlesson.student.id), session)
-    kb = KeyboardGenerator((_('Отметить как просмотренное'), ('watched', new_studentlesson.id))).keyboard
+    kb = KeyboardGenerator([(_('Отметить как просмотренное'), ('watched', new_studentlesson.id))]).keyboard
 
     text = await get_lesson_text(new_studentlesson, session, display_hw=False, display_link=True)
 
@@ -224,7 +224,7 @@ async def check_homework(
     if record.lesson.has_homework:
         await bot.answer_callback_query(cb.id)
         text = await get_lesson_text(record, session, display_hw=True, display_link=False)
-        kb = KeyboardGenerator((_('Сдать дз'), ('submit', record.lesson.course.chat_id, record.id))).keyboard
+        kb = KeyboardGenerator([(_('Сдать дз'), ('submit', record.lesson.course.chat_id, record.id))]).keyboard
 
         if cb.message.photo:
             await bot.edit_message_caption(

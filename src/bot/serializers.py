@@ -1,6 +1,6 @@
 import hashlib
 from dataclasses import dataclass
-from typing import Iterable, Union
+from typing import Iterable, Union, List, Tuple, Any
 
 from aiogram.contrib.fsm_storage.redis import RedisStorage2
 from aiogram.types import (
@@ -103,7 +103,8 @@ class MessageSender:
 
 
 class KeyboardGenerator:
-    def __init__(self, data: Iterable = None, keyboard=None, **kwargs):
+    def __init__(self, data: List[Tuple[Any, Tuple[Union[str, int], ...]]] = None,
+                 keyboard=None, **kwargs):
         if keyboard:
             self.keyboard = keyboard
         else:
