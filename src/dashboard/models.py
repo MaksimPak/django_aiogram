@@ -261,19 +261,6 @@ class StudentLesson(BaseModel):
         unique_together = [['student', 'lesson']]
 
 
-class QuizAnswer(BaseModel):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, verbose_name='Студент')
-    score = models.IntegerField(verbose_name='Баллы', default=0)
-    answers = models.TextField(blank=True, null=True, verbose_name='Ответы')
-
-    def __str__(self):
-        return f'Ответ от {self.student.__str__()}'
-
-    class Meta:
-        verbose_name = 'Ответ на викторину'
-        verbose_name_plural = 'Ответы на викторину'
-
-
 class SendingReport(BaseModel):
     class LanguageType(models.TextChoices):
         all = 'all', 'Всем'
@@ -312,8 +299,7 @@ class Form(BaseModel):
     link = models.CharField(max_length=50, verbose_name='Линк', null=True, blank=True)
     start_message = models.CharField(max_length=50, verbose_name='Сообщение для отправки при старте', null=True, blank=True)
     end_message = models.CharField(max_length=50, verbose_name='Сообщение для отправки при завершении', null=True, blank=True)
-    is_started = models.BooleanField(verbose_name='Форма начата', default=False)
-    is_finished = models.BooleanField(verbose_name='Форма закончена', default=False)
+    is_active = models.BooleanField(verbose_name='Форма начата', default=False)
     one_off = models.BooleanField(verbose_name='Одноразовая форма', default=False)
 
     def __str__(self):
@@ -329,7 +315,6 @@ class FormQuestion(BaseModel):
     multi_answer = models.BooleanField(verbose_name='Мульти-ответ', default=False)
     text = models.CharField(max_length=50, verbose_name='Текст')
     image = models.ImageField(verbose_name='Картинка', blank=True, null=True, upload_to=form_question_directory)
-    image_file_id = models.CharField(verbose_name='Image ID', null=True, blank=True, editable=False, max_length=255)
 
     def __str__(self):
         return f'Форма[{self.form.name}]: {self.text} '

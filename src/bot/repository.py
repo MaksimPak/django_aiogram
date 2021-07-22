@@ -7,8 +7,8 @@ from sqlalchemy.orm import selectinload, with_parent
 from bot.models.dashboard import (
     StudentTable, CourseTable, StudentCourse,
     LessonTable, LessonUrlTable, StudentLesson,
-    CategoryType, PromotionTable, QuizAnswerTable,
-    ContactTable, FormTable, FormQuestionTable, FormAnswerTable, StudentFormTable
+    CategoryType, PromotionTable, ContactTable,
+    FormTable, FormQuestionTable, FormAnswerTable, StudentFormTable
 )
 from bot.models.db import SessionLocal
 
@@ -309,10 +309,6 @@ class StudentCourseRepository(BaseRepository):
             filtered = (await session.execute(stmt)).all()
 
             return filtered
-
-
-class QuizAnswerRepository(BaseRepository):
-    table = QuizAnswerTable
 
 
 class FormRepository(BaseRepository):

@@ -436,21 +436,6 @@ class LessonAdmin(admin.ModelAdmin):
         )
 
 
-@admin.register(models.QuizAnswer)
-class QuizAnswerAdmin(admin.ModelAdmin):
-    list_display = ('id', 'student', 'score', 'created_at', 'updated_at')
-    list_display_links = ('student',)
-    list_per_page = 20
-    ordering = ('-score',)
-    readonly_fields = ('link_to_student',)
-
-    @admin.display(description='Ссылка на студента')
-    def link_to_student(self, obj):
-        change_url = 'admin:dashboard_client_change' if obj.student.is_client else 'admin:dashboard_lead_change'
-        link = reverse(change_url, args=(obj.student.id,))
-        return mark_safe(f'<a href="{link}">{obj.student}</a>')
-
-
 @admin.register(models.FormQuestion)
 class FormQuestionAdmin(admin.ModelAdmin):
     inlines = (FormAnswerList,)

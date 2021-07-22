@@ -180,14 +180,6 @@ class StudentLesson(BaseModel):
     student = relationship('StudentTable', back_populates='lessons')
 
 
-class QuizAnswerTable(BaseModel):
-    __tablename__ = 'dashboard_quizanswer'
-
-    student_id = Column(Integer, ForeignKey('dashboard_student.id', ondelete='CASCADE'), nullable=False)
-    score = Column(Integer, default=0)
-    answers = Column(TEXT, nullable=True)
-
-
 class SendingReportTable(BaseModel):
     class ReportStatus(enum.Enum):
         pending = 'PENDING'
