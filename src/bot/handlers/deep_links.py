@@ -97,4 +97,4 @@ async def promo_deep_link(
                 if not studentcourse:
                     await repo.StudentCourseRepository.create_record(student.id, promotion.course_id, session)
             await message.reply(promotion.start_message)
-            await start_reg(message, **kwargs)
+            await start_reg(message)
