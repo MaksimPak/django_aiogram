@@ -121,14 +121,16 @@ async def process_multianswer(
 
 
 @dp.callback_query_handler(simple_data.filter(value='forms'))
-@dp.message_handler(Text(equals='🤔 Опросники'))
+@dp.message_handler(Text(equals='🤔 Опросники'), state='*')
 @create_session
 async def display_forms(
         response: Union[types.Message, types.CallbackQuery],
+        state: FSMContext,
         session: SessionLocal,
         **kwargs: dict
 
 ):
+    await state.reset_state()
     if type(response) == types.CallbackQuery:
         await response.answer()
 

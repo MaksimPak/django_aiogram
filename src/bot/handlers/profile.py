@@ -63,16 +63,18 @@ async def profile_kb(
     return message, kb
 
 
-@dp.message_handler(Text(equals='🧑‍🎓 Профиль'))
+@dp.message_handler(Text(equals='🧑‍🎓 Профиль'), state='*')
 @create_session
 async def my_profile(
         message: types.Message,
         session: SessionLocal,
+        state: FSMContext,
         **kwargs
 ):
     """
     Starting point for profile view/edit
     """
+    await state.reset_state()
     client = await repo.StudentRepository.load_with_category('tg_id', int(message.from_user.id), session)
 
     async with session:

@@ -88,16 +88,18 @@ async def send_next_lesson(studentlesson, user_id, session):
         )
 
 
-@dp.message_handler(Text(equals='📝 Курсы'))
+@dp.message_handler(Text(equals='📝 Курсы'), state='*')
 @create_session
 async def my_courses(
         message: types.Message,
+        state: FSMContext,
         session: SessionLocal,
         **kwargs
 ):
     """
     Displays free and enrolled courses of the student
     """
+    await state.reset_state()
     client = await repo.StudentRepository.get_course_inload('tg_id', int(message.from_user.id), session)
     if not client:
         await message.reply(_('Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться'))

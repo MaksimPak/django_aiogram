@@ -43,13 +43,15 @@ async def cancel_handler(
     await message.reply(_('Отменено.'), reply_markup=types.ReplyKeyboardRemove())
 
 
-@dp.message_handler(CommandStart(), ChatTypeFilter(types.ChatType.PRIVATE))
+@dp.message_handler(CommandStart(), state='*')
 async def initial(
-        message: types.Message
+        message: types.Message,
+        state: FSMContext
 ):
     """
     Displays main panel if user exists. Else, offers options for registration
     """
+    await state.reset_state()
     await start_reg(message)
 
 

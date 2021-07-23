@@ -146,7 +146,7 @@ class LessonTable(BaseModel):
 class LessonUrlTable(BaseModel):
     __tablename__ = 'dashboard_lessonurl'
 
-    student_id = Column(Integer, ForeignKey('dashboard_student.id'), primary_key=True)
+    student_id = Column(Integer, ForeignKey('dashboard_student.id'), nullable=False)
     hash = Column(VARCHAR(length=36), nullable=False, unique=True, default=lambda: str(uuid.uuid4())[:8])
     lesson_id = Column(Integer, ForeignKey('dashboard_lesson.id'), nullable=False)
     hits = Column(Integer, default=0)
