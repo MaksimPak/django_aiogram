@@ -161,12 +161,10 @@ async def form_initial(
     else:
         form_id = regexp.group(1) if regexp else deep_link.group(1)
 
+    message_id = response.message.message_id if type(response) == types.CallbackQuery else response.message_id
     search_field = 'id' if type(response) == types.CallbackQuery else 'unique_code'
     client = await repo.StudentRepository.get('tg_id', int(response.from_user.id), session)
     form = await repo.FormRepository.get(search_field, int(form_id), session)
-    is_record = await repo.StudentFormRepository.exists(client.id, int(form_id), session)
-    message_id = response.message.message_id if type(response) == types.CallbackQuery else response.message_id
-
     if not client:
         return await bot.send_message(
             response.from_user.id,
@@ -179,18 +177,20 @@ async def form_initial(
             'Ошибка системы. Получите опросники снова',
             reply_to_message_id=message_id
         )
-    elif form.one_off and is_record:
-        return await bot.send_message(
-            response.from_user.id,
-            'Данный опросник нельзя пройти дважды',
-            reply_to_message_id=message_id
-        )
     elif not form.is_active:
         return await bot.send_message(
             response.from_user.id,
             'Форма не активна. Свяжитесь с администрацией',
             reply_to_message_id=message_id
         )
+    is_record = await repo.StudentFormRepository.exists(client.id, int(form_id), session)
+    if form.one_off and is_record:
+        return await bot.send_message(
+            response.from_user.id,
+            'Данный опросник нельзя пройти дважды',
+            reply_to_message_id=message_id
+        )
+
     data = [('Начать', ('start_form', form.id)), ('Назад', ('forms',))]
     kb = KeyboardGenerator(data, row_width=1).keyboard
 
