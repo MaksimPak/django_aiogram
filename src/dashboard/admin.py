@@ -57,12 +57,12 @@ class FormAnswerList(admin.StackedInline):
     fk_name = 'question'
 
     def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
-
         field = super(FormAnswerList, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
         if db_field.name == 'jump_to':
             if request._obj_ is not None:
-                field.queryset = field.queryset.filter(form=request._obj_.form)
+                field.queryset = field.queryset.filter(
+                    form=request._obj_.form).exclude(id=request._obj_.id)
             else:
                 field.queryset = field.queryset.none()
 

@@ -338,16 +338,28 @@ class FormQuestionRepository(BaseRepository):
 
     @staticmethod
     async def next_question(question_id, form_id, session):
-        next_question = (
-            await session.execute(
-                select(FormQuestionTable).where(
-                    FormQuestionTable.form_id == form_id,
-                    FormQuestionTable.id > question_id
-                ).options(selectinload(FormQuestionTable.answers))
+        async with session:
+            next_question = (
+                await session.execute(
+                    select(FormQuestionTable).where(
+                        FormQuestionTable.form_id == form_id,
+                        FormQuestionTable.id > question_id
+                    ).options(selectinload(FormQuestionTable.answers))
+                    .options(selectinload(FormQuestionTable.form))
+                )
+            ).scalar()
+            return next_question
+
+    @classmethod
+    async def get(cls, attribute: str, value: Any, session: SessionLocal):
+        async with session:
+            question = (await session.execute(
+                select(FormQuestionTable).where(getattr(FormQuestionTable, attribute) == value)
+                .options(selectinload(FormQuestionTable.answers))
                 .options(selectinload(FormQuestionTable.form))
-            )
-        ).scalar()
-        return next_question
+            )).scalar()
+
+        return question
 
 
 class FormAnswerRepository(BaseRepository):

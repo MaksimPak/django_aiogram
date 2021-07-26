@@ -230,7 +230,7 @@ class FormQuestionTable(BaseModel):
     position = Column(Integer, nullable=False)
 
     form = relationship('FormTable', back_populates='questions')
-    answers = relationship('FormAnswerTable', back_populates='question', foreign_keys='FormAnswerTable.question_id')
+    answers = relationship('FormAnswerTable', back_populates='question', foreign_keys='FormAnswerTable.question_id', order_by='FormAnswerTable.id')
     jump_answers = relationship('FormAnswerTable', back_populates='jump_to_question', foreign_keys='FormAnswerTable.jump_to_id')
 
 
