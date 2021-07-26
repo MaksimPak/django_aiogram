@@ -185,6 +185,12 @@ async def form_initial(
             'Данный опросник нельзя пройти дважды',
             reply_to_message_id=message_id
         )
+    elif not form.is_active:
+        return await bot.send_message(
+            response.from_user.id,
+            'Форма не активна. Свяжитесь с администрацией',
+            reply_to_message_id=message_id
+        )
     data = [('Начать', ('start_form', form.id)), ('Назад', ('forms',))]
     kb = KeyboardGenerator(data, row_width=1).keyboard
 
