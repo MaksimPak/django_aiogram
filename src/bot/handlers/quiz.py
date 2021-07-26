@@ -89,15 +89,7 @@ async def next_question(
         student = await repo.StudentRepository.get('tg_id', chat_id, session)
         data = await state.get_data()
         form = await repo.FormRepository.get('id', data['form_id'], session)
-        await repo.StudentFormRepository.create(
-            {
-                'student_id': student.id,
-                'form_id': data['form_id'],
-                'score':  data['score'],
-                'data': data['text_answers']
-            },
-            session
-        )
+        await repo.StudentFormRepository.create_or_edit(student.id, data['form_id'], data, session)
         await bot.send_message(
             chat_id,
             form.end_message,

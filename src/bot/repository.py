@@ -394,3 +394,33 @@ class StudentFormRepository(BaseRepository):
                 )
             )).first()
             return is_record
+
+    @staticmethod
+    async def get_one(student_id, form_id, session):
+        async with session:
+            record = (await session.execute(
+                select(StudentFormTable).where(
+                    StudentFormTable.student_id == student_id,
+                    StudentFormTable.form_id == form_id
+                )
+            )).scalar()
+            return record
+
+    @staticmethod
+    async def create_or_edit(student_id, form_id, data, session):
+        student_form = await StudentFormRepository.get_one(
+            student_id, form_id, session)
+
+        payload = {
+            'student_id': student_id,
+            'form_id': form_id,
+            'score': data['score'],
+            'data': data['text_answers'],
+        }
+
+        if not student_form:
+            student_form = await StudentFormRepository.create(payload, session)
+        else:
+            student_form = await StudentFormRepository.edit(student_form, payload, session)
+
+        return student_form

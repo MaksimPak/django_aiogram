@@ -341,3 +341,5 @@ class StudentForm(BaseModel):
     class Meta:
         verbose_name = 'Ответ на форму'
         verbose_name_plural = 'Ответы на форму'
+        unique_together = [['student', 'form']]
+
