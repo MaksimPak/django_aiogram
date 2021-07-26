@@ -37,7 +37,7 @@ async def start_question_sending(
         await QuestionnaireMode.accept_text.set()
 
     async with state.proxy() as data:
-        data['form_id'] = form_id
+        data['form_id'] = int(form_id)
 
     if not answer:
         await state.update_data({'current_question_id': form.questions[0].id})
@@ -65,9 +65,14 @@ async def next_question(
         session: SessionLocal = None
 ):
     data = await state.get_data()
-    question = await repo.FormQuestionRepository.next_question(
-            int(data['current_question_id']),
-            int(data['form_id']),
+    if data.get('jump_to_question'):
+        async with state.proxy() as data:
+            jump_to_id = data.pop('jump_to_question')
+        question = await repo.FormQuestionRepository.get('id', jump_to_id, session)
+    else:
+        question = await repo.FormQuestionRepository.next_question(
+            data['current_question_id'],
+            data['form_id'],
             session
         )
     if question:
@@ -87,8 +92,8 @@ async def next_question(
         await repo.StudentFormRepository.create(
             {
                 'student_id': student.id,
-                'form_id': int(data['form_id']),
-                'score':  int(data['score']),
+                'form_id': data['form_id'],
+                'score':  data['score'],
                 'data': data['text_answers']
             },
             session
@@ -217,7 +222,7 @@ async def start_form(
     form_id = int(callback_data['value'])
 
     async with state.proxy() as data:
-        data['form_id'] = form_id
+        data['form_id'] = int(form_id)
 
     await start_question_sending(form_id, cb.from_user.id, message_id, state)
 
@@ -233,8 +238,11 @@ async def get_inline_answer(
 ):
     await cb.answer()
     answer = await repo.FormAnswerRepository.load_all_relationships(int(callback_data['value']), session)
-    multi_answer = answer.question.multi_answer
-    if multi_answer:
+
+    if answer.jump_to_id:
+        await state.update_data({'jump_to_question': answer.jump_to_id})
+
+    if answer.question.multi_answer:
         await process_multianswer(cb, answer, state, cb.message.reply_markup)
     else:
         async with state.proxy() as data:
