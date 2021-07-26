@@ -112,7 +112,7 @@ class KeyboardGenerator:
         if data:
             self.add(data)
 
-    def add(self, buttons: Iterable):
+    def add(self, buttons: Tuple[Any, Tuple[Union[str, int], ...]]):
         self.keyboard.add(
             *self.prepare_buttons(buttons)
         )
@@ -195,8 +195,8 @@ class FormButtons(KeyboardGenerator):
         return self.keyboard
 
     async def question_buttons(self):
-        kb = None
-        if self.form.mode.value == 'quiz':
-            data = [(answer.text, ('answer', answer.id)) for answer in self.question.answers]
-            kb = KeyboardGenerator(data).keyboard
-        return kb
+        data = [(answer.text, ('answer', answer.id)) for answer in self.question.answers]
+        kb = KeyboardGenerator(data)
+        if self.question.custom_answer:
+            kb.add(('Другое', ('custom_answer',)))
+        return kb.keyboard

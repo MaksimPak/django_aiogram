@@ -5,8 +5,11 @@ from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.template.defaultfilters import truncatewords
 
-from dashboard.validators import validate_video_extension, validate_photo_extension, validate_hashtag, \
-    validate_file_size, validate_dimensions, validate_thumbnail_size
+from dashboard.validators import (
+    validate_video_extension, validate_photo_extension,
+    validate_hashtag, validate_file_size,
+    validate_dimensions, validate_thumbnail_size
+)
 
 COURSE_HELP_TEXT = 'Если вводится Chatid группы вам нужно создать группу, добавить туда бота, узнать её чат айди, и ввести его здесь. Боту надо дать админ права в группе чтобы он мог форвардить сообщения'
 THUMBNAIL_HELP_TEXT = 'The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail\'s width and height should not exceed 320.'
@@ -302,7 +305,7 @@ class Form(BaseModel):
     one_off = models.BooleanField(verbose_name='Одноразовая форма', default=False)
 
     def __str__(self):
-        return self.name
+        return f'Форма: [{self.name}]'
 
     class Meta:
         verbose_name = 'Форма'
@@ -315,9 +318,14 @@ class FormQuestion(BaseModel):
     text = models.CharField(max_length=50, verbose_name='Текст')
     image = models.ImageField(verbose_name='Картинка', blank=True, null=True, upload_to=form_question_directory)
     position = models.IntegerField(verbose_name='Нумерация')
+    custom_answer = models.BooleanField(verbose_name='Кастомный ответ', default=False)
 
     def __str__(self):
-        return f'Форма[{self.form.name}]: {self.text} '
+        return f'[{self.form.name}]Вопрос: {self.text}'
+
+    def clean(self):
+        if self.custom_answer and self.form.mode == Form.FormMode.quiz:
+            raise ValidationError('Нельзя добавить кастомный ответ к викторине')
 
     class Meta:
         verbose_name = 'Вопрос'
@@ -331,11 +339,15 @@ class FormAnswer(BaseModel):
     text = models.CharField(max_length=50, verbose_name='Текст ответа')
     jump_to = models.ForeignKey(FormQuestion, on_delete=models.CASCADE, verbose_name='Ведет к вопросу', null=True, blank=True, related_name='jumps')
 
+    def clean(self):
+        if self.is_correct and self.question.form.mode == Form.FormMode.questionnaire:
+            raise ValidationError('У опросника нет правильного ответа')
+
 
 class StudentForm(BaseModel):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     form = models.ForeignKey(Form, on_delete=models.CASCADE)
-    score = models.IntegerField(verbose_name='Бал', null=True, blank=True)
+    score = models.IntegerField(verbose_name='Балл', null=True, blank=True)
     data = models.JSONField(verbose_name='Данные', null=True, blank=True, default=dict)
 
     class Meta:

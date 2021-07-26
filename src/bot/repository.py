@@ -354,9 +354,9 @@ class FormQuestionRepository(BaseRepository):
     async def get(cls, attribute: str, value: Any, session: SessionLocal):
         async with session:
             question = (await session.execute(
-                select(FormQuestionTable).where(getattr(FormQuestionTable, attribute) == value)
-                .options(selectinload(FormQuestionTable.answers))
-                .options(selectinload(FormQuestionTable.form))
+                select(cls.table).where(getattr(cls.table, attribute) == value)
+                .options(selectinload(cls.table.answers))
+                .options(selectinload(cls.table.form))
             )).scalar()
 
         return question
@@ -415,9 +415,9 @@ class StudentFormRepository(BaseRepository):
             'student_id': student_id,
             'form_id': form_id,
             'score': data['score'],
-            'data': data['text_answers'],
+            'data': data['answers'],
         }
-
+        print(payload)
         if not student_form:
             student_form = await StudentFormRepository.create(payload, session)
         else:

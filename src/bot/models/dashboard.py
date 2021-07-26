@@ -228,6 +228,7 @@ class FormQuestionTable(BaseModel):
     text = Column(String(50))
     image = Column(String(255), nullable=True)
     position = Column(Integer, nullable=False)
+    custom_answer = Column(Boolean, default=False)
 
     form = relationship('FormTable', back_populates='questions')
     answers = relationship('FormAnswerTable', back_populates='question', foreign_keys='FormAnswerTable.question_id', order_by='FormAnswerTable.id')

@@ -10,7 +10,7 @@ from aiogram.types import InlineKeyboardMarkup
 from bot import repository as repo
 from bot.decorators import create_session
 from bot.misc import dp, i18n, bot
-from bot.models.dashboard import FormTable, FormAnswerTable
+from bot.models.dashboard import FormAnswerTable
 from bot.models.db import SessionLocal
 from bot.serializers import KeyboardGenerator, FormButtons, MessageSender
 from bot.utils.callback_settings import short_data, simple_data
@@ -33,15 +33,13 @@ async def start_question_sending(
         answer: Optional = None,
 ):
     form = await repo.FormRepository.get_questions(int(form_id), session)
-    if form.mode == FormTable.FormMode.questionnaire:
-        await QuestionnaireMode.accept_text.set()
 
     async with state.proxy() as data:
         data['form_id'] = int(form_id)
 
     if not answer:
         await state.update_data({'current_question_id': form.questions[0].id})
-        await state.update_data({'text_answers': {}})
+        await state.update_data({'answers': {}})
         await state.update_data({'score': 0})
 
         kb = await FormButtons(form, form.questions[0]).question_buttons()
@@ -230,6 +228,10 @@ async def get_inline_answer(
 ):
     await cb.answer()
     answer = await repo.FormAnswerRepository.load_all_relationships(int(callback_data['value']), session)
+    data = await state.get_data()
+    previous_answers = data.get('answers') if data.get('answers') else {}
+    previous_answers[answer.question.text] = answer.text
+    await state.update_data({'answers': previous_answers})
 
     if answer.jump_to_id:
         await state.update_data({'jump_to_question': answer.jump_to_id})
@@ -263,9 +265,22 @@ async def proceed(
     async with state.proxy() as data:
         if all(data['answers']):
             data['score'] += 1
-        data['current_question_id'] = callback_data['value']
+        data['current_question_id'] = int(callback_data['value'])
 
     await next_question(cb.from_user.id, state)
+
+
+@dp.callback_query_handler(simple_data.filter(value='custom_answer'))
+async def custom_answer(
+        cb: types.CallbackQuery,
+):
+    await cb.answer()
+    await cb.message.edit_reply_markup(None)
+    await bot.send_message(
+        cb.from_user.id,
+        'Напишите свой ответ',
+    )
+    await QuestionnaireMode.accept_text.set()
 
 
 @dp.message_handler(state=QuestionnaireMode.accept_text)
@@ -276,14 +291,15 @@ async def get_text_answer(
         session: SessionLocal,
         **kwargs
 ):
+    await state.reset_state(False)
     data = await state.get_data()
     question = await repo.FormQuestionRepository.get(
         'id',
-        int(data['current_question_id']),
+        data['current_question_id'],
         session
     )
-    answers = data.get('text_answers') if data.get('text_answers') else {}
+    answers = data.get('answers') if data.get('answers') else {}
     answers[question.text] = message.text
-    await state.update_data({'text_answers': answers})
+    await state.update_data({'answers': answers})
 
     await next_question(message.from_user.id, state)
