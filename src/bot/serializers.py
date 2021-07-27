@@ -112,7 +112,7 @@ class KeyboardGenerator:
         if data:
             self.add(data)
 
-    def add(self, buttons: Tuple[Any, Tuple[Union[str, int], ...]]):
+    def add(self, buttons: Union[Tuple[Any, Tuple[Union[str, int], ...]], Iterable]):
         self.keyboard.add(
             *self.prepare_buttons(buttons)
         )
@@ -184,9 +184,10 @@ class FormButtons(KeyboardGenerator):
             keyboard: dict
     ):
         for key in keyboard['inline_keyboard'][0]:
-            if int(key['callback_data'][-1]) == answer_id and key['text'][0] != '✅':
+            callback_answer_id = int(key['callback_data'].split('|')[-1])
+            if callback_answer_id == answer_id and key['text'][0] != '✅':
                 key['text'] = '✅ ' + key['text']
-            elif int(key['callback_data'][-1]) == answer_id and key['text'][0] == '✅':
+            elif callback_answer_id == answer_id and key['text'][0] == '✅':
                 key['text'] = key['text'][1:]
         self.keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard['inline_keyboard'])
         if self.keyboard.inline_keyboard[-1][-1].text != 'Следующий вопрос':

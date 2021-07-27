@@ -102,10 +102,10 @@ async def process_multianswer(
         keyboard: InlineKeyboardMarkup
 ):
     async with state.proxy() as data:
-        if 'answers' not in data:
-            data['answers'] = [answer.is_correct]
+        if 'is_correct' not in data:
+            data['is_correct'] = [answer.is_correct]
         else:
-            data['answers'].append(answer.is_correct)
+            data['is_correct'].append(answer.is_correct)
     kb = await FormButtons(answer.question.form_id).mark_selected(
         answer.id,
         answer.question_id,
@@ -269,7 +269,7 @@ async def proceed(
     await cb.answer()
     await cb.message.edit_reply_markup(None)
     async with state.proxy() as data:
-        if all(data['answers']):
+        if all(data['is_correct']):
             data['score'] += 1
         data['current_question_id'] = int(callback_data['value'])
 

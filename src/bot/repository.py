@@ -417,7 +417,6 @@ class StudentFormRepository(BaseRepository):
             'score': data['score'],
             'data': data['answers'],
         }
-        print(payload)
         if not student_form:
             student_form = await StudentFormRepository.create(payload, session)
         else:
