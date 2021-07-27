@@ -10,10 +10,13 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
+from django.db import models as dj_models
 
 from dashboard import models, forms
+from dashboard.forms import StudentForm
 from dashboard.models import Course
 from dashboard.utils.telegram import Telegram
+from dashboard.widgets import AdminJsonWidget
 
 
 class StudentCourseList(admin.TabularInline):
@@ -467,7 +470,11 @@ class StudentFormAdmin(admin.ModelAdmin):
     list_display = ('id', 'student', 'form', 'score')
     list_display_links = ('student',)
     list_per_page = 20
-    readonly_fields = ('student', 'form', 'score', 'data')
+    readonly_fields = ('student', 'form', 'score',)
+    form = StudentForm
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 
 admin.site.register(models.User, UserAdmin)

@@ -1,6 +1,7 @@
 from django import forms
 
 from dashboard import models
+from dashboard.widgets import AdminJsonWidget
 
 
 class LeadForm(forms.ModelForm):
@@ -40,3 +41,14 @@ class StudentAdmin(forms.ModelForm):
     class Meta:
         model = models.Lead
         exclude = ('invite_link',)
+
+
+class StudentForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(StudentForm, self).__init__(*args, **kwargs)
+        self.fields['data'].widget = AdminJsonWidget(instance=self.instance)
+
+    class Meta:
+        model = models.StudentForm
+        fields = '__all__'

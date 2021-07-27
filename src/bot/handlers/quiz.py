@@ -236,7 +236,7 @@ async def get_inline_answer(
     answer = await repo.FormAnswerRepository.load_all_relationships(int(callback_data['value']), session)
     data = await state.get_data()
     previous_answers = data.get('answers') if data.get('answers') else {}
-    previous_answers[answer.question.text] = answer.text
+    previous_answers[answer.question.id] = answer.text
     await state.update_data({'answers': previous_answers})
 
     if answer.jump_to_id:
@@ -305,7 +305,7 @@ async def get_text_answer(
         session
     )
     answers = data.get('answers') if data.get('answers') else {}
-    answers[question.text] = message.text
+    answers[question.id] = message.text
     await state.update_data({'answers': answers})
 
     await next_question(message.from_user.id, state)
