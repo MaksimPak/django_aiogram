@@ -333,11 +333,12 @@ class FormQuestion(BaseModel):
         ordering = ('position', 'id')
 
 
+# todo set null for fk
 class FormAnswer(BaseModel):
-    question = models.ForeignKey(FormQuestion, on_delete=models.CASCADE, verbose_name='Вопрос', related_name='questions')
+    question = models.ForeignKey(FormQuestion, on_delete=models.SET_NULL, verbose_name='Вопрос', related_name='questions', null=True)
     is_correct = models.BooleanField(verbose_name='Правильный ответ', default=False)
     text = models.CharField(max_length=50, verbose_name='Текст ответа')
-    jump_to = models.ForeignKey(FormQuestion, on_delete=models.CASCADE, verbose_name='Ведет к вопросу', null=True, blank=True, related_name='jumps')
+    jump_to = models.ForeignKey(FormQuestion, on_delete=models.SET_NULL, verbose_name='Ведет к вопросу', null=True, blank=True, related_name='jumps')
 
     def clean(self):
         if self.is_correct and self.question.form.mode == Form.FormMode.questionnaire:
