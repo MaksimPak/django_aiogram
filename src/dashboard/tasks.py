@@ -7,8 +7,8 @@ from django.db.models import F
 
 from app.celery import app
 from dashboard.models import Student, Promotion, SendingReport
-from dashboard.utils.telegram import Telegram
 from dashboard.utils.helpers import prepare_promo_data
+from dashboard.utils.telegram import Telegram
 
 
 @app.task

@@ -11,11 +11,11 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 
 from dashboard.forms import LeadForm
-from dashboard.tasks import send_promo_task, message_students_task
 from dashboard.models import LessonUrl, Lead, Student, Course, Lesson, Promotion
+from dashboard.tasks import send_promo_task, message_students_task
 from dashboard.utils.ffmpeg import get_resolution, get_duration
-from dashboard.utils.telegram import Telegram
 from dashboard.utils.helpers import prepare_promo_data
+from dashboard.utils.telegram import Telegram
 
 TELEGRAM_AGENT = 'TelegramBot (like TwitterBot)'
 MESSAGE_URL = f'https://api.telegram.org/bot{os.getenv("BOT_TOKEN")}/sendMessage'
