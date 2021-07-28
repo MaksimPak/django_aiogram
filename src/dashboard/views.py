@@ -77,16 +77,18 @@ def signup(request):
     """
     if request.POST:
         try:
-            Lead.objects.create(
+            lead = Lead.objects.create(
                 first_name=request.POST['first_name'],
                 last_name=request.POST['last_name'],
                 language_type=request.POST['language_type'],
                 phone=request.POST['phone'],
-                chosen_field=request.POST['chosen_field'],
+                city=request.POST['city'],
+                chosen_field_id=request.POST['chosen_field'],
                 application_type=Lead.ApplicationType.web,
                 is_client=False
             )
-            return HttpResponse('thank you')
+            lead.refresh_from_db()
+            return redirect(lead.invite_link)
         except IntegrityError:
             return HttpResponse('Invalid phone number. Number is already used')
     else:

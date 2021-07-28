@@ -10,7 +10,7 @@ from bot.decorators import create_session
 from bot.misc import dp, jinja_env, bot, i18n
 from bot.models.db import SessionLocal
 from bot.serializers import KeyboardGenerator
-from bot.views import start_reg
+from bot.views import main
 
 _ = i18n.gettext
 
@@ -97,4 +97,4 @@ async def promo_deep_link(
                 if not studentcourse:
                     await repo.StudentCourseRepository.create_record(student.id, promotion.course_id, session)
             await message.reply(promotion.start_message)
-            await start_reg(message)
+            await main(message)

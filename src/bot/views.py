@@ -13,7 +13,7 @@ _ = i18n.gettext
 
 
 @create_session
-async def start_reg(
+async def main(
         message: types.Message,
         session: SessionLocal = None
 ):
@@ -25,8 +25,13 @@ async def start_reg(
                 'last_name': message.from_user.last_name,
                 'tg_id': message.from_user.id
             }, session)
-        kb = KeyboardGenerator([(_('Через бот'), ('tg_reg',)), (_('Через инвайт'), ('invite_reg',))]).keyboard
-        await bot.send_message(message.from_user.id, _('Выберите способ регистрации'), reply_markup=kb)
+        kb = await KeyboardGenerator.contact_kb()
+
+        await bot.send_message(
+            message.from_user.id,
+            _('Добро пожаловать в бот Megaskill! Пожалуйста, выберите опцию'),
+            reply_markup=kb
+        )
     else:
         kb = await KeyboardGenerator.main_kb()
         if student.blocked_bot:

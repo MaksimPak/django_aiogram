@@ -10,7 +10,7 @@ from bot.models.dashboard import StudentTable
 from bot.models.db import SessionLocal
 from bot.serializers import KeyboardGenerator
 from bot.utils.callback_settings import short_data, simple_data
-from bot.views import start_reg
+from bot.views import main
 
 _ = i18n.gettext
 
@@ -52,16 +52,7 @@ async def initial(
     Displays main panel if user exists. Else, offers options for registration
     """
     await state.reset_state()
-    await start_reg(message)
-
-
-@dp.callback_query_handler(ChatTypeFilter(types.ChatType.PRIVATE), simple_data.filter(value='invite_reg'))
-async def invite_reg(
-        cb: types.callback_query
-):
-    await bot.answer_callback_query(cb.id)
-    await bot.send_message(cb.from_user.id, _('Введите инвайт код'))
-    await RegistrationState.invite_link.set()
+    await main(message)
 
 
 @dp.message_handler(ChatTypeFilter(types.ChatType.PRIVATE), state=RegistrationState.invite_link)

@@ -162,6 +162,16 @@ class KeyboardGenerator:
         return kb
 
     @staticmethod
+    async def contact_kb():
+        btns = [
+            KeyboardButton('🧑‍🎓 Профиль'),
+            KeyboardButton('🤔 Опросники'),
+        ]
+        kb = ReplyKeyboardMarkup(resize_keyboard=True)
+        kb.add(*btns)
+        return kb
+
+    @staticmethod
     async def main_kb_inline(client_id):
         kb = InlineKeyboardMarkup().add(*[
             InlineKeyboardButton('Курсы', callback_data=short_data.new(property='course', value=client_id)),

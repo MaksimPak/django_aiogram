@@ -76,14 +76,18 @@ async def my_profile(
     """
     await state.reset_state()
     client = await repo.StudentRepository.load_with_category('tg_id', int(message.from_user.id), session)
+    kb = KeyboardGenerator([('Регистрация', ('tg_reg',))]).keyboard
+    if not client:
+        return await message.reply(
+            _('<i>Ваш статус: Незагрегистированный пользователь.\n</i>' 
+              '<i>Зарегистрируйтесь и получите больше возможностей.</i>'),
+            parse_mode='html',
+            reply_markup=kb
+            )
 
     async with session:
         session.add(client)
         await session.refresh(client)
-
-    if not client:
-        await message.reply(_('Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться'))
-        return
 
     info, kb = await profile_kb(client)
 

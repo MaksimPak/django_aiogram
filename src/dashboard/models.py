@@ -110,7 +110,7 @@ class Student(BaseModel):
     promo = models.ForeignKey('Promotion', on_delete=models.SET_NULL, verbose_name='Из какого промо пришел', null=True, blank=True)
     blocked_bot = models.BooleanField(verbose_name='Заблокировал бота', default=False)
     comment = models.TextField(verbose_name='Комментарий к пользователю', blank=True, null=True)
-    contact = models.OneToOneField(Contact, on_delete=models.SET_NULL, verbose_name='ТГ Профиль', null=True)
+    contact = models.OneToOneField(Contact, on_delete=models.SET_NULL, verbose_name='ТГ Профиль', null=True, blank=True)
 
     def __str__(self):
         return f'{self.first_name} {self.last_name or ""}'

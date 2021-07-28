@@ -60,9 +60,10 @@ def lead_invite_data(sender, instance, created, **kwargs):
     """
     Create a unique code and invite link for registration for lead upon saving.
     """
+
     if created:
         unique_code = str(instance.id) + random_int()
-        invite_link = f'https://t.me/{os.getenv("BOT_NAME")}?start={instance.unique_code}'
+        invite_link = f'https://t.me/{os.getenv("BOT_NAME")}?start={unique_code}'
 
         Lead.objects.filter(pk=instance.id).update(unique_code=unique_code, invite_link=invite_link)
 

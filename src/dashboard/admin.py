@@ -201,7 +201,8 @@ class LeadAdmin(admin.ModelAdmin):
     list_per_page = 20
     list_filter = ('chosen_field', 'application_type', 'promo')
     list_display_links = ('__str__',)
-    readonly_fields = ('unique_code', 'checkout_date', 'invite_link', 'created_at',)
+    readonly_fields = ('checkout_date', 'invite_link', 'created_at',)
+    exclude = ('unique_code',)
     actions = ('send_message', 'send_checkout', 'assign_courses', 'assign_free_courses')
     search_fields = ('id', 'first_name', 'last_name')
     ordering = ('id',)
