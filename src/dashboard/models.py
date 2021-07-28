@@ -72,6 +72,7 @@ class Contact(BaseModel):
     first_name = models.CharField(verbose_name='ТГ Имя', max_length=255)
     last_name = models.CharField(verbose_name='ТГ Фамилия', max_length=255, null=True, blank=True)
     tg_id = models.BigIntegerField(verbose_name='Telegram ID', blank=True, null=True, unique=True)
+    is_registered = models.BooleanField(default=False)
     data = models.JSONField(null=True, blank=True, default=dict)
 
     def __str__(self):
@@ -109,6 +110,7 @@ class Student(BaseModel):
     promo = models.ForeignKey('Promotion', on_delete=models.SET_NULL, verbose_name='Из какого промо пришел', null=True, blank=True)
     blocked_bot = models.BooleanField(verbose_name='Заблокировал бота', default=False)
     comment = models.TextField(verbose_name='Комментарий к пользователю', blank=True, null=True)
+    contact = models.OneToOneField(Contact, on_delete=models.SET_NULL, verbose_name='ТГ Профиль', null=True)
 
     def __str__(self):
         return f'{self.first_name} {self.last_name or ""}'
@@ -333,26 +335,25 @@ class FormQuestion(BaseModel):
         ordering = ('position', 'id')
 
 
-# todo set null for fk
 class FormAnswer(BaseModel):
-    question = models.ForeignKey(FormQuestion, on_delete=models.SET_NULL, verbose_name='Вопрос', related_name='questions', null=True)
+    question = models.ForeignKey(FormQuestion, on_delete=models.CASCADE, verbose_name='Вопрос', related_name='questions', null=True)
     is_correct = models.BooleanField(verbose_name='Правильный ответ', default=False)
     text = models.CharField(max_length=50, verbose_name='Текст ответа')
-    jump_to = models.ForeignKey(FormQuestion, on_delete=models.SET_NULL, verbose_name='Ведет к вопросу', null=True, blank=True, related_name='jumps')
+    jump_to = models.ForeignKey(FormQuestion, on_delete=models.CASCADE, verbose_name='Ведет к вопросу', null=True, blank=True, related_name='jumps')
 
     def clean(self):
         if self.is_correct and self.question.form.mode == Form.FormMode.questionnaire:
             raise ValidationError('У опросника нет правильного ответа')
 
 
-class StudentForm(BaseModel):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    form = models.ForeignKey(Form, on_delete=models.CASCADE)
+class ContactForm(BaseModel):
+    contact = models.ForeignKey(Contact, on_delete=models.SET_NULL, null=True)
+    form = models.ForeignKey(Form, on_delete=models.SET_NULL, null=True)
     score = models.IntegerField(verbose_name='Балл', null=True, blank=True)
     data = models.JSONField(verbose_name='Данные', null=True, blank=True, default=dict)
 
     class Meta:
         verbose_name = 'Ответ на форму'
         verbose_name_plural = 'Ответы на форму'
-        unique_together = [['student', 'form']]
+        unique_together = [['contact', 'form']]
 

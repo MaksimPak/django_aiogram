@@ -84,10 +84,10 @@ async def next_question(
             markup=kb
         ).send()
     else:
-        student = await repo.StudentRepository.get('tg_id', chat_id, session)
+        contact = await repo.ContactRepository.get('tg_id', chat_id, session)
         data = await state.get_data()
         form = await repo.FormRepository.get('id', data['form_id'], session)
-        await repo.StudentFormRepository.create_or_edit(student.id, data['form_id'], data, session)
+        await repo.ContactFormRepository.create_or_edit(contact.id, data['form_id'], data, session)
         await bot.send_message(
             chat_id,
             form.end_message,
@@ -163,15 +163,15 @@ async def form_initial(
 
     message_id = response.message.message_id if type(response) == types.CallbackQuery else response.message_id
     search_field = 'id' if type(response) == types.CallbackQuery else 'unique_code'
-    client = await repo.StudentRepository.get('tg_id', int(response.from_user.id), session)
+    contact = await repo.ContactRepository.get_or_create(
+        response.from_user.id,
+        response.from_user.first_name,
+        response.from_user.last_name,
+        session
+    )
     form = await repo.FormRepository.get(search_field, int(form_id), session)
-    if not client:
-        return await bot.send_message(
-            response.from_user.id,
-            'Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться',
-            reply_to_message_id=message_id
-        )
-    elif not form:
+
+    if not form:
         return await bot.send_message(
             response.from_user.id,
             'Ошибка системы. Получите опросники снова',
@@ -183,7 +183,7 @@ async def form_initial(
             'Форма не активна. Свяжитесь с администрацией',
             reply_to_message_id=message_id
         )
-    is_record = await repo.StudentFormRepository.exists(client.id, int(form_id), session)
+    is_record = await repo.ContactFormRepository.exists(contact.id, int(form_id), session)
     if form.one_off and is_record:
         return await bot.send_message(
             response.from_user.id,

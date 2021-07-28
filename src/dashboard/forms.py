@@ -43,12 +43,12 @@ class StudentAdmin(forms.ModelForm):
         exclude = ('invite_link',)
 
 
-class StudentForm(forms.ModelForm):
+class ContactFormAnswers(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
-        super(StudentForm, self).__init__(*args, **kwargs)
+        super(ContactFormAnswers, self).__init__(*args, **kwargs)
         self.fields['data'].widget = AdminJsonWidget(instance=self.instance)
 
     class Meta:
-        model = models.StudentForm
+        model = models.ContactForm
         fields = '__all__'

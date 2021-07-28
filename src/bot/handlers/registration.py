@@ -180,16 +180,19 @@ async def create_record(
         'chosen_field_id': field,
         'application_type': StudentTable.ApplicationType.telegram,
         'is_client': False,
+        'contact_id': contact.id,
     }
     if contact:
         lead_data['promo_id'] = contact.data.get('promo')
 
     student = await repo.StudentRepository.create(lead_data, session)
+    await repo.ContactRepository.edit(contact, {
+        'is_registered': True
+    }, session)
 
-    if contact and contact.data.get('courses'):
+    if contact.data.get('courses'):
         await repo.StudentCourseRepository.bunch_create(student.id, contact.data['courses'], session)
 
-    not contact or await repo.ContactRepository.delete(contact, session)
     reply_kb = await KeyboardGenerator.main_kb()
     await bot.send_message(cb.from_user.id, _('Вы зарегистрированы! В ближайшее время с вами свяжется наш оператор'),
                            reply_markup=reply_kb)

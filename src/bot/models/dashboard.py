@@ -37,6 +37,9 @@ class ContactTable(BaseModel):
     last_name = Column(String(255), nullable=True)
     tg_id = Column(Integer, nullable=True, unique=True)
     data = Column(sqlalchemy_json.mutable_json_type(dbtype=JSONB, nested=True), nullable=True, default=dict)
+    is_registered = Column(Boolean, default=False)
+
+    student = relationship('StudentTable', back_populates='contact', uselist=False)
 
 
 class StudentTable(BaseModel):
@@ -64,12 +67,14 @@ class StudentTable(BaseModel):
     unique_code = Column(String(255), nullable=True, unique=True)
     promo_id = Column(Integer, ForeignKey('dashboard_promotion.id', ondelete='SET NULL'), nullable=True)
     blocked_bot = Column(Boolean, default=False)
+    contact_id = Column(Integer, ForeignKey('dashboard_contact.id'))
 
     courses = relationship('StudentCourse', back_populates='students')
     lessons = relationship('StudentLesson', back_populates='student')
     category = relationship('CategoryType', back_populates='student')
     promo = relationship('PromotionTable', back_populates='student')
     lesson_url = relationship('LessonUrlTable', back_populates='student')
+    contact = relationship('ContactTable', back_populates='student')
 
     @property
     def name(self):
@@ -247,10 +252,10 @@ class FormAnswerTable(BaseModel):
     jump_to_question = relationship('FormQuestionTable', back_populates='jump_answers', foreign_keys=[jump_to_id])
 
 
-class StudentFormTable(BaseModel):
-    __tablename__ = 'dashboard_studentform'
+class ContactFormTable(BaseModel):
+    __tablename__ = 'dashboard_contactform'
 
-    student_id = Column(Integer, ForeignKey('dashboard_student.id', ondelete='CASCADE'), nullable=False)
-    form_id = Column(Integer, ForeignKey('dashboard_form.id', ondelete='CASCADE'), nullable=False)
+    contact_id = Column(Integer, ForeignKey('dashboard_contact.id', ondelete='SET NULL'), nullable=False)
+    form_id = Column(Integer, ForeignKey('dashboard_form.id', ondelete='SET NULL'), nullable=False)
     score = Column(Integer, nullable=True)
     data = Column(sqlalchemy_json.mutable_json_type(dbtype=JSONB, nested=True), nullable=True, default=dict)

@@ -8,7 +8,7 @@ from bot.models.dashboard import (
     StudentTable, CourseTable, StudentCourse,
     LessonTable, LessonUrlTable, StudentLesson,
     CategoryType, PromotionTable, ContactTable,
-    FormTable, FormQuestionTable, FormAnswerTable, StudentFormTable
+    FormTable, FormQuestionTable, FormAnswerTable, ContactFormTable
 )
 from bot.models.db import SessionLocal
 
@@ -71,6 +71,25 @@ class BaseRepository:
 
 class ContactRepository(BaseRepository):
     table = ContactTable
+
+    @staticmethod
+    async def get_or_create(
+            tg_id: int,
+            first_name: str,
+            last_name: str,
+            session: SessionLocal,
+    ):
+        contact = await ContactRepository.get(
+            'tg_id', tg_id, session)
+
+        if not contact:
+            contact = await ContactRepository.create({
+                'first_name': first_name,
+                'last_name': last_name,
+                'tg_id': tg_id
+            }, session)
+
+        return contact
 
 
 class StudentRepository(BaseRepository):
@@ -144,7 +163,7 @@ class LessonRepository(BaseRepository):
         async with session:
             lesson = (await session.execute(
                 select(LessonTable).filter(getattr(LessonTable, attribute) > value, LessonTable.course_id == course_id)
-                    .order_by(LessonTable.id).options(
+                      .order_by(LessonTable.id).options(
                     selectinload(LessonTable.course)
                 ))).scalars().first()
         return lesson
@@ -172,7 +191,7 @@ class LessonUrlRepository(BaseRepository):
             lesson_url = (await session.execute(
                 select(LessonUrlTable).where(LessonUrlTable.lesson_id == lesson_id,
                                              LessonUrlTable.student_id == student_id)
-            .options(selectinload(LessonUrlTable.lesson)))).scalar()
+                .options(selectinload(LessonUrlTable.lesson)))).scalar()
         return lesson_url
 
     @staticmethod
@@ -224,14 +243,14 @@ class StudentLessonRepository(BaseRepository):
     async def finished_lesson_count(course_id, student_id, session):
         async with session:
             count = (await session.execute(select(func.count()).select_from(StudentLesson).where(
-                    StudentLesson.student_id == student_id,
-                ).join_from(StudentLesson, LessonTable, StudentLesson.lesson_id == LessonTable.id).filter(
-                    StudentLesson.date_sent != None,
-                    StudentLesson.date_watched != None,
-                    LessonTable.course_id == course_id,
-                    or_(and_(LessonTable.has_homework == True, StudentLesson.homework_sent != None),
-                        LessonTable.has_homework == None)
-                ))).scalar()
+                StudentLesson.student_id == student_id,
+            ).join_from(StudentLesson, LessonTable, StudentLesson.lesson_id == LessonTable.id).filter(
+                StudentLesson.date_sent != None,
+                StudentLesson.date_watched != None,
+                LessonTable.course_id == course_id,
+                or_(and_(LessonTable.has_homework == True, StudentLesson.homework_sent != None),
+                    LessonTable.has_homework == None)
+            ))).scalar()
 
             return count
 
@@ -301,8 +320,8 @@ class StudentCourseRepository(BaseRepository):
     async def filter_from_relationship(relationship, session: SessionLocal):
         # todo rewrite
         async with session:
-            stmt = select(func.count(LessonTable.id), CourseTable, StudentCourse)\
-                .join_from(StudentCourse, CourseTable, StudentCourse.course_id == CourseTable.id)\
+            stmt = select(func.count(LessonTable.id), CourseTable, StudentCourse) \
+                .join_from(StudentCourse, CourseTable, StudentCourse.course_id == CourseTable.id) \
                 .join_from(StudentCourse, LessonTable, LessonTable.course_id == StudentCourse.course_id).where(
                 with_parent(relationship, StudentTable.courses),
                 CourseTable.is_started == True).group_by(LessonTable.course_id, CourseTable.id, StudentCourse.id)
@@ -328,7 +347,7 @@ class FormRepository(BaseRepository):
             form = (
                 await session.execute(
                     select(FormTable).where(FormTable.id == form_id)
-                .options(selectinload(FormTable.questions).selectinload(FormQuestionTable.answers)))
+                    .options(selectinload(FormTable.questions).selectinload(FormQuestionTable.answers)))
             ).scalar()
             return form
 
@@ -371,55 +390,55 @@ class FormAnswerRepository(BaseRepository):
             answer = (
                 await session.execute(
                     select(FormAnswerTable).where(FormAnswerTable.id == answer_id)
-                        .options(
+                    .options(
                         selectinload(FormAnswerTable.question)
                         .selectinload(FormQuestionTable.form)
                         .selectinload(FormTable.questions)
                     )
-                        )
+                )
             ).scalar()
             return answer
 
 
-class StudentFormRepository(BaseRepository):
-    table = StudentFormTable
+class ContactFormRepository(BaseRepository):
+    table = ContactFormTable
 
     @staticmethod
-    async def exists(student_id, form_id, session):
+    async def exists(contact_id, form_id, session):
         async with session:
             is_record = (await session.execute(
-                select(StudentFormTable.id).where(
-                    StudentFormTable.student_id == student_id,
-                    StudentFormTable.form_id == form_id
+                select(ContactFormTable.id).where(
+                    ContactFormTable.contact_id == contact_id,
+                    ContactFormTable.form_id == form_id
                 )
             )).first()
             return is_record
 
     @staticmethod
-    async def get_one(student_id, form_id, session):
+    async def get_one(contact_id, form_id, session):
         async with session:
             record = (await session.execute(
-                select(StudentFormTable).where(
-                    StudentFormTable.student_id == student_id,
-                    StudentFormTable.form_id == form_id
+                select(ContactFormTable).where(
+                    ContactFormTable.contact_id == contact_id,
+                    ContactFormTable.form_id == form_id
                 )
             )).scalar()
             return record
 
     @staticmethod
-    async def create_or_edit(student_id, form_id, data, session):
-        student_form = await StudentFormRepository.get_one(
-            student_id, form_id, session)
+    async def create_or_edit(contact_id, form_id, data, session):
+        student_form = await ContactFormRepository.get_one(
+            contact_id, form_id, session)
 
         payload = {
-            'student_id': student_id,
+            'contact_id': contact_id,
             'form_id': form_id,
             'score': data['score'],
             'data': data['answers'],
         }
         if not student_form:
-            student_form = await StudentFormRepository.create(payload, session)
+            student_form = await ContactFormRepository.create(payload, session)
         else:
-            student_form = await StudentFormRepository.edit(student_form, payload, session)
+            student_form = await ContactFormRepository.edit(student_form, payload, session)
 
         return student_form

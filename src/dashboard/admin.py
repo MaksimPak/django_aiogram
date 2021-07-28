@@ -12,8 +12,8 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from dashboard import models, forms
-from dashboard.forms import StudentForm
-from dashboard.models import Course
+from dashboard.forms import ContactFormAnswers
+from dashboard.models import Course, Student
 from dashboard.utils.telegram import Telegram
 
 
@@ -160,7 +160,8 @@ class ContactAdmin(admin.ModelAdmin):
     list_display_links = ('first_name',)
     list_per_page = 20
     actions = ('send_message',)
-    readonly_fields = ('data',)
+    readonly_fields = ('data', 'is_registered', 'profile_link')
+    list_filter = ('is_registered',)
 
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, contacts):
@@ -181,6 +182,17 @@ class ContactAdmin(admin.ModelAdmin):
             return HttpResponseRedirect(request.get_full_path())
 
         return render(request, 'dashboard/send_intermediate.html', context={'entities': contacts})
+
+    @admin.display(description='Ссылка на профиль')
+    def profile_link(self, instance):
+        try:
+            model = 'client' if instance.student.is_client else 'lead'
+            changeform_url = reverse(
+                f'admin:dashboard_{model}_change', args=(instance.student.id,)
+            )
+            return mark_safe(f'<a href="{changeform_url}" target="_blank">Ссылка на профиль</a>')
+        except Student.DoesNotExist:
+            return 'Не зарегистрирован'
 
 
 @admin.register(models.Lead)
@@ -463,13 +475,13 @@ class FormAdmin(admin.ModelAdmin):
         return f'/quiz{form.unique_code}' if form.unique_code else '-'
 
 
-@admin.register(models.StudentForm)
-class StudentFormAdmin(admin.ModelAdmin):
-    list_display = ('id', 'student', 'form', 'score')
-    list_display_links = ('student',)
+@admin.register(models.ContactForm)
+class ContactFormAdmin(admin.ModelAdmin):
+    list_display = ('id', 'contact', 'form', 'score')
+    list_display_links = ('contact',)
     list_per_page = 20
-    readonly_fields = ('student', 'form', 'score',)
-    form = StudentForm
+    readonly_fields = ('contact', 'form', 'score',)
+    form = ContactFormAnswers
 
     def has_add_permission(self, request, obj=None):
         return False
