@@ -79,8 +79,8 @@ class Contact(BaseModel):
         return f'TG[{self.first_name}]'
 
     class Meta:
-        verbose_name = 'Пре Лид'
-        verbose_name_plural = 'Пре Лиды'
+        verbose_name = 'ТГ Профиль'
+        verbose_name_plural = 'ТГ Профили'
 
 
 class Student(BaseModel):
