@@ -35,10 +35,19 @@ class BaseRepository:
         """
         async with session:
             instances = (await session.execute(
-                select(CourseTable).where(getattr(cls.table, attribute) == value)
+                select(cls.table).where(getattr(cls.table, attribute) == value)
             )).scalars()
 
         return instances
+
+    @classmethod
+    async def is_exist(cls, attribute: str, value: Any, session: SessionLocal):
+        async with session:
+            instance = (await session.execute(
+                select(getattr(cls.table, attribute)).where(
+                    getattr(cls.table, attribute) == value))).scalar()
+
+            return bool(instance)
 
     @classmethod
     async def edit(cls, instance, params: dict, session: SessionLocal):

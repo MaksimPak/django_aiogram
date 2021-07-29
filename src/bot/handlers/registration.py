@@ -1,3 +1,5 @@
+from typing import Union
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import CommandStart, Text, ChatTypeFilter
@@ -74,23 +76,34 @@ async def check_invite_code(
         await message.reply(_('Неверный инвайт код'))
 
 
+@dp.message_handler(commands=['register'])
 @dp.callback_query_handler(simple_data.filter(value='tg_reg'))
+@create_session
 async def tg_reg(
-        cb: types.callback_query
+        response: Union[types.CallbackQuery, types.Message],
+        session: SessionLocal,
+        **kwargs
 ):
-    await bot.answer_callback_query(cb.id)
+    if type(response) == types.CallbackQuery:
+        await response.answer()
+    client = await repo.StudentRepository.get('tg_id', response.from_user.id, session)
+    if client:
+        return await bot.send_message(
+            response.from_user.id,
+            'Вы уже зарегистрированы'
+        )
     data = [(name.capitalize(), ('lang', member.value))
             for name, member in StudentTable.LanguageType.__members__.items()]
 
     kb = KeyboardGenerator(data).keyboard
 
-    await bot.send_message(cb.from_user.id, _('Привет! Выбери язык'), reply_markup=kb)
+    await bot.send_message(response.from_user.id, _('Привет! Выбери язык'), reply_markup=kb)
     await RegistrationState.lang.set()
 
 
 @dp.callback_query_handler(short_data.filter(property='lang'), state=RegistrationState.lang)
 async def set_lang(
-        cb: types.callback_query,
+        cb: types.CallbackQuery,
         state: FSMContext,
         callback_data: dict
 ):
@@ -136,6 +149,9 @@ async def set_phone(
         session: SessionLocal,
         **kwargs
 ):
+    is_phone_exists = await repo.StudentRepository.is_exist('phone', message.text, session)
+    if is_phone_exists:
+        return await message.reply('Данный номер уже используется')
     async with state.proxy() as data:
         data['phone'] = message.text
 
@@ -152,13 +168,13 @@ async def set_phone(
 @dp.callback_query_handler(short_data.filter(property='field'), state=RegistrationState.selected_field)
 @create_session
 async def create_record(
-        cb: types.callback_query,
+        cb: types.CallbackQuery,
         state: FSMContext,
         session: SessionLocal,
         callback_data: dict,
         **kwargs
 ):
-    await bot.answer_callback_query(cb.id)
+    await cb.answer()
     field = int(callback_data['value'])
     contact = await repo.ContactRepository.get('tg_id', cb.from_user.id, session)
     data = await state.get_data()
