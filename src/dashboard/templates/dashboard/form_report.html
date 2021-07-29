@@ -1,0 +1,50 @@
+{% extends 'dashboard/base.html' %}
+{% load helpers %}
+
+{% block content %}
+    <h1>{{ object.name }}</h1>
+    <table class="table table-dark table-striped">
+        <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Ученик</th>
+            <th scope="col">Балл</th>
+            {% for question in questions %}
+                <th scope="col">{{question.text}}</th>
+            {% endfor %}
+        </tr>
+        </thead>
+        <tbody>
+    {% for record in object.contactform_set.all %}
+        <tr>
+            <th scope="row">{{ forloop.counter }}</th>
+            {% with contact=record.contact %}
+            {% with student=record.contact.student %}
+            {% if record.form.mode == 'quiz' %}
+            <td>
+                {% if student %}
+                    {{student.first_name}} {% if student.last_name %} {{student.last_name}} {% endif %}
+                {% else %}
+                    {{contact.first_name}} {% if contact.last_name %}{{contact.last_name}}{% endif %}{% endif %}
+            </td>
+            <td>
+                {{record.score}}
+            </td>
+            {% for question in questions %}
+                {% for answer_data in answers %}
+                    <td>{{answer_data|int_json_key|dict_key:question.id}}</td>
+                {% endfor %}
+            {% endfor %}
+            {% else %}
+                questionnaire
+            {% endif %}
+            {% endwith %}
+            {% endwith %}
+        </tr>
+    {% empty %}
+        Нет записей
+    {% endfor %}
+    </tbody>
+    </table>
+{{now}}
+{% endblock %}

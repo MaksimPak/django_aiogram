@@ -470,6 +470,7 @@ class FormAdmin(admin.ModelAdmin):
     inlines = (FormQuestionList,)
     readonly_fields = ('bot_command', 'link',)
     exclude = ('unique_code',)
+    change_form_template = 'admin/dashboard/form/change_form.html'
 
     @admin.display(description='Бот команда')
     def bot_command(self, form):

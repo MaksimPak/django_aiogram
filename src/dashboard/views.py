@@ -4,14 +4,16 @@ import os
 
 import requests
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import IntegrityError
 from django.http import HttpResponseNotFound, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.views.generic import DetailView
 
 from dashboard.forms import LeadForm
-from dashboard.models import LessonUrl, Lead, Student, Course, Lesson, Promotion
+from dashboard.models import LessonUrl, Lead, Student, Course, Lesson, Promotion, Form
 from dashboard.tasks import send_promo_task, message_students_task
 from dashboard.utils.ffmpeg import get_resolution, get_duration
 from dashboard.utils.helpers import prepare_promo_data
@@ -220,3 +222,16 @@ def send_promo_myself(request, promo_id):
 
     messages.add_message(request, messages.INFO, 'Отправлено в общий chat id.')
     return HttpResponseRedirect(reverse('admin:dashboard_promotion_change', args=(promo_id,)))
+
+
+class FormReport(DetailView, LoginRequiredMixin):
+    model = Form
+    template_name = 'dashboard/form_report.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        questions = self.object.formquestion_set.all()
+        answers = [x.data for x in self.object.contactform_set.all()]
+        context['answers'] = answers
+        context['questions'] = questions
+        return context
