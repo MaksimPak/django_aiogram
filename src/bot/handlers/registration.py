@@ -97,7 +97,12 @@ async def tg_reg(
 
     kb = KeyboardGenerator(data).keyboard
 
-    await bot.send_message(response.from_user.id, _('Привет! Выбери язык'), reply_markup=kb)
+    await bot.send_message(
+        response.from_user.id,
+        _('Регистрация в боте MegaSkill.\n'
+          'Выберите язык:'),
+        reply_markup=kb
+    )
     await RegistrationState.lang.set()
 
 
