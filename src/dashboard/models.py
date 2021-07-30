@@ -346,7 +346,7 @@ class FormAnswer(BaseModel):
             raise ValidationError('У опросника нет правильного ответа')
 
 
-class ContactForm(BaseModel):
+class ContactFormAnswers(BaseModel):
     contact = models.ForeignKey(Contact, on_delete=models.SET_NULL, null=True)
     form = models.ForeignKey(Form, on_delete=models.SET_NULL, null=True)
     score = models.IntegerField(verbose_name='Балл', null=True, blank=True)

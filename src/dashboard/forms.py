@@ -50,5 +50,5 @@ class ContactFormAnswers(forms.ModelForm):
         self.fields['data'].widget = AdminJsonWidget(instance=self.instance)
 
     class Meta:
-        model = models.ContactForm
+        model = models.ContactFormAnswers
         fields = '__all__'

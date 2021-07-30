@@ -477,7 +477,7 @@ class FormAdmin(admin.ModelAdmin):
         return f'/quiz{form.unique_code}' if form.unique_code else '-'
 
 
-@admin.register(models.ContactForm)
+@admin.register(models.ContactFormAnswers)
 class ContactFormAdmin(admin.ModelAdmin):
     list_display = ('id', 'contact', 'form', 'score')
     list_display_links = ('contact',)
