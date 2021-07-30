@@ -253,7 +253,7 @@ class FormAnswerTable(BaseModel):
 
 
 class ContactFormTable(BaseModel):
-    __tablename__ = 'dashboard_contactform'
+    __tablename__ = 'dashboard_contactformanswers'
 
     contact_id = Column(Integer, ForeignKey('dashboard_contact.id', ondelete='SET NULL'), nullable=False)
     form_id = Column(Integer, ForeignKey('dashboard_form.id', ondelete='SET NULL'), nullable=False)
