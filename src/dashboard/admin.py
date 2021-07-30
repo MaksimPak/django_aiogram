@@ -201,8 +201,8 @@ class LeadAdmin(admin.ModelAdmin):
     list_per_page = 20
     list_filter = ('chosen_field', 'application_type', 'promo')
     list_display_links = ('__str__',)
-    readonly_fields = ('checkout_date', 'invite_link', 'created_at',)
-    exclude = ('unique_code',)
+    readonly_fields = ('checkout_date', 'invite_link', 'created_at', 'blocked_bot')
+    exclude = ('unique_code', 'contact')
     actions = ('send_message', 'send_checkout', 'assign_courses', 'assign_free_courses')
     search_fields = ('id', 'first_name', 'last_name')
     ordering = ('id',)
@@ -282,7 +282,8 @@ class ClientAdmin(admin.ModelAdmin):
     list_filter = ('studentcourse__course__name',)
     list_display_links = ('__str__',)
     actions = ('send_message', 'send_checkout', 'assign_courses', 'assign_free_courses')
-    readonly_fields = ('unique_code', 'checkout_date', 'invite_link', 'created_at',)
+    readonly_fields = ('unique_code', 'checkout_date', 'invite_link', 'created_at', 'blocked_bot')
+    exclude = ('contact',)
     search_fields = ('id', 'first_name', 'last_name')
     ordering = ('id',)
     date_hierarchy = 'created_at'
