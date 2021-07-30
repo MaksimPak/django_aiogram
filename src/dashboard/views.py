@@ -222,16 +222,3 @@ def send_promo_myself(request, promo_id):
 
     messages.add_message(request, messages.INFO, 'Отправлено в общий chat id.')
     return HttpResponseRedirect(reverse('admin:dashboard_promotion_change', args=(promo_id,)))
-
-
-class FormReport(DetailView, LoginRequiredMixin):
-    model = Form
-    template_name = 'dashboard/form_report.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        questions = self.object.formquestion_set.all()
-        answers = [x.data for x in self.object.contactform_set.all()]
-        context['answers'] = answers
-        context['questions'] = questions
-        return context

@@ -347,8 +347,8 @@ class FormAnswer(BaseModel):
 
 
 class ContactFormAnswers(BaseModel):
-    contact = models.ForeignKey(Contact, on_delete=models.SET_NULL, null=True)
-    form = models.ForeignKey(Form, on_delete=models.SET_NULL, null=True)
+    contact = models.ForeignKey(Contact, on_delete=models.SET_NULL, null=True, verbose_name='Студент')
+    form = models.ForeignKey(Form, on_delete=models.SET_NULL, null=True, verbose_name='Форма')
     score = models.IntegerField(verbose_name='Балл', null=True, blank=True)
     data = models.JSONField(verbose_name='Данные', null=True, blank=True, default=dict)
 

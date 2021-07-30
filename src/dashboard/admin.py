@@ -1,5 +1,6 @@
 import datetime
 import json
+from functools import partial
 
 from celery.result import GroupResult
 from django.contrib import admin, messages
@@ -13,7 +14,6 @@ from django.utils.safestring import mark_safe
 
 from dashboard import models, forms
 from dashboard.forms import ContactFormAnswers
-from dashboard.models import Course, Student
 from dashboard.utils.telegram import Telegram
 
 
@@ -191,7 +191,7 @@ class ContactAdmin(admin.ModelAdmin):
                 f'admin:dashboard_{model}_change', args=(instance.student.id,)
             )
             return mark_safe(f'<a href="{changeform_url}" target="_blank">Ссылка на профиль</a>')
-        except Student.DoesNotExist:
+        except models.Student.DoesNotExist:
             return 'Не зарегистрирован'
 
 
@@ -244,24 +244,24 @@ class LeadAdmin(admin.ModelAdmin):
     @admin.display(description='Назначить курсы')
     def assign_courses(self, request, leads):
         if 'assign' in request.POST:
-            courses = Course.objects.filter(pk__in=request.POST.getlist('course'))
+            courses = models.Course.objects.filter(pk__in=request.POST.getlist('course'))
             for lead in leads:
                 lead.assign_courses(courses, True)
             return HttpResponseRedirect(request.get_full_path())
 
-        courses = Course.objects.filter(is_free=False, is_started=False, is_finished=False)
+        courses = models.Course.objects.filter(is_free=False, is_started=False, is_finished=False)
         return render(request, 'dashboard/assign_courses.html',
                       context={'entities': leads, 'courses': courses, 'action': 'assign_courses'})
 
     @admin.display(description='Добавить бесплатных курсов')
     def assign_free_courses(self, request, leads):
         if 'assign' in request.POST:
-            courses = Course.objects.filter(pk__in=request.POST.getlist('course'))
+            courses = models.Course.objects.filter(pk__in=request.POST.getlist('course'))
             for lead in leads:
                 lead.assign_courses(courses)
             return HttpResponseRedirect(request.get_full_path())
 
-        courses = Course.objects.filter(is_free=True, is_started=False, is_finished=False)
+        courses = models.Course.objects.filter(is_free=True, is_started=False, is_finished=False)
         return render(request, 'dashboard/assign_courses.html',
                       context={'entities': leads, 'courses': courses, 'action': 'assign_free_courses'})
 
@@ -333,24 +333,24 @@ class ClientAdmin(admin.ModelAdmin):
     @admin.display(description='Назначить курсы')
     def assign_courses(self, request, clients):
         if 'assign' in request.POST:
-            courses = Course.objects.filter(pk__in=request.POST.getlist('course'))
+            courses = models.Course.objects.filter(pk__in=request.POST.getlist('course'))
             for client in clients:
                 client.assign_courses(courses, True)
             return HttpResponseRedirect(request.get_full_path())
 
-        courses = Course.objects.filter(is_free=False, is_started=False, is_finished=False)
+        courses = models.Course.objects.filter(is_free=False, is_started=False, is_finished=False)
         return render(request, 'dashboard/assign_courses.html',
                       context={'entities': clients, 'courses': courses, 'action': 'assign_courses'})
 
     @admin.display(description='Добавить бесплатных курсов')
     def assign_free_courses(self, request, clients):
         if 'assign' in request.POST:
-            courses = Course.objects.filter(pk__in=request.POST.getlist('course'))
+            courses = models.Course.objects.filter(pk__in=request.POST.getlist('course'))
             for client in clients:
                 client.assign_courses(courses, True)
             return HttpResponseRedirect(request.get_full_path())
 
-        courses = Course.objects.filter(is_free=True, is_started=False, is_finished=False)
+        courses = models.Course.objects.filter(is_free=True, is_started=False, is_finished=False)
         return render(request, 'dashboard/assign_courses.html',
                       context={'entities': clients, 'courses': courses, 'action': 'assign_free_courses'})
 
@@ -478,15 +478,49 @@ class FormAdmin(admin.ModelAdmin):
 
 
 @admin.register(models.ContactFormAnswers)
-class ContactFormAdmin(admin.ModelAdmin):
-    list_display = ('id', 'contact', 'form', 'score')
+class ContactFormAnswersAdmin(admin.ModelAdmin):
+    list_display = ('id', 'contact', 'form', 'points')
     list_display_links = ('contact',)
     list_per_page = 20
     readonly_fields = ('contact', 'form', 'score',)
     form = ContactFormAnswers
+    list_filter = ('form', 'score',)
 
     def has_add_permission(self, request, obj=None):
         return False
+
+    @admin.display(description='Балл')
+    def points(self, instance):
+        question_count = instance.form.formquestion_set.all().count()
+        return f'{instance.score}/{question_count}' if instance.score else None
+
+    def get_list_display(self, request):
+        list_display = super(ContactFormAnswersAdmin, self).get_list_display(request)
+        form = models.Form.objects.get(pk=request.GET['form__id__exact'])
+        questions = form.formquestion_set.all()
+        for quesiton in questions:
+            attr_name = f'question_{quesiton.id}'
+            list_display += (attr_name,)
+            func = partial(self._get_answer, field=attr_name)
+            func.short_description = quesiton.text
+            setattr(self, attr_name, func)
+        return list_display
+
+    @staticmethod
+    def _get_answer(instance, field=''):
+        key = field.split('_')[-1]
+        return instance.data[key]
+
+    def get_model_perms(self, request):
+        """
+        Return empty perms dict thus hiding the model from admin index.
+        """
+        return {}
+
+    class Media:
+        js = (
+            'dashboard/js/contactformanswers_admin.js',
+        )
 
 
 admin.site.register(models.User, UserAdmin)

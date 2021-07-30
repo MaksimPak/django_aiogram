@@ -2,6 +2,6 @@
 {% block object-tools-items %}
       {{block.super}}
       {% if original.id %}
-      <li><a href="{% url 'dashboard:form_report' original.id %}">Посмотреть отчет</a></li>
+      <li><a href="{% url 'admin:dashboard_contactformanswers_changelist' %}?form__id__exact={{original.id}}">Посмотреть отчет</a></li>
       {% endif %}
 {% endblock %}
