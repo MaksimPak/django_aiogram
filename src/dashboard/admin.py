@@ -197,7 +197,7 @@ class ContactAdmin(admin.ModelAdmin):
 
 @admin.register(models.Lead)
 class LeadAdmin(admin.ModelAdmin):
-    list_display = ('id', '__str__', 'tg_id', 'application_type', 'phone', 'language_type', 'chosen_field', 'checkout_date', 'get_courses', 'promo')
+    list_display = ('id', '__str__', 'tg_id', 'application_type', 'blocked_bot', 'phone', 'language_type', 'chosen_field', 'checkout_date', 'get_courses', 'promo')
     list_per_page = 20
     list_filter = ('chosen_field', 'application_type', 'promo')
     list_display_links = ('__str__',)
@@ -277,7 +277,7 @@ class LeadAdmin(admin.ModelAdmin):
 
 @admin.register(models.Client)
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ('id', '__str__', 'phone', 'language_type', 'get_courses',)
+    list_display = ('id', '__str__', 'blocked_bot', 'phone', 'language_type', 'get_courses',)
     list_per_page = 20
     list_filter = ('studentcourse__course__name',)
     list_display_links = ('__str__',)
