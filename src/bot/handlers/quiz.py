@@ -236,7 +236,15 @@ async def get_inline_answer(
     answer = await repo.FormAnswerRepository.load_all_relationships(int(callback_data['value']), session)
     data = await state.get_data()
     previous_answers = data.get('answers') if data.get('answers') else {}
-    previous_answers[answer.question.id] = answer.text
+    # todo buggy/ creates duplicates / refactor
+    if answer.question.multi_answer:
+        if previous_answers.get(str(answer.question.id)):
+            previous_answers[str(answer.question.id)].append(answer.text)
+        else:
+            previous_answers[answer.question.id] = [answer.text]
+    else:
+        previous_answers[answer.question.id] = answer.text
+
     await state.update_data({'answers': previous_answers})
 
     if answer.jump_to_id:

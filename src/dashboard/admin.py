@@ -510,7 +510,7 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
     @staticmethod
     def _get_answer(instance, field=''):
         key = field.split('_')[-1]
-        return instance.data[key]
+        return instance.data.get(key)
 
     def get_model_perms(self, request):
         """

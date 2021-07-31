@@ -374,8 +374,10 @@ class FormQuestionRepository(BaseRepository):
                         FormQuestionTable.id > question_id
                     ).options(selectinload(FormQuestionTable.answers))
                     .options(selectinload(FormQuestionTable.form))
+                    .order_by(FormQuestionTable.position, FormQuestionTable.id)
                 )
             ).scalar()
+
             return next_question
 
     @classmethod
