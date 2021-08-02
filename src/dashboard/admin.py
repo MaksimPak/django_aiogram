@@ -13,7 +13,6 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from dashboard import models, forms
-from dashboard.forms import ContactFormAnswers
 from dashboard.utils.telegram import Telegram
 
 
@@ -484,7 +483,7 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
     list_display_links = ('contact',)
     list_per_page = 20
     readonly_fields = ('contact', 'form', 'score',)
-    form = ContactFormAnswers
+    form = forms.ContactFormAnswers
     list_filter = ('form', 'score',)
 
     def has_add_permission(self, request, obj=None):
