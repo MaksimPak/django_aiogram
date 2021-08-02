@@ -11,3 +11,8 @@ def int_json_key(d):
 @register.filter(name='dict_key')
 def dict_key(d, k):
     return d.get(k)
+
+
+@register.filter
+def get_type(value):
+    return type(value)

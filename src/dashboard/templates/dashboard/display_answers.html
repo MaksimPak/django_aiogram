@@ -1,5 +1,11 @@
+{% load helpers %}
+
 {% for answer in answers %}
+{% if answer|get_type == 'list' %}
 <li>{{answer}}</li>
+{% else %}
+{{answer}}
+{% endif %}
 {% empty %}
 Нет ответа
 {% endfor %}
