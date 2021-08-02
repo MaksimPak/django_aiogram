@@ -16,6 +16,8 @@ from bot.serializers import KeyboardGenerator, FormButtons, MessageSender
 from bot.utils.callback_settings import short_data, simple_data
 
 # todo: need to localize
+from bot.utils.throttling import throttled
+
 _ = i18n.gettext
 
 
@@ -168,6 +170,7 @@ async def display_forms(
 @dp.message_handler(CommandStart(re.compile(r'^quiz(\d+)')), ChatTypeFilter(types.ChatType.PRIVATE))
 @dp.message_handler(Regexp(re.compile(r'^/quiz(\d+)')))
 @dp.callback_query_handler(short_data.filter(property='form'))
+@dp.throttled(throttled, rate=.8)
 @create_session
 async def form_initial(
         response: Union[types.CallbackQuery, types.Message],
@@ -225,6 +228,7 @@ async def form_initial(
 
 
 @dp.callback_query_handler(short_data.filter(property='start_form'))
+@dp.throttled(throttled, rate=.8)
 @create_session
 async def start_form(
         cb: types.CallbackQuery,
@@ -246,6 +250,7 @@ async def start_form(
 
 
 @dp.callback_query_handler(short_data.filter(property='answer'))
+@dp.throttled(throttled, rate=.8)
 @create_session
 async def get_inline_answer(
         cb: types.CallbackQuery,
@@ -278,6 +283,7 @@ async def get_inline_answer(
 
 
 @dp.callback_query_handler(short_data.filter(property='proceed'))
+@dp.throttled(throttled, rate=.8)
 @create_session
 async def proceed(
         cb: types.CallbackQuery,
@@ -296,6 +302,7 @@ async def proceed(
 
 
 @dp.callback_query_handler(simple_data.filter(value='custom_answer'))
+@dp.throttled(throttled, rate=.8)
 async def custom_answer(
         cb: types.CallbackQuery,
 ):
@@ -309,6 +316,7 @@ async def custom_answer(
 
 
 @dp.message_handler(state=QuestionnaireMode.accept_text)
+@dp.throttled(throttled, rate=.8)
 @create_session
 async def get_text_answer(
         message: types.Message,
