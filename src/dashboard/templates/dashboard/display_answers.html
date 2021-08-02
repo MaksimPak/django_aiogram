@@ -1,11 +1,3 @@
 {% load helpers %}
+{{answers|listify_answer|join:'<br>'}}
 
-{% for answer in answers %}
-{% if answer|get_type == 'list' %}
-<li>{{answer}}</li>
-{% else %}
-{{answer}}
-{% endif %}
-{% empty %}
-Нет ответа
-{% endfor %}

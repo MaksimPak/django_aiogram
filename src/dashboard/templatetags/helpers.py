@@ -14,5 +14,8 @@ def dict_key(d, k):
 
 
 @register.filter
-def get_type(value):
-    return type(value)
+def listify_answer(value):
+    if type(value) is not list:
+        value = list(value)
+
+    return value
