@@ -10,7 +10,7 @@ from aiogram.types import InlineKeyboardMarkup
 from bot import repository as repo
 from bot.decorators import create_session
 from bot.misc import dp, i18n, bot
-from bot.models.dashboard import FormAnswerTable
+from bot.models.dashboard import FormAnswerTable, FormQuestionTable
 from bot.models.db import SessionLocal
 from bot.serializers import KeyboardGenerator, FormButtons, MessageSender
 from bot.utils.callback_settings import short_data, simple_data
@@ -21,6 +21,28 @@ _ = i18n.gettext
 
 class QuestionnaireMode(StatesGroup):
     accept_text = State()
+
+
+async def store_answer(
+        question: FormQuestionTable,
+        answer: FormAnswerTable,
+        state: FSMContext,
+        rewrite: bool = False
+):
+    data = await state.get_data()
+    previous_answers = data.get('answers') if data.get('answers') else {}
+    key = str(question.id)
+
+    if question.multi_answer and not rewrite:
+        if previous_answers.get(key) and answer in previous_answers.get(key):
+            previous_answers[key].remove(answer)
+        else:
+            previous_answers.setdefault(key, [])
+            previous_answers[key].append(answer)
+    else:
+        previous_answers[key] = answer
+
+    await state.update_data({'answers': previous_answers})
 
 
 @create_session
@@ -234,18 +256,7 @@ async def get_inline_answer(
 ):
     await cb.answer()
     answer = await repo.FormAnswerRepository.load_all_relationships(int(callback_data['value']), session)
-    data = await state.get_data()
-    previous_answers = data.get('answers') if data.get('answers') else {}
-    # todo buggy/ creates duplicates / refactor
-    if answer.question.multi_answer:
-        if previous_answers.get(str(answer.question.id)):
-            previous_answers[str(answer.question.id)].append(answer.text)
-        else:
-            previous_answers[answer.question.id] = [answer.text]
-    else:
-        previous_answers[answer.question.id] = answer.text
-
-    await state.update_data({'answers': previous_answers})
+    await store_answer(answer.question, answer.text, state)
 
     if answer.jump_to_id:
         await state.update_data({'jump_to_question': answer.jump_to_id})
@@ -312,8 +323,6 @@ async def get_text_answer(
         data['current_question_id'],
         session
     )
-    answers = data.get('answers') if data.get('answers') else {}
-    answers[question.id] = message.text
-    await state.update_data({'answers': answers})
+    await store_answer(question, message.text, state, True)
 
     await next_question(message.from_user.id, state)
