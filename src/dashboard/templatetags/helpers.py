@@ -16,6 +16,6 @@ def dict_key(d, k):
 @register.filter
 def listify_answer(value):
     if value and type(value) is not list:
-        value = list(value)
+        value = [value]
 
     return value
