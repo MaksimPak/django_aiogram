@@ -14,7 +14,7 @@ def dict_key(d, k):
 
 
 @register.filter
-def listify_answer(value):
+def listify(value):
     if value and type(value) is not list:
         value = [value]
 

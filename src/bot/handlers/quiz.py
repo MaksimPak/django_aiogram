@@ -97,6 +97,12 @@ async def next_question(
             data['form_id'],
             session
         )
+
+    contact = await repo.ContactRepository.get('tg_id', chat_id, session)
+    data = await state.get_data()
+    form = await repo.FormRepository.get('id', data['form_id'], session)
+    await repo.ContactFormRepository.create_or_edit(contact.id, data['form_id'], data, session)
+
     if question:
         await state.update_data({'current_question_id': question.id})
         kb = await FormButtons(question.form, question).question_buttons()
@@ -108,10 +114,6 @@ async def next_question(
             markup=kb
         ).send()
     else:
-        contact = await repo.ContactRepository.get('tg_id', chat_id, session)
-        data = await state.get_data()
-        form = await repo.FormRepository.get('id', data['form_id'], session)
-        await repo.ContactFormRepository.create_or_edit(contact.id, data['form_id'], data, session)
         await bot.send_message(
             chat_id,
             form.end_message,
