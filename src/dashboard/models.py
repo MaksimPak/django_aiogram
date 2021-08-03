@@ -305,6 +305,7 @@ class Form(BaseModel):
     end_message = models.CharField(max_length=50, verbose_name='Сообщение для отправки при завершении')
     is_active = models.BooleanField(verbose_name='Активна', default=False)
     one_off = models.BooleanField(verbose_name='Одноразовая форма', default=False)
+    one_row_btns = models.BooleanField(verbose_name='Однострочные ответы', default=False)
 
     def __str__(self):
         return f'Форма: [{self.name}]'
