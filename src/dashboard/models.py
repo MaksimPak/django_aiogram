@@ -27,6 +27,10 @@ def form_question_directory(instance, filename):
     return f'form_questions/{instance.form.id}/{filename}'
 
 
+def form_directory(instance, filename):
+    return f'forms/{instance.id}/{filename}'
+
+
 def generate_uuid():
     return str(uuid.uuid4())[:8]
 
@@ -305,6 +309,7 @@ class Form(BaseModel):
     end_message = models.CharField(max_length=50, verbose_name='Сообщение для отправки при завершении')
     is_active = models.BooleanField(verbose_name='Активна', default=False)
     one_off = models.BooleanField(verbose_name='Одноразовая форма', default=False)
+    image = models.ImageField(verbose_name='Картинка', blank=True, null=True, upload_to=form_directory)
 
     def __str__(self):
         return f'Форма: [{self.name}]'

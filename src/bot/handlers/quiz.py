@@ -220,12 +220,12 @@ async def form_initial(
     data = [('Начать', ('start_form', form.id)), ('Назад', ('forms',))]
     kb = KeyboardGenerator(data, row_width=1).keyboard
 
-    await bot.send_message(
+    await MessageSender(
         response.from_user.id,
         form.start_message,
-        reply_to_message_id=message_id,
-        reply_markup=kb
-    )
+        form.image,
+        markup=kb
+    ).send()
 
 
 @dp.callback_query_handler(short_data.filter(property='start_form'))

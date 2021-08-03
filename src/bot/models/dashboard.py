@@ -221,6 +221,7 @@ class FormTable(BaseModel):
     end_message = Column(String(50), nullable=False)
     is_active = Column(Boolean, default=False)
     one_off = Column(Boolean, default=False)
+    image = Column(String(255), nullable=True)
 
     questions = relationship('FormQuestionTable', back_populates='form', order_by='[FormQuestionTable.position, FormQuestionTable.id]')
 
