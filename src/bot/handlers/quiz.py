@@ -29,13 +29,12 @@ async def store_answer(
         question: FormQuestionTable,
         answer: FormAnswerTable,
         state: FSMContext,
-        rewrite: bool = False
 ):
     data = await state.get_data()
     previous_answers = data.get('answers') if data.get('answers') else {}
     key = str(question.id)
 
-    if question.multi_answer and not rewrite:
+    if question.multi_answer:
         if previous_answers.get(key) and answer in previous_answers.get(key):
             previous_answers[key].remove(answer)
         else:
@@ -333,6 +332,6 @@ async def get_text_answer(
         data['current_question_id'],
         session
     )
-    await store_answer(question, message.text, state, True)
+    await store_answer(question, message.text, state)
 
     await next_question(message.from_user.id, state)
