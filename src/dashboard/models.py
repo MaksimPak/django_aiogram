@@ -305,7 +305,6 @@ class Form(BaseModel):
     end_message = models.CharField(max_length=50, verbose_name='Сообщение для отправки при завершении')
     is_active = models.BooleanField(verbose_name='Активна', default=False)
     one_off = models.BooleanField(verbose_name='Одноразовая форма', default=False)
-    one_row_btns = models.BooleanField(verbose_name='Однострочные ответы', default=False)
 
     def __str__(self):
         return f'Форма: [{self.name}]'
@@ -322,6 +321,7 @@ class FormQuestion(BaseModel):
     image = models.ImageField(verbose_name='Картинка', blank=True, null=True, upload_to=form_question_directory)
     position = models.IntegerField(verbose_name='Нумерация')
     custom_answer = models.BooleanField(verbose_name='Кастомный ответ', default=False)
+    one_row_btns = models.BooleanField(verbose_name='Однострочные ответы', default=False)
 
     def __str__(self):
         return f'[{self.form.name}]Вопрос: {self.text}'

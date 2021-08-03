@@ -210,7 +210,7 @@ class FormButtons(KeyboardGenerator):
 
     async def question_buttons(self):
         data = [(answer.text, ('answer', answer.id)) for answer in self.question.answers]
-        row_width = 1 if self.form.one_row_btns else 3
+        row_width = 1 if self.question.one_row_btns else 3
         kb = KeyboardGenerator(data, row_width=row_width)
         if self.question.custom_answer:
             kb.add(('Другое', ('custom_answer',)))

@@ -221,7 +221,6 @@ class FormTable(BaseModel):
     end_message = Column(String(50), nullable=False)
     is_active = Column(Boolean, default=False)
     one_off = Column(Boolean, default=False)
-    one_row_btns = Column(Boolean, default=False)
 
     questions = relationship('FormQuestionTable', back_populates='form', order_by='[FormQuestionTable.position, FormQuestionTable.id]')
 
@@ -235,6 +234,7 @@ class FormQuestionTable(BaseModel):
     image = Column(String(255), nullable=True)
     position = Column(Integer, nullable=False)
     custom_answer = Column(Boolean, default=False)
+    one_row_btns = Column(Boolean, default=False)
 
     form = relationship('FormTable', back_populates='questions')
     answers = relationship('FormAnswerTable', back_populates='question', foreign_keys='FormAnswerTable.question_id', order_by='FormAnswerTable.id')
