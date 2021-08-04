@@ -1,4 +1,5 @@
 import functools
+import json
 
 import click
 from aiogram.__main__ import SysInfo
@@ -37,7 +38,7 @@ class CustomWebhookRequestHandler(WebhookRequestHandler):
         if response:
             web_response = response.get_web_response()
         else:
-            web_response = web.Response(body=update.to_python())
+            web_response = web.Response(body=json.dumps(update.to_python()))
 
         if self.request.app.get('RETRY_AFTER', None):
             web_response.headers['Retry-After'] = self.request.app['RETRY_AFTER']
