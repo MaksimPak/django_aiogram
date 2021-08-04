@@ -37,12 +37,13 @@ class CustomWebhookRequestHandler(WebhookRequestHandler):
         if response:
             web_response = response.get_web_response()
         else:
-            web_response = web.Response(body=update)
+            web_response = web.Response(body=update.to_python())
 
         if self.request.app.get('RETRY_AFTER', None):
             web_response.headers['Retry-After'] = self.request.app['RETRY_AFTER']
 
         return web_response
+
 
 @click.group()
 def cli():
