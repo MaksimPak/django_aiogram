@@ -149,26 +149,22 @@ class KeyboardGenerator:
         return btns
 
     @staticmethod
-    async def main_kb():
+    async def main_kb(contact=None):
         btns = [
             KeyboardButton('📝 Курсы'),
             KeyboardButton('🧑‍🎓 Профиль'),
             KeyboardButton('📚 Домашка'),
             KeyboardButton('🤔 Опросники'),
         ]
+
+        if contact:
+            btns = [
+                KeyboardButton('🧑‍🎓 Профиль'),
+                KeyboardButton('🤔 Опросники'),
+            ]
         kb = ReplyKeyboardMarkup(resize_keyboard=True)
         kb.add(*btns)
 
-        return kb
-
-    @staticmethod
-    async def contact_kb():
-        btns = [
-            KeyboardButton('🧑‍🎓 Профиль'),
-            KeyboardButton('🤔 Опросники'),
-        ]
-        kb = ReplyKeyboardMarkup(resize_keyboard=True)
-        kb.add(*btns)
         return kb
 
     @staticmethod

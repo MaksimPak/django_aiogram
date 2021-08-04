@@ -2,7 +2,7 @@ from typing import Union
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters import CommandStart, Text, ChatTypeFilter
+from aiogram.dispatcher.filters import ChatTypeFilter
 from aiogram.dispatcher.filters.state import StatesGroup, State
 
 from bot import repository as repo
@@ -12,7 +12,6 @@ from bot.models.dashboard import StudentTable
 from bot.models.db import SessionLocal
 from bot.serializers import KeyboardGenerator
 from bot.utils.callback_settings import short_data, simple_data
-from bot.views import main
 
 _ = i18n.gettext
 
@@ -24,37 +23,6 @@ class RegistrationState(StatesGroup):
     city = State()
     phone = State()
     selected_field = State()
-
-
-@dp.message_handler(ChatTypeFilter(types.ChatType.PRIVATE), state='*', commands='cancel')
-@dp.message_handler(ChatTypeFilter(types.ChatType.PRIVATE), Text(equals='cancel', ignore_case=True), state='*')
-async def cancel_handler(
-        message: types.Message,
-        state: FSMContext
-):
-    """
-    Allow user to cancel any action
-    """
-
-    current_state = await state.get_state()
-    if current_state is None:
-        return
-    # Cancel state and inform user about it
-    await state.finish()
-    # And remove keyboard (just in case)
-    await message.reply(_('Отменено.'), reply_markup=types.ReplyKeyboardRemove())
-
-
-@dp.message_handler(CommandStart(), state='*')
-async def initial(
-        message: types.Message,
-        state: FSMContext
-):
-    """
-    Displays main panel if user exists. Else, offers options for registration
-    """
-    await state.reset_state()
-    await main(message)
 
 
 @dp.message_handler(ChatTypeFilter(types.ChatType.PRIVATE), state=RegistrationState.invite_link)

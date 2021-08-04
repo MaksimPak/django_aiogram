@@ -113,9 +113,11 @@ async def next_question(
             markup=kb
         ).send()
     else:
+        kb = await KeyboardGenerator.main_kb(contact)
         await bot.send_message(
             chat_id,
             form.end_message,
+            reply_markup=kb
         )
         await state.finish()
 

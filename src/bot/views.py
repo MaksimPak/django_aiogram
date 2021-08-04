@@ -1,7 +1,4 @@
-from contextlib import suppress
-
 from aiogram import types
-from sqlalchemy.exc import IntegrityError
 
 from bot import repository as repo
 from bot.decorators import create_session
@@ -19,13 +16,14 @@ async def main(
 ):
     student = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
     if not student:
-        with suppress(IntegrityError):
-            await repo.ContactRepository.create({
-                'first_name': message.from_user.first_name,
-                'last_name': message.from_user.last_name,
-                'tg_id': message.from_user.id
-            }, session)
-        kb = await KeyboardGenerator.contact_kb()
+        contact = await repo.ContactRepository.get_or_create(
+            message.from_user.id,
+            message.from_user.first_name,
+            message.from_user.last_name,
+            session
+            )
+
+        kb = await KeyboardGenerator.main_kb(contact)
 
         await bot.send_message(
             message.from_user.id,
