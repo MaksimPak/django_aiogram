@@ -7,9 +7,9 @@ from aiogram import types
 async def throttled(*args, **kwargs):
     response: Union[types.Message, types.CallbackQuery] = args[0]
     message = response if type(response) == types.Message else response.message
-    err = 'Too many requests'
-    answer_kwargs = (err, True) if type(response) is types.CallbackQuery else (err,)
 
-    await response.answer(*answer_kwargs)
-
+    if type(response) == types.CallbackQuery:
+        await response.answer(text='Повторите попытку еще раз', show_alert=True)
+    else:
+        await message.answer('Повторите попытку еще раз')
     logger.info(f'User: {message.from_user.id} caused throttling.\nMessage:{message.text}')
