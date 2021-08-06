@@ -1,49 +1,13 @@
 import functools
-import json
 
 import click
 from aiogram.__main__ import SysInfo
-from aiogram.dispatcher.webhook import WebhookRequestHandler
-from aiohttp import web
 from loguru import logger
 
 try:
     import aiohttp_autoreload
 except ImportError:
     aiohttp_autoreload = None
-
-
-class CustomWebhookRequestHandler(WebhookRequestHandler):
-    async def post(self):
-        """
-        Process POST request
-
-        if one of handler returns instance of :class:`aiogram.dispatcher.webhook.BaseResponse` return it to webhook.
-        Otherwise do nothing (return 'ok')
-
-        :return: :class:`aiohttp.web.Response`
-        """
-        self.validate_ip()
-
-        # context.update_state({'CALLER': WEBHOOK,
-        #                       WEBHOOK_CONNECTION: True,
-        #                       WEBHOOK_REQUEST: self.request})
-
-        dispatcher = self.get_dispatcher()
-        update = await self.parse_update(dispatcher.bot)
-
-        results = await self.process_update(update)
-        response = self.get_response(results)
-
-        if response:
-            web_response = response.get_web_response()
-        else:
-            web_response = web.Response(body=json.dumps(update.to_python()))
-
-        if self.request.app.get('RETRY_AFTER', None):
-            web_response.headers['Retry-After'] = self.request.app['RETRY_AFTER']
-
-        return web_response
 
 
 @click.group()
@@ -103,4 +67,4 @@ def webhook():
     from bot.utils.executor import runner
     from bot import config
 
-    runner.start_webhook(webhook_path=config.WEBHOOK_PATH, port=config.BOT_PUBLIC_PORT, request_handler=CustomWebhookRequestHandler)
+    runner.start_webhook(webhook_path=config.WEBHOOK_PATH, port=config.BOT_PUBLIC_PORT)
