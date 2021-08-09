@@ -20,7 +20,10 @@ def lesson_upload_directory(instance, filename):
 
 
 def promo_upload_directory(instance, filename):
-    return f'promos/{instance.course.id}/{filename}'
+    if getattr(instance, 'course'):
+        return f'promos/{instance.course.id}/{filename}'
+    else:
+        return f'promos/{filename}'
 
 
 def form_question_directory(instance, filename):
@@ -206,6 +209,7 @@ class Promotion(BaseModel):
     video_file_id = models.CharField(verbose_name='Video file ID', null=True, blank=True, editable=False, max_length=255)
     unique_code = models.CharField(max_length=255, verbose_name='Инвайт код', unique=True, null=True, blank=True, editable=False)
     start_message = models.TextField(verbose_name='Сообщение после регистрации на курс')
+    display_link = models.BooleanField(verbose_name='Показать ссылку', default=False)
 
     def __str__(self):
         return self.title
@@ -326,6 +330,7 @@ class FormQuestion(BaseModel):
     image = models.ImageField(verbose_name='Картинка', blank=True, null=True, upload_to=form_question_directory)
     position = models.IntegerField(verbose_name='Нумерация')
     custom_answer = models.BooleanField(verbose_name='Кастомный ответ', default=False)
+    custom_answer_text = models.CharField(verbose_name='Текст кастомного ответа', max_length=50, null=True, blank=True)
     one_row_btns = models.BooleanField(verbose_name='Однострочные ответы', default=False)
 
     def __str__(self):

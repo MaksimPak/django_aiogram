@@ -125,6 +125,7 @@ class PromotionTable(BaseModel):
     video_file_id = Column(String(255), nullable=True)
     unique_code = Column(String(255), nullable=True, unique=True)
     start_message = Column(TEXT, nullable=False)
+    display_link = Column(Boolean, default=False)
 
     student = relationship('StudentTable', back_populates='promo')
     course = relationship('CourseTable', back_populates='promo')
@@ -235,6 +236,8 @@ class FormQuestionTable(BaseModel):
     image = Column(String(255), nullable=True)
     position = Column(Integer, nullable=False)
     custom_answer = Column(Boolean, default=False)
+    custom_answer_text = Column(String(50), nullable=True)
+
     one_row_btns = Column(Boolean, default=False)
 
     form = relationship('FormTable', back_populates='questions')

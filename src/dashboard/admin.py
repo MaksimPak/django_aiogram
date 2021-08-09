@@ -71,7 +71,8 @@ class FormAnswerList(admin.StackedInline):
 
 class FormQuestionList(admin.StackedInline):
     model = models.FormQuestion
-    fields = ('text', 'multi_answer', 'image', 'custom_answer', 'position', 'one_row_btns', 'changeform_link')
+    fields = ('text', 'multi_answer', 'image', 'custom_answer', 'custom_answer_text',
+              'position', 'one_row_btns', 'changeform_link')
     readonly_fields = ('changeform_link', )
 
     @admin.display(description='Дополнительно')
@@ -83,6 +84,11 @@ class FormQuestionList(admin.StackedInline):
             return mark_safe(f'<a href="{changeform_url}" target="_blank">Создать Ответы</a>')
         else:
             return 'Сначала создайте вопрос'
+
+    class Media:
+        js = (
+            'dashboard/js/form_admin.js',
+        )
 
 
 class PromotionReport(admin.TabularInline):
