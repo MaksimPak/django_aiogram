@@ -93,8 +93,7 @@ async def send_next_lesson(studentlesson, user_id, session):
 async def my_courses(
         message: types.Message,
         state: FSMContext,
-        session: SessionLocal,
-        **kwargs
+        session: SessionLocal
 ):
     """
     Displays free and enrolled courses of the student
@@ -129,8 +128,7 @@ async def course_lessons(
         cb: types.callback_query,
         session: SessionLocal,
         state: FSMContext,
-        callback_data: dict,
-        **kwargs
+        callback_data: dict
 ):
     """
     Displays all lessons of the course
@@ -160,8 +158,7 @@ async def course_lessons(
 async def get_lesson(
         cb: types.callback_query,
         callback_data: dict,
-        session: SessionLocal,
-        **kwargs
+        session: SessionLocal
 ):
     """
     Display content of the lesson and create access link for video watch
@@ -203,8 +200,7 @@ async def check_homework(
         cb: types.callback_query,
         state: FSMContext,
         callback_data: dict,
-        session: SessionLocal,
-        **kwargs
+        session: SessionLocal
 ):
     """
     Checks if lesson has homework. If it does, provides student with submit button
@@ -279,8 +275,7 @@ async def request_homework(
 async def forward_homework(
         message: types.Message,
         state: FSMContext,
-        session: SessionLocal,
-        **kwargs
+        session: SessionLocal
 ):
     """
     Gets the content of the homework and forwards it to the chat specified for course
@@ -360,8 +355,7 @@ async def get_course_feedback(
 async def forward_course_feedback(
         message: types.Message,
         state: FSMContext,
-        session: SessionLocal,
-        **kwargs
+        session: SessionLocal
 ):
     """
     Processes feedback from student and forwards it to course chat id
@@ -434,8 +428,7 @@ async def get_student_feedback(
 async def forward_student_feedback(
         message: types.Message,
         state: FSMContext,
-        session: SessionLocal,
-        **kwargs
+        session: SessionLocal
 ):
     """
     Processes feedback from student and forwards it to course chat id

@@ -1,4 +1,4 @@
-from functools import wraps
+import functools
 
 from bot.models.db import SessionLocal
 
@@ -7,10 +7,12 @@ def create_session(func):
     """
     Create session for database access.
     """
-    @wraps(func)
+    @functools.wraps(func)
     async def inner(*args, **kwargs):
-        async with SessionLocal() as session:
-            result = await func(*args, **kwargs, session=session)
-
+        if not kwargs.get('session'):
+            async with SessionLocal() as session:
+                kwargs['session'] = session
+        result = await func(*args, **kwargs)
         return result
+
     return inner

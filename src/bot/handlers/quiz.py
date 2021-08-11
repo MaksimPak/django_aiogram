@@ -14,10 +14,9 @@ from bot.models.dashboard import FormAnswerTable, FormQuestionTable
 from bot.models.db import SessionLocal
 from bot.serializers import KeyboardGenerator, FormButtons, MessageSender
 from bot.utils.callback_settings import short_data, simple_data
-
-# todo: need to localize
 from bot.utils.throttling import throttled
 
+# todo: need to localize
 _ = i18n.gettext
 
 
@@ -148,8 +147,7 @@ async def process_multianswer(
 async def display_forms(
         response: Union[types.Message, types.CallbackQuery],
         state: FSMContext,
-        session: SessionLocal,
-        **kwargs: dict
+        session: SessionLocal
 
 ):
     await state.reset_state()
@@ -180,8 +178,7 @@ async def form_initial(
         session: SessionLocal,
         callback_data: dict = None,
         regexp: re.Match = None,
-        deep_link: re.Match = None,
-        **kwargs
+        deep_link: re.Match = None
 ):
     if type(response) == types.CallbackQuery:
         await response.answer()
@@ -232,12 +229,10 @@ async def form_initial(
 
 @dp.callback_query_handler(short_data.filter(property='start_form'))
 @dp.throttled(throttled, rate=.7)
-@create_session
 async def start_form(
         cb: types.CallbackQuery,
         state: FSMContext,
-        callback_data: dict = None,
-        **kwargs
+        callback_data: dict = None
 ):
     """
     Start the form for student
@@ -259,8 +254,7 @@ async def get_inline_answer(
         cb: types.CallbackQuery,
         session: SessionLocal,
         state: FSMContext,
-        callback_data: dict = None,
-        **kwargs: dict
+        callback_data: dict = None
 ):
     await cb.answer()
     answer = await repo.FormAnswerRepository.load_all_relationships(int(callback_data['value']), session)
@@ -287,12 +281,10 @@ async def get_inline_answer(
 
 @dp.callback_query_handler(short_data.filter(property='proceed'))
 @dp.throttled(throttled, rate=.7)
-@create_session
 async def proceed(
         cb: types.CallbackQuery,
         state: FSMContext,
-        callback_data: dict = None,
-        **kwargs
+        callback_data: dict = None
 ):
     await cb.answer()
     await cb.message.edit_reply_markup(None)
@@ -324,8 +316,7 @@ async def custom_answer(
 async def get_text_answer(
         message: types.Message,
         state: FSMContext,
-        session: SessionLocal,
-        **kwargs
+        session: SessionLocal
 ):
     await state.reset_state(False)
     data = await state.get_data()

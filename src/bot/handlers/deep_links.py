@@ -19,8 +19,7 @@ _ = i18n.gettext
 @create_session
 async def register_deep_link(
         message: types.Message,
-        session: SessionLocal,
-        **kwargs
+        session: SessionLocal
 ):
     """
     Saves user tg_id into db if start was passed w/ deep link

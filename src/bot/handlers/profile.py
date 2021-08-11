@@ -68,8 +68,7 @@ async def profile_kb(
 async def my_profile(
         message: types.Message,
         session: SessionLocal,
-        state: FSMContext,
-        **kwargs
+        state: FSMContext
 ):
     """
     Starting point for profile view/edit
@@ -121,8 +120,7 @@ async def change_first_name(
 async def set_name(
         message: types.Message,
         state: FSMContext,
-        session: SessionLocal,
-        **kwargs
+        session: SessionLocal
 ):
     """
     Saves new first_name into db
@@ -171,8 +169,7 @@ async def change_last_name(
 async def set_last_name(
         message: types.Message,
         state: FSMContext,
-        session: SessionLocal,
-        **kwargs
+        session: SessionLocal
 ):
     """
     Saves last_name into db
@@ -224,8 +221,7 @@ async def set_lang(
         cb: types.callback_query,
         state: FSMContext,
         session: SessionLocal,
-        callback_data: dict,
-        **kwargs
+        callback_data: dict
 ):
     """
     Saves new lang into db
@@ -283,8 +279,7 @@ async def change_phone(
 async def set_phone(
         message: types.Message,
         state: FSMContext,
-        session: SessionLocal,
-        **kwargs
+        session: SessionLocal
 ):
     """
     Saves phone into db
@@ -333,8 +328,7 @@ async def change_city(
 async def set_city(
         message: types.Message,
         state: FSMContext,
-        session: SessionLocal,
-        **kwargs
+        session: SessionLocal
 ):
     """
     Saves phone into db

@@ -189,14 +189,14 @@ class FormButtons(KeyboardGenerator):
             question_id: int,
             keyboard: dict
     ):
-        #todo REFACTOR 
+        # todo REFACTOR
         for row in keyboard['inline_keyboard']:
             for key in row:
-                if key['text'] != 'Другое':
-                    callback_answer_id = int(key['callback_data'].split('|')[-1])
-                    if callback_answer_id == answer_id and key['text'][0] != '✅':
+                cb_answer_id = key['callback_data'].split('|')[-1]
+                if cb_answer_id.isdigit():
+                    if int(cb_answer_id) == answer_id and key['text'][0] != '✅':
                         key['text'] = '✅ ' + key['text']
-                    elif callback_answer_id == answer_id and key['text'][0] == '✅':
+                    elif int(cb_answer_id) == answer_id and key['text'][0] == '✅':
                         key['text'] = key['text'][1:]
         self.keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard['inline_keyboard'])
         if self.keyboard.inline_keyboard[-1][-1].text != 'Следующий вопрос':

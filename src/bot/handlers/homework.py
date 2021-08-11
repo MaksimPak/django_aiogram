@@ -14,8 +14,7 @@ _ = i18n.gettext
 async def my_tasks(
         message: types.Message,
         state: FSMContext,
-        session: SessionLocal,
-        **kwargs
+        session: SessionLocal
 ):
     """
     Starting handler to process homework process

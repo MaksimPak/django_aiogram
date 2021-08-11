@@ -15,8 +15,7 @@ _ = i18n.gettext
 async def to_courses(
         cb: types.callback_query,
         session: SessionLocal,
-        callback_data: dict,
-        **kwargs
+        callback_data: dict
 ):
     """
     Handles back button to return to course list

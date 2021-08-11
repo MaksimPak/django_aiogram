@@ -69,7 +69,7 @@ class BaseRepository:
             instance = cls.table(**params)
             session.add(instance)
             await session.commit()
-            return instance
+        return instance
 
     @classmethod
     async def delete(cls, instance, session):
@@ -112,7 +112,7 @@ class StudentRepository(BaseRepository):
                     selectinload(StudentTable.category)
                 )
             )).scalar()
-            return student
+        return student
 
     @staticmethod
     async def get_course_inload(attribute: str, value: Any, session: SessionLocal):
@@ -261,7 +261,7 @@ class StudentLessonRepository(BaseRepository):
                     LessonTable.has_homework == None)
             ))).scalar()
 
-            return count
+        return count
 
     @staticmethod
     async def get_lesson_student_inload(attribute, value, session):
@@ -285,7 +285,7 @@ class CategoryRepository(BaseRepository):
             categories = (await session.execute(
                 select(CategoryType)
             )).scalars()
-            return categories
+        return categories
 
 
 class PromotionRepository(BaseRepository):
@@ -308,11 +308,10 @@ class StudentCourseRepository(BaseRepository):
     @staticmethod
     async def create_record(student_id, course_id, session):
         async with session:
-            async with session:
-                instance = StudentCourse(student_id=student_id, course_id=course_id)
-                session.add(instance)
-                await session.commit()
-                return instance
+            instance = StudentCourse(student_id=student_id, course_id=course_id)
+            session.add(instance)
+            await session.commit()
+        return instance
 
     @staticmethod
     async def get_record(student_id, course_id, session):
@@ -336,7 +335,7 @@ class StudentCourseRepository(BaseRepository):
                 CourseTable.is_started == True).group_by(LessonTable.course_id, CourseTable.id, StudentCourse.id)
             filtered = (await session.execute(stmt)).all()
 
-            return filtered
+        return filtered
 
 
 class FormRepository(BaseRepository):
@@ -348,7 +347,7 @@ class FormRepository(BaseRepository):
             forms = (
                 await session.execute(
                     select(FormTable).where(FormTable.type == 'public'))).scalars()
-            return forms
+        return forms
 
     @staticmethod
     async def get_questions(form_id, session):
@@ -358,7 +357,7 @@ class FormRepository(BaseRepository):
                     select(FormTable).where(FormTable.id == form_id)
                     .options(selectinload(FormTable.questions).selectinload(FormQuestionTable.answers)))
             ).scalar()
-            return form
+        return form
 
 
 class FormQuestionRepository(BaseRepository):
@@ -378,7 +377,7 @@ class FormQuestionRepository(BaseRepository):
                 )
             ).scalar()
 
-            return next_question
+        return next_question
 
     @classmethod
     async def get(cls, attribute: str, value: Any, session: SessionLocal):
@@ -408,7 +407,7 @@ class FormAnswerRepository(BaseRepository):
                     )
                 )
             ).scalar()
-            return answer
+        return answer
 
 
 class ContactFormRepository(BaseRepository):
@@ -423,7 +422,7 @@ class ContactFormRepository(BaseRepository):
                     ContactFormTable.form_id == form_id
                 )
             )).first()
-            return is_record
+        return is_record
 
     @staticmethod
     async def get_one(contact_id, form_id, session):
@@ -434,7 +433,7 @@ class ContactFormRepository(BaseRepository):
                     ContactFormTable.form_id == form_id
                 )
             )).scalar()
-            return record
+        return record
 
     @staticmethod
     async def create_or_edit(contact_id, form_id, data, session):

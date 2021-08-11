@@ -30,8 +30,7 @@ class RegistrationState(StatesGroup):
 async def check_invite_code(
         message: types.Message,
         state: FSMContext,
-        session: SessionLocal,
-        **kwargs
+        session: SessionLocal
 ):
     student = await repo.StudentRepository.get('unique_code', message.text, session)
     if student:
@@ -49,8 +48,7 @@ async def check_invite_code(
 @create_session
 async def tg_reg(
         response: Union[types.CallbackQuery, types.Message],
-        session: SessionLocal,
-        **kwargs
+        session: SessionLocal
 ):
     if type(response) == types.CallbackQuery:
         await response.answer()
@@ -119,8 +117,7 @@ async def set_first_name(
 async def set_phone(
         message: types.Message,
         state: FSMContext,
-        session: SessionLocal,
-        **kwargs
+        session: SessionLocal
 ):
     is_phone_exists = await repo.StudentRepository.is_exist('phone', message.text, session)
     if is_phone_exists:
@@ -144,8 +141,7 @@ async def create_record(
         cb: types.CallbackQuery,
         state: FSMContext,
         session: SessionLocal,
-        callback_data: dict,
-        **kwargs
+        callback_data: dict
 ):
     await cb.answer()
     field = int(callback_data['value'])
