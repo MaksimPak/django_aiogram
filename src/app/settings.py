@@ -149,6 +149,9 @@ CELERY_TIMEZONE = 'Asia/Tashkent'
 CELERY_RESULT_BACKEND = f'redis://{os.getenv("REDIS_HOST", "redis")}:{os.getenv("REDIS_PORT", 6379)}/0'
 
 
+# REDIS
+REDIS_CUSTOM_DATA = 4
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

@@ -148,7 +148,6 @@ async def display_forms(
         response: Union[types.Message, types.CallbackQuery],
         state: FSMContext,
         session: SessionLocal
-
 ):
     await state.reset_state()
     if type(response) == types.CallbackQuery:

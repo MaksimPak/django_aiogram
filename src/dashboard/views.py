@@ -17,7 +17,7 @@ from dashboard.models import LessonUrl, Lead, Student, Course, Lesson, Promotion
 from dashboard.tasks import send_promo_task, message_students_task
 from dashboard.utils.ffmpeg import get_resolution, get_duration
 from dashboard.utils.helpers import prepare_promo_data
-from dashboard.utils.telegram import Telegram
+from dashboard.utils.telegram import Telegram, Telegram2
 
 TELEGRAM_AGENT = 'TelegramBot (like TwitterBot)'
 MESSAGE_URL = f'https://api.telegram.org/bot{os.getenv("BOT_TOKEN")}/sendMessage'
@@ -200,25 +200,30 @@ def send_promo(request, promo_id, lang):
 def send_promo_myself(request, promo_id):
     promotion = get_object_or_404(Promotion, pk=promo_id)
     message = render_to_string('dashboard/promo_text.html', {'promo': promotion})
-    video = promotion.video if not promotion.video_file_id else None
-    thumb = promotion.thumbnail if promotion.thumbnail else None
-    duration = get_duration(promotion.video.path)
-    width, height = get_resolution(promotion.video.path)
+    image = promotion.image.path
+    video = None
+    thumb = None
+    duration = None
+    width = None
+    height = None
 
-    data = prepare_promo_data(
-        os.getenv('CHAT_ID', None),
-        promotion.video_file_id,
+    if promotion.video:
+        image = None
+        video = promotion.video.path
+        thumb = promotion.image.path
+        duration = get_duration(promotion.video.path)
+        width, height = get_resolution(promotion.video.path)
+
+    Telegram2(
+        int(os.getenv('CHAT_ID')),
         message,
+        image,
+        video,
         duration,
         width,
         height,
-    )
-
-    resp = Telegram.video_to_person(data, thumb, video)
-
-    if not promotion.video_file_id and resp['ok']:
-        promotion.video_file_id = resp['result']['video']['file_id']
-        promotion.save()
+        thumb
+    ).send()
 
     messages.add_message(request, messages.INFO, 'Отправлено в общий chat id.')
     return HttpResponseRedirect(reverse('admin:dashboard_promotion_change', args=(promo_id,)))

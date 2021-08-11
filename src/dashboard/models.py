@@ -2,6 +2,7 @@ import uuid
 
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
+from django.core.validators import validate_image_file_extension
 from django.db import models, transaction
 from django.template.defaultfilters import truncatewords
 
@@ -200,8 +201,8 @@ class Course(BaseModel):
 
 class Promotion(BaseModel):
     title = models.CharField(max_length=50, verbose_name='Название')
-    video = models.FileField(verbose_name='Промо видео', upload_to=promo_upload_directory, validators=[validate_video_extension, validate_file_size], help_text='Не больше 50 мб')
-    thumbnail = models.ImageField(verbose_name='Промо превью', null=True, blank=True, upload_to=promo_upload_directory, validators=[validate_dimensions, validate_thumbnail_size], help_text=THUMBNAIL_HELP_TEXT)
+    video = models.FileField(verbose_name='Промо видео', null=True, blank=True, upload_to=promo_upload_directory, validators=[validate_video_extension, validate_file_size], help_text='Не больше 50 мб')
+    image = models.ImageField(verbose_name='Картинка', upload_to=promo_upload_directory, validators=[validate_image_file_extension], help_text=THUMBNAIL_HELP_TEXT)
     description = models.TextField(verbose_name='Описание')
     course = models.ForeignKey(Course, on_delete=models.SET_NULL, verbose_name='Курс', null=True, blank=True)
     counter = models.IntegerField('Подсчет просмотра', default=0)
@@ -210,6 +211,11 @@ class Promotion(BaseModel):
     unique_code = models.CharField(max_length=255, verbose_name='Инвайт код', unique=True, null=True, blank=True, editable=False)
     start_message = models.TextField(verbose_name='Сообщение после регистрации на курс')
     display_link = models.BooleanField(verbose_name='Показать ссылку', default=False)
+
+    def clean(self):
+        if self.video and self.image:
+            validate_dimensions(self.image)
+            validate_thumbnail_size(self.image)
 
     def __str__(self):
         return self.title

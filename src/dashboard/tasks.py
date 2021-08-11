@@ -48,7 +48,7 @@ def send_promo_task(config):
         raise ValidationError('Video file id is required')
 
     video = promotion.video.path
-    thumb = promotion.thumbnail.path if promotion.thumbnail else None
+    thumb = promotion.image.path if promotion.thumbnail else None
 
     report = SendingReport.objects.create(lang=config['lang'], promotion=promotion, sent=students.count())
 

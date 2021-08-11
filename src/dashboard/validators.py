@@ -34,9 +34,9 @@ def validate_file_size(value):
 
 def validate_dimensions(value):
     if value.width > 320 or value.height > 320:
-        raise ValidationError("Максимальная (ширина)х(высота): 320x320")
+        raise ValidationError({value.field.name: "Максимальная (ширина)х(высота): 320x320"})
 
 
 def validate_thumbnail_size(value):
     if value.size > 327680:
-        raise ValidationError("Максимальный размер картинки: 320kB")
+        raise ValidationError({value.field.name: "Максимальный размер картинки: 320kB"})
