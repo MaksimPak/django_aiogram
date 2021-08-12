@@ -38,7 +38,7 @@ class Telegram:
         return requests.post(url, files=files, data=data).json()
 
 
-class Telegram2:
+class TelegramSender:
     def __init__(self, chat_id: int, text: str = None, photo: str = None,
                  video: str = None, duration: int = None, width: int = None,
                  height: int = None, thumbnail: str = None,

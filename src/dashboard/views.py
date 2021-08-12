@@ -4,20 +4,17 @@ import os
 
 import requests
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import IntegrityError
 from django.http import HttpResponseNotFound, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
-from django.views.generic import DetailView
 
 from dashboard.forms import LeadForm
-from dashboard.models import LessonUrl, Lead, Student, Course, Lesson, Promotion, Form
+from dashboard.models import LessonUrl, Lead, Student, Course, Lesson, Promotion
 from dashboard.tasks import send_promo_task, message_students_task
 from dashboard.utils.ffmpeg import get_resolution, get_duration
-from dashboard.utils.helpers import prepare_promo_data
-from dashboard.utils.telegram import Telegram, Telegram2
+from dashboard.utils.telegram import TelegramSender
 
 TELEGRAM_AGENT = 'TelegramBot (like TwitterBot)'
 MESSAGE_URL = f'https://api.telegram.org/bot{os.getenv("BOT_TOKEN")}/sendMessage'
@@ -180,15 +177,9 @@ def send_promo(request, promo_id, lang):
     promotion = get_object_or_404(Promotion, pk=promo_id)
     message = render_to_string('dashboard/promo_text.html', {'promo': promotion})
 
-    duration = get_duration(promotion.video.path)
-    width, height = get_resolution(promotion.video.path)
-
     config = {
         'promo_id': promo_id,
         'message': message,
-        'duration': duration,
-        'width': width,
-        'height': height,
         'lang': lang
     }
     send_promo_task.delay(config)
@@ -214,16 +205,8 @@ def send_promo_myself(request, promo_id):
         duration = get_duration(promotion.video.path)
         width, height = get_resolution(promotion.video.path)
 
-    Telegram2(
-        int(os.getenv('CHAT_ID')),
-        message,
-        image,
-        video,
-        duration,
-        width,
-        height,
-        thumb
-    ).send()
+    TelegramSender(int(os.getenv('CHAT_ID')), message, image, video,
+              duration, width, height, thumb).send()
 
     messages.add_message(request, messages.INFO, 'Отправлено в общий chat id.')
     return HttpResponseRedirect(reverse('admin:dashboard_promotion_change', args=(promo_id,)))
