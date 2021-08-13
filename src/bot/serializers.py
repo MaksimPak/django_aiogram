@@ -96,7 +96,7 @@ class MessageSender:
 
         if not media_object:
             wait_message = await bot.send_message(self.chat_id, 'Пожалуйста, подождите ⏳')
-            media_object = InputFile(path/'media'/getattr(self, media_attr))
+            media_object = InputFile(path)
 
         self.set_media(media_attr, media_object)
 
