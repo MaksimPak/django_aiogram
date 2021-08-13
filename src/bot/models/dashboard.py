@@ -117,12 +117,11 @@ class PromotionTable(BaseModel):
 
     title = Column(String(50))
     video = Column(String(100))
-    thumbnail = Column(String(100), nullable=True)
+    image = Column(String(100), nullable=True)
     description = Column(TEXT)
     course_id = Column(Integer, ForeignKey('dashboard_course.id', ondelete='SET NULL'), nullable=True)
     counter = Column(Integer, default=0)
     link = Column(String(255), nullable=True)
-    video_file_id = Column(String(255), nullable=True)
     unique_code = Column(String(255), nullable=True, unique=True)
     start_message = Column(TEXT, nullable=False)
     display_link = Column(Boolean, default=False)

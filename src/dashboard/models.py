@@ -207,7 +207,6 @@ class Promotion(BaseModel):
     course = models.ForeignKey(Course, on_delete=models.SET_NULL, verbose_name='Курс', null=True, blank=True)
     counter = models.IntegerField('Подсчет просмотра', default=0)
     link = models.CharField(max_length=255, editable=False, null=True, blank=True, verbose_name='Инвайт ссылка')
-    video_file_id = models.CharField(verbose_name='Video file ID', null=True, blank=True, editable=False, max_length=255)
     unique_code = models.CharField(max_length=255, verbose_name='Инвайт код', unique=True, null=True, blank=True, editable=False)
     start_message = models.TextField(verbose_name='Сообщение после регистрации на курс')
     display_link = models.BooleanField(verbose_name='Показать ссылку', default=False)

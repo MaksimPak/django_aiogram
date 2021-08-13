@@ -55,7 +55,7 @@ class TelegramSender:
         self.base_url = f'https://api.telegram.org/bot{os.getenv("BOT_TOKEN")}/'
         self.data = {
             'chat_id': self.chat_id,
-            'parse_mode': 'html',
+            'parse_mode': 'HTML',
         }
         if markup:
             self.data['reply_markup'] = markup

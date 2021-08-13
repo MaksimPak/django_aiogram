@@ -1,7 +1,10 @@
 import hashlib
+import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Iterable, Union, List, Tuple, Any
 
+from aiogram import types
 from aiogram.contrib.fsm_storage.redis import RedisStorage2
 from aiogram.types import (
     InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton,
@@ -24,6 +27,7 @@ question_redis = RedisStorage2(
     port=config.REDIS_PORT,
     db=DATABASES['CUSTOM_DATA']
 )
+ROOT_DIR = Path(__file__).parent.parent
 
 
 class MessageSender:
@@ -60,7 +64,7 @@ class MessageSender:
                 self.duration,
                 self.width,
                 self.height,
-                self.thumbnail,
+                InputFile('media/' + self.thumbnail),
                 self.text,
                 'html',
                 reply_markup=self.markup
@@ -75,16 +79,24 @@ class MessageSender:
 
         return resp
 
+    @staticmethod
+    async def _get_file_id(response: types.Message, media_attr: str):
+        if media_attr == 'video':
+            return response.video.file_id
+        else:
+            return response.photo[-1].file_id
+
     async def _cache_media(self):
         redis = await question_redis.redis()
         media_attr = 'photo' if self.photo else 'video'
-        hashed_filepath = hashlib.md5(getattr(self, media_attr).encode()).hexdigest()
+        path = ROOT_DIR / 'media' / getattr(self, media_attr)
+        hashed_filepath = hashlib.md5(str(path).encode()).hexdigest()
         media_object = await redis.get(hashed_filepath, encoding='utf8')
         wait_message = None
 
         if not media_object:
             wait_message = await bot.send_message(self.chat_id, 'Пожалуйста, подождите ⏳')
-            media_object = InputFile(f'media/{getattr(self, media_attr)}')
+            media_object = InputFile(path/'media'/getattr(self, media_attr))
 
         self.set_media(media_attr, media_object)
 
@@ -92,7 +104,8 @@ class MessageSender:
 
         if wait_message:
             await wait_message.delete()
-            await redis.set(hashed_filepath, getattr(resp, media_attr)[-1].file_id)
+            key = await self._get_file_id(resp, media_attr)
+            await redis.set(hashed_filepath, key)
 
     async def send(self):
         if self.photo or self.video:

@@ -9,8 +9,9 @@ from bot import repository as repo
 from bot.decorators import create_session
 from bot.misc import dp, jinja_env, bot, i18n
 from bot.models.db import SessionLocal
-from bot.serializers import KeyboardGenerator
+from bot.serializers import KeyboardGenerator, MessageSender
 from bot.views import main
+from ffmpeg import get_duration, get_resolution
 
 _ = i18n.gettext
 
@@ -43,8 +44,7 @@ async def register_deep_link(
 @create_session
 async def promo_deep_link(
         message: types.Message,
-        session: SessionLocal,
-        **kwargs
+        session: SessionLocal
 ):
     promotion = await repo.PromotionRepository.get('unique_code', message.get_args().split('_')[1], session)
     student = await repo.StudentRepository.get('tg_id', message.from_user.id, session)
@@ -55,12 +55,30 @@ async def promo_deep_link(
 
     with suppress(Unauthorized):
         await repo.PromotionRepository.edit(promotion, {'counter': promotion.counter + 1}, session)
-        await bot.send_video(
+
+        video = promotion.video
+        image = promotion.image
+        thumb = None
+        duration = None
+        width = None
+        height = None
+
+        if video:
+            image = None
+            thumb = promotion.image
+            duration = get_duration('media/' + promotion.video)
+            width, height = get_resolution('media/' + promotion.video)
+
+        await MessageSender(
             message.from_user.id,
-            promotion.video_file_id,
-            caption=text,
-            parse_mode='html',
-        )
+            text,
+            image,
+            video,
+            duration=duration,
+            width=width,
+            height=height,
+            thumbnail=thumb
+        ).send()
 
         if not student:
             contact = await repo.ContactRepository.get('tg_id', message.from_user.id, session)

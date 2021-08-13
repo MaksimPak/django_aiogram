@@ -6,7 +6,7 @@ from django.db.models import F
 
 from app.celery import app
 from dashboard.models import Student, Promotion, SendingReport
-from dashboard.utils.ffmpeg import get_duration, get_resolution
+from ffmpeg import get_duration, get_resolution
 from dashboard.utils.telegram import Telegram, TelegramSender
 
 

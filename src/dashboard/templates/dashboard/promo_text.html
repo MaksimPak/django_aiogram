@@ -1,6 +1,6 @@
 <b>{{ promo.title }}</b>
 
-{{ promo.description }}
+{{ promo.description|safe }}
 {% if promo.display_link %}
 <a href="{{ promo.link }}">👉 Записаться на курс / Kurga yozilish</a>
 {% endif %}

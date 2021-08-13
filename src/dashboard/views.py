@@ -13,7 +13,7 @@ from django.urls import reverse
 from dashboard.forms import LeadForm
 from dashboard.models import LessonUrl, Lead, Student, Course, Lesson, Promotion
 from dashboard.tasks import send_promo_task, message_students_task
-from dashboard.utils.ffmpeg import get_resolution, get_duration
+from ffmpeg import get_resolution, get_duration
 from dashboard.utils.telegram import TelegramSender
 
 TELEGRAM_AGENT = 'TelegramBot (like TwitterBot)'
@@ -206,7 +206,7 @@ def send_promo_myself(request, promo_id):
         width, height = get_resolution(promotion.video.path)
 
     TelegramSender(int(os.getenv('CHAT_ID')), message, image, video,
-              duration, width, height, thumb).send()
+                   duration, width, height, thumb).send()
 
     messages.add_message(request, messages.INFO, 'Отправлено в общий chat id.')
     return HttpResponseRedirect(reverse('admin:dashboard_promotion_change', args=(promo_id,)))
