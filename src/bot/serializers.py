@@ -64,7 +64,7 @@ class MessageSender:
                 self.duration,
                 self.width,
                 self.height,
-                InputFile('media/' + self.thumbnail),
+                InputFile(ROOT_DIR / 'media' / self.thumbnail),
                 self.text,
                 'html',
                 reply_markup=self.markup
