@@ -101,6 +101,7 @@ def message_to_students(request):
     """
     students = Student.objects.all()
     selected = getattr(request, request.method).getlist('_selected_action')
+    referer = request.META['HTTP_REFERER']
 
     if selected:
         students = Student.objects.filter(pk__in=selected)
@@ -121,12 +122,13 @@ def message_to_students(request):
 
         message_students_task.delay(config)
 
-        return HttpResponseRedirect(reverse('admin:dashboard_course_changelist'))
+        return HttpResponseRedirect(request.POST.get('referer'))
 
     return render(request, 'dashboard/send_intermediate.html', context={
         'entities': students,
         'course_id': course_id,
-        'lesson_id': lesson_id
+        'lesson_id': lesson_id,
+        'referer': referer,
     })
 
 
