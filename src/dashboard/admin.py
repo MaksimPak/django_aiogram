@@ -490,7 +490,7 @@ class FormAdmin(admin.ModelAdmin):
 
 @admin.register(models.ContactFormAnswers)
 class ContactFormAnswersAdmin(admin.ModelAdmin):
-    list_display = ('id', 'contact', 'is_registered', 'form', 'points')
+    list_display = ('id', 'contact', 'is_registered', 'points')
     list_display_links = ('contact',)
     list_per_page = 20
     readonly_fields = ('contact', 'form', 'score',)
