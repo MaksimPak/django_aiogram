@@ -471,7 +471,7 @@ class FormQuestionAdmin(admin.ModelAdmin):
 
 @admin.register(models.Form)
 class FormAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'type', 'mode', 'created_at')
+    list_display = ('id', 'name', 'type', 'mode', 'statistics', 'created_at')
     list_display_links = ('name',)
     list_per_page = 20
     inlines = (FormQuestionList,)
@@ -482,6 +482,10 @@ class FormAdmin(admin.ModelAdmin):
     @admin.display(description='Бот команда')
     def bot_command(self, form):
         return f'/quiz{form.unique_code}' if form.unique_code else '-'
+
+    @admin.display(description='Человек ответило')
+    def statistics(self, form):
+        return form.contactformanswers_set.count()
 
 
 @admin.register(models.ContactFormAnswers)
