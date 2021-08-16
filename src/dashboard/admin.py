@@ -486,7 +486,7 @@ class FormAdmin(admin.ModelAdmin):
 
 @admin.register(models.ContactFormAnswers)
 class ContactFormAnswersAdmin(admin.ModelAdmin):
-    list_display = ('id', 'contact', 'form', 'points')
+    list_display = ('id', 'contact', 'is_registered', 'form', 'points')
     list_display_links = ('contact',)
     list_per_page = 20
     readonly_fields = ('contact', 'form', 'score',)
@@ -497,6 +497,10 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request, obj=None):
         return False
+
+    @admin.display(description='Зареган', boolean=True)
+    def is_registered(self, answer):
+        return answer.contact.is_registered
 
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, answers):
