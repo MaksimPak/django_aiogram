@@ -491,7 +491,7 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
     list_per_page = 20
     readonly_fields = ('contact', 'form', 'score',)
     form = forms.ContactFormAnswers
-    actions = ('test',)
+    actions = ('send_message',)
     list_filter = ('form', 'score',)
     change_form_template = 'admin/dashboard/contactformanswers/change_form.html'
 
