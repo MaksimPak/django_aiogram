@@ -15,16 +15,17 @@ async def main(
         session: SessionLocal = None
 ):
     student = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
+    contact = await repo.ContactRepository.get_or_create(
+        message.from_user.id,
+        message.from_user.first_name,
+        message.from_user.last_name,
+        session
+    )
+    if contact.blocked_bot:
+        await repo.ContactRepository.edit(contact, {'blocked_bot': False}, session)
+
     if not student:
-        contact = await repo.ContactRepository.get_or_create(
-            message.from_user.id,
-            message.from_user.first_name,
-            message.from_user.last_name,
-            session
-            )
-
         kb = await KeyboardGenerator.main_kb(contact)
-
         await bot.send_message(
             message.from_user.id,
             _('Добро пожаловать в бот Megaskill! Пожалуйста, выберите опцию'),

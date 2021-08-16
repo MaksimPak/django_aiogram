@@ -4,20 +4,13 @@ import time
 from celery import shared_task, group
 from django.db.models import F
 
-from app.celery import app
-from dashboard.models import Student, Promotion, SendingReport
+from dashboard.models import Student, Promotion, SendingReport, Contact
 from ffmpeg import get_duration, get_resolution
 from dashboard.utils.telegram import Telegram, TelegramSender
 
 
-@app.task
-def add(x, y):
-    time.sleep(3)
-    return x + y
-
-
 @shared_task
-def send_video_task(data, report_id, student_id):
+def send_promo_task(data, report_id, student_id):
     res = TelegramSender(
             data['chat_id'],
             data['message'],
@@ -43,8 +36,24 @@ def send_single_message_task(data):
     Telegram.send_single_message(data)
 
 
+def set_blocked(chat_id):
+    Contact.objects.filter(tg_id=chat_id).update(blocked_bot=True)
+
+
 @shared_task
-def send_promo_task(config):
+def send_message(data):
+    resp = TelegramSender(chat_id=data.get('chat_id'), text=data.get('text'),
+                          photo=data.get('photo'), video=data.get('video'),
+                          duration=data.get('duration'), width=data.get('width'),
+                          height=data.get('height'), thumbnail=data.get('thumbnail'),
+                          markup=data.get('markup')).send()
+
+    if resp.get('ok') is False and resp.get('error_code') == 403:
+        set_blocked(data.get('chat_id'))
+
+
+@shared_task
+def initiate_promo_task(config):
     if config['lang'] != 'all':
         students = Student.objects.filter(language_type=config['lang'])
     else:
@@ -84,7 +93,7 @@ def send_promo_task(config):
             'thumb': thumb
         }
 
-        student.blocked_bot or tasks.append(send_video_task.s(data, report.id, student.id))
+        student.blocked_bot or tasks.append(send_promo_task.s(data, report.id, student.id))
     result = group(tasks)().save()
     SendingReport.objects.filter(pk=report.id).update(celery_id=result.id)
 
@@ -113,3 +122,29 @@ def message_students_task(config):
         if kb:
             data['reply_markup'] = json.dumps(kb)
         send_single_message_task.delay(data)
+
+
+@shared_task
+def message_contacts_task(config):
+    contacts = Contact.objects.all() if config['contacts'] == 'all'\
+        else Contact.objects.filter(pk__in=config['contacts'])
+
+    for contact in contacts:
+        kb = {
+                'inline_keyboard': [[
+                    {
+                        'text': 'Ответить',
+                        'callback_data': f'data|feedback_student|{contact.id}'
+                    }]
+                ]
+        } if config['is_feedback'] else None
+
+        data = {
+            'chat_id': contact.tg_id,
+            'text': config['message']
+        }
+        if kb:
+            data['markup'] = json.dumps(kb)
+
+        if not contact.blocked_bot:
+            send_message.delay(data)

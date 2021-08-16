@@ -38,6 +38,7 @@ class ContactTable(BaseModel):
     tg_id = Column(Integer, nullable=True, unique=True)
     data = Column(sqlalchemy_json.mutable_json_type(dbtype=JSONB, nested=True), nullable=True, default=dict)
     is_registered = Column(Boolean, default=False)
+    blocked_bot = Column(Boolean, default=False)
 
     student = relationship('StudentTable', back_populates='contact', uselist=False)
 

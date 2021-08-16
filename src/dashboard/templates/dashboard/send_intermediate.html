@@ -10,6 +10,7 @@
             <form action="" method="POST">
                 <div>
                     {% csrf_token %}
+                    <input type="hidden" name="referer" value="{{ referer }}" />
                     <input type="hidden" name="course_id" value="{{ course_id }}" />
                     <input type="hidden" name="lesson_id" value="{{ lesson_id }}" />
                     {% for entity in entities %}

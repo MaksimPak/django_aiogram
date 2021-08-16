@@ -5,6 +5,7 @@ from functools import partial
 from celery.result import GroupResult
 from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.template.loader import render_to_string
@@ -165,7 +166,7 @@ class ContactAdmin(admin.ModelAdmin):
     list_display_links = ('first_name',)
     list_per_page = 20
     actions = ('send_message',)
-    readonly_fields = ('data', 'is_registered', 'profile_link')
+    readonly_fields = ('data', 'is_registered', 'blocked_bot', 'profile_link')
     list_filter = ('is_registered',)
 
     @admin.display(description='Массовая рассылка')
@@ -490,10 +491,18 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
     list_per_page = 20
     readonly_fields = ('contact', 'form', 'score',)
     form = forms.ContactFormAnswers
+    actions = ('test',)
     list_filter = ('form', 'score',)
+    change_form_template = 'admin/dashboard/contactformanswers/change_form.html'
 
     def has_add_permission(self, request, obj=None):
         return False
+
+    @admin.display(description='Массовая рассылка')
+    def send_message(self, request, answers):
+        s = [x.contact.id for x in answers]
+        return HttpResponseRedirect(reverse(
+                'dashboard:message_contacts') + f'?_selected_action={"".join(str(pk) for pk in s)}')
 
     @admin.display(description='Балл')
     def points(self, instance):

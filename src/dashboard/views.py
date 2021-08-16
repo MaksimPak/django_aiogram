@@ -11,8 +11,8 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 
 from dashboard.forms import LeadForm
-from dashboard.models import LessonUrl, Lead, Student, Course, Lesson, Promotion
-from dashboard.tasks import send_promo_task, message_students_task
+from dashboard.models import LessonUrl, Lead, Student, Course, Lesson, Promotion, Contact
+from dashboard.tasks import message_students_task, message_contacts_task, initiate_promo_task
 from ffmpeg import get_resolution, get_duration
 from dashboard.utils.telegram import TelegramSender
 
@@ -130,6 +130,36 @@ def message_to_students(request):
     })
 
 
+def message_contacts(request):
+    """
+        Handles message sending to students from Course in Admin panel
+        """
+    contacts = Contact.objects.all()
+    selected = getattr(request, request.method).getlist('_selected_action')
+    referer = request.META['HTTP_REFERER']
+
+    if selected:
+        contacts = Contact.objects.filter(pk__in=map(int, selected))
+
+    if 'send' in request.POST:
+        is_feedback = request.POST.get('is_feedback')
+
+        config = {
+            'is_feedback': is_feedback,
+            'contacts': 'all' if not selected else selected,
+            'message': request.POST['message'],
+        }
+
+        message_contacts_task.delay(config)
+
+        return HttpResponseRedirect(request.POST.get('referer'))
+
+    return render(request, 'dashboard/send_intermediate.html', context={
+        'entities': contacts,
+        'referer': referer
+    })
+
+
 def send_lesson(request, course_id, lesson_id):
     """
     Handles lesson sending to students from Course in Admin panel
@@ -182,7 +212,7 @@ def send_promo(request, promo_id, lang):
         'message': message,
         'lang': lang
     }
-    send_promo_task.delay(config)
+    initiate_promo_task.delay(config)
 
     messages.add_message(request, messages.INFO, 'Отправлено всем студентам.')
     return HttpResponseRedirect(reverse('admin:dashboard_promotion_change', args=(promo_id,)))
