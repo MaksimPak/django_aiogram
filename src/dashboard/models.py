@@ -65,7 +65,7 @@ class User(AbstractUser):
 
 
 class CategoryType(BaseModel):
-    title = models.CharField(max_length=50, verbose_name='Название категории', unique=True)
+    title = models.CharField(max_length=100, verbose_name='Название категории', unique=True)
     uz_title = models.CharField(max_length=50, verbose_name='Узбекская версия', unique=True, blank=True, null=True)
 
     def __str__(self):
@@ -166,7 +166,7 @@ class Course(BaseModel):
         medium = '2', 'Intermediate',
         hard = '3', 'Advanced'
 
-    name = models.CharField(max_length=50, verbose_name='Название курса')
+    name = models.CharField(max_length=100, verbose_name='Название курса')
     info = models.TextField(blank=True, null=True, verbose_name='Описание')
     hashtag = models.CharField(max_length=20, verbose_name='Хештег', null=True, blank=True, validators=[validate_hashtag])
     category = models.ForeignKey(CategoryType, on_delete=models.PROTECT, verbose_name='Категория')
@@ -201,7 +201,7 @@ class Course(BaseModel):
 
 
 class Promotion(BaseModel):
-    title = models.CharField(max_length=50, verbose_name='Название')
+    title = models.CharField(max_length=100, verbose_name='Название')
     video = models.FileField(verbose_name='Промо видео', null=True, blank=True, upload_to=promo_upload_directory, validators=[validate_video_extension, validate_file_size], help_text='Не больше 50 мб')
     image = models.ImageField(verbose_name='Картинка', upload_to=promo_upload_directory, validators=[validate_image_file_extension], help_text=THUMBNAIL_HELP_TEXT)
     description = models.TextField(verbose_name='Описание')
@@ -226,7 +226,7 @@ class Promotion(BaseModel):
 
 
 class Lesson(BaseModel):
-    title = models.CharField(max_length=50, verbose_name='Название урока')
+    title = models.CharField(max_length=100, verbose_name='Название урока')
     info = models.TextField(blank=True, null=True, verbose_name='Описание')
     image = models.ImageField(verbose_name='Картинка', null=True, blank=True, upload_to=lesson_upload_directory, validators=[validate_photo_extension])
     image_file_id = models.CharField(verbose_name='Photo file ID', null=True, blank=True, editable=False, max_length=255)
@@ -310,7 +310,7 @@ class Form(BaseModel):
         quiz = 'quiz', 'Викторина'
         questionnaire = 'questionnaire', 'Вопросник'
 
-    name = models.CharField(max_length=50, verbose_name='Название')
+    name = models.CharField(max_length=100, verbose_name='Название')
     type = models.CharField(max_length=20, verbose_name='Тип', default=FormType.public, choices=FormType.choices)
     mode = models.CharField(max_length=20, verbose_name='Режим работы', choices=FormMode.choices)
     unique_code = models.IntegerField(verbose_name='Уникальный код', null=True, blank=True)
