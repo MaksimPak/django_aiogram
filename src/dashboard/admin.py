@@ -521,12 +521,12 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
         list_display = super(ContactFormAnswersAdmin, self).get_list_display(request)
         form = models.Form.objects.get(pk=request.GET['form__id__exact'])
         questions = form.formquestion_set.all()
-        for quesiton in questions:
-            attr_name = f'question_{quesiton.id}'
+        for question in questions:
+            attr_name = f'question_{question.id}'
             list_display += (attr_name,)
             func = partial(self._get_answer, field=attr_name)
-            func.short_description = quesiton.text
-            func.admin_order_field = 'data'
+            func.short_description = question.text
+            func.admin_order_field = f'data__{question.id}'
             setattr(self, attr_name, func)
         return list_display
 
