@@ -526,6 +526,7 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
             list_display += (attr_name,)
             func = partial(self._get_answer, field=attr_name)
             func.short_description = quesiton.text
+            func.admin_order_field = 'data'
             setattr(self, attr_name, func)
         return list_display
 
