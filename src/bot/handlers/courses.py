@@ -406,12 +406,12 @@ async def get_student_feedback(
     """
     Sets the state for feedback processing handler and requests student feedback
     """
-    student_id = callback_data['value']
+    contact_id = callback_data['value']
 
     await bot.answer_callback_query(cb.id)
 
     async with state.proxy() as data:
-        data['student_id'] = student_id
+        data['contact_id'] = contact_id
 
     await bot.edit_message_text(
         _('Отправьте ваше сообщение'),
@@ -434,12 +434,12 @@ async def forward_student_feedback(
     Processes feedback from student and forwards it to course chat id
     """
     data = await state.get_data()
-    student = await repo.StudentRepository.get('id', int(data['student_id']), session)
+    contact = await repo.ContactRepository.load_student(int(data['contact_id']), session)
     template = jinja_env.get_template('feedback.html')
 
     await bot.send_message(
         config.CHAT_ID,
-        template.render(student=student, course=None, lesson=None),
+        template.render(contact=contact, course=None, lesson=None),
         parse_mode='html'
     )
     await bot.forward_message(

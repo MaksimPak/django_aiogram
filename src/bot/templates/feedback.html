@@ -2,15 +2,15 @@
 {% if course is not none %} Course hashtag: {{ course.hashtag }}{% endif %}
 {% if lesson is not none %} Lesson title: {{ lesson.title }} {% endif %}
 
-{%if student is not none%}
-{% if student.is_client %}
-Фидбек от <a href="{{config.DOMAIN}}/admin/dashboard/client/{{ student.id }}/change/">{{ student.first_name }} {{ student.last_name }}</a>
+{% if contact.is_registered %}
+{% if contact.student.is_client %}
+Фидбек от <a href="{{config.DOMAIN}}/admin/dashboard/client/{{ contact.student.id }}/change/">{{ contact.student.first_name }} {{ contact.student.last_name }}</a>
 {% else %}
-Фидбек от <a href="{{config.DOMAIN}}/admin/dashboard/lead/{{ student.id }}/change/">{{ student.first_name }} {{ student.last_name }}</a>
+Фидбек от <a href="{{config.DOMAIN}}/admin/dashboard/lead/{{ contact.student.id }}/change/">{{ contact.student.first_name }} {{ contact.student.last_name }}</a>
+{% endif %}
+{% else %}
+Фидбек от ТГ[<a href="{{config.DOMAIN}}/admin/dashboard/contact/{{ contact.id }}/change/">{{contact.first_name}} {{ contact.last_name }}</a>]
 {% endif %}
 {% if error %}
 <strong> {{ error }} </strong>
-{% endif %}
-{% else %}
-Фидбек от незарегистрированного пользователя
 {% endif %}

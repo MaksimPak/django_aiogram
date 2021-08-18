@@ -100,6 +100,19 @@ class ContactRepository(BaseRepository):
 
         return contact
 
+    @staticmethod
+    async def load_student(contact_id: int, session: SessionLocal):
+        """
+        load contact with student relationship
+        """
+        async with session:
+            contact = (await session.execute(
+                select(ContactTable).where(
+                    ContactTable.id == contact_id).options(selectinload(ContactTable.student))
+            )).scalar()
+
+        return contact
+
 
 class StudentRepository(BaseRepository):
     table = StudentTable

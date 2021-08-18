@@ -222,7 +222,7 @@ class LeadAdmin(admin.ModelAdmin):
             is_feedback = request.POST.get('is_feedback')
             if is_feedback:
                 for student in leads:
-                    kb = {'inline_keyboard': [[{'text': 'Ответить', 'callback_data': f'data|feedback_student|{student.id}'}]]}
+                    kb = {'inline_keyboard': [[{'text': 'Ответить', 'callback_data': f'data|feedback_student|{student.contact.id}'}]]}
                     data = {
                         'chat_id': student.tg_id,
                         'parse_mode': 'html',
@@ -303,7 +303,7 @@ class ClientAdmin(admin.ModelAdmin):
             if is_feedback:
                 for student in clients:
                     kb = {'inline_keyboard': [
-                        [{'text': 'Ответить', 'callback_data': f'data|feedback_student|{student.id}'}]]}
+                        [{'text': 'Ответить', 'callback_data': f'data|feedback_student|{student.contact.id}'}]]}
                     data = {
                         'chat_id': student.tg_id,
                         'parse_mode': 'html',
