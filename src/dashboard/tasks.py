@@ -6,6 +6,7 @@ from django.db.models import F
 
 from dashboard.models import Student, Promotion, SendingReport, Contact
 from ffmpeg import get_duration, get_resolution
+from loguru import logger
 from dashboard.utils.telegram import Telegram, TelegramSender
 
 
@@ -50,6 +51,7 @@ def send_message(data):
 
     if resp.get('ok') is False and resp.get('error_code') == 403:
         set_blocked(data.get('chat_id'))
+    logger.info(resp)
 
 
 @shared_task

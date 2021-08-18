@@ -139,13 +139,12 @@ def message_contacts(request):
     contacts = Contact.objects.all()
     selected = getattr(request, request.method).getlist('_selected_action')
     referer = request.META['HTTP_REFERER']
-
     if selected:
-        contacts = Contact.objects.filter(pk__in=map(int, selected))
-
+        contacts = Contact.objects.filter(pk__in=selected)
     if 'send' in request.POST:
-        is_feedback = request.POST.get('is_feedback')
+        selected = request.POST.getlist('_selected_action')
 
+        is_feedback = request.POST.get('is_feedback')
         config = {
             'is_feedback': is_feedback,
             'contacts': 'all' if not selected else selected,
@@ -158,7 +157,7 @@ def message_contacts(request):
 
     return render(request, 'dashboard/send_intermediate.html', context={
         'entities': contacts,
-        'referer': referer
+        'referer': referer,
     })
 
 

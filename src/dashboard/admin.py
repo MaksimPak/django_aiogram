@@ -509,8 +509,9 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, answers):
         s = [x.contact.id for x in answers]
+        params = f'?_selected_action={"&_selected_action=".join(str(x)  for x in s)}'
         return HttpResponseRedirect(reverse(
-                'dashboard:message_contacts') + f'?_selected_action={"".join(str(pk) for pk in s)}')
+                'dashboard:message_contacts') + f'{params}')
 
     @admin.display(description='Балл')
     def points(self, instance):
