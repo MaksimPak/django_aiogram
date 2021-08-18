@@ -6,6 +6,7 @@ from celery.result import GroupResult
 from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.contenttypes.models import ContentType
+from django.db.models.expressions import RawSQL, OrderBy
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.template.loader import render_to_string
@@ -527,7 +528,7 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
             list_display += (attr_name,)
             func = partial(self._get_answer, field=attr_name)
             func.short_description = question.text
-            func.admin_order_field = f'data__{question.id}'
+            func.admin_order_field = RawSQL("data->>'%s'", (question.id,))
             setattr(self, attr_name, func)
         return list_display
 
