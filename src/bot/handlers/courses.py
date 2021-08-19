@@ -262,6 +262,9 @@ async def request_homework(
     async with state.proxy() as data:
         data['course_tg'] = course_tg
         data['student_lesson'] = student_lesson
+
+    await cb.message.edit_reply_markup(reply_markup=None)
+
     await bot.send_message(
         cb.from_user.id,
         _('Отправьте вашу работу')
@@ -324,7 +327,7 @@ async def forward_homework(
 
 @dp.callback_query_handler(three_valued_data.filter(property='feedback'))
 async def get_course_feedback(
-        cb: types.callback_query,
+        cb: types.CallbackQuery,
         state: FSMContext,
         callback_data: dict
 ):
@@ -342,6 +345,9 @@ async def get_course_feedback(
         data['course_id'] = int(course_id) if course_id != 'None' else None
         data['student_id'] = int(student_id) if student_id != 'None' else None
         data['lesson_id'] = int(lesson_id) if lesson_id != 'None' else None
+        data['msg'] = cb.message.text
+
+    await cb.message.edit_reply_markup(reply_markup=None)
 
     await bot.send_message(
         cb.from_user.id,
@@ -372,7 +378,7 @@ async def forward_course_feedback(
     try:
         await bot.send_message(
             chat_id,
-            template.render(student=student, course=course, lesson=lesson)
+            template.render(student=student, course=course, lesson=lesson, msg=data.get('msg'))
         )
         await bot.forward_message(
             chat_id,
@@ -384,7 +390,8 @@ async def forward_course_feedback(
                   'Пожалуйста исправьте').format(course_name=course.name) if course else None
         await bot.send_message(
             chat_id,
-            template.render(student=student, course=course, lesson=lesson, error=error),
+            template.render(student=student, course=course,
+                            lesson=lesson, msg=data.get('msg'), error=error),
             parse_mode='html'
         )
         await bot.forward_message(
@@ -412,12 +419,13 @@ async def get_student_feedback(
 
     async with state.proxy() as data:
         data['contact_id'] = contact_id
+        data['msg'] = cb.message.text
 
-    await bot.edit_message_text(
-        _('Отправьте ваше сообщение'),
+    await cb.message.edit_reply_markup(reply_markup=None)
+
+    await bot.send_message(
         cb.from_user.id,
-        cb.message.message_id,
-        reply_markup=None
+        _('Отправьте ваше сообщение')
     )
 
     await Feedback.feedback_student.set()
@@ -439,7 +447,7 @@ async def forward_student_feedback(
 
     await bot.send_message(
         config.CHAT_ID,
-        template.render(contact=contact, course=None, lesson=None),
+        template.render(contact=contact, course=None, lesson=None, msg=data.get('msg')),
         parse_mode='html'
     )
     await bot.forward_message(
