@@ -507,7 +507,9 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
 
     @admin.display(description='Зареган', boolean=True, ordering='contact__is_registered')
     def is_registered(self, answer):
-        return answer.contact.is_registered
+        if answer.contact:
+            return answer.contact.is_registered
+        return False
 
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, answers):
