@@ -15,7 +15,7 @@ def match_students(apps, schema_editor):
         with suppress(Student.DoesNotExist):
             student = Student.objects.get(tg_id__exact=contact.tg_id)
             if student:
-                contact.student = student
+                student.contact = contact
                 contact.is_registered = True
                 contact.save()
 
