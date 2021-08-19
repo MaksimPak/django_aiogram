@@ -169,6 +169,7 @@ class ContactAdmin(admin.ModelAdmin):
     actions = ('send_message',)
     readonly_fields = ('data', 'is_registered', 'blocked_bot', 'profile_link')
     list_filter = ('is_registered',)
+    search_fields = ('id', 'first_name', 'last_name',)
 
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, contacts):
