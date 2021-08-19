@@ -14,10 +14,10 @@ def match_students(apps, schema_editor):
     for contact in Contact.objects.all():
         with suppress(Student.DoesNotExist):
             student = Student.objects.get(tg_id__exact=contact.tg_id)
-            if student:
-                student.contact = contact
-                contact.is_registered = True
-                contact.save()
+            student.contact = contact
+            contact.is_registered = True
+            contact.save()
+            student.save()
 
 
 class Migration(migrations.Migration):
