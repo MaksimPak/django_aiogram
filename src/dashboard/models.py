@@ -332,11 +332,11 @@ class Form(BaseModel):
 class FormQuestion(BaseModel):
     form = models.ForeignKey(Form, on_delete=models.CASCADE, verbose_name='Форма')
     multi_answer = models.BooleanField(verbose_name='Мульти-ответ', default=False)
-    text = models.CharField(max_length=50, verbose_name='Текст')
+    text = models.CharField(max_length=100, verbose_name='Текст')
     image = models.ImageField(verbose_name='Картинка', blank=True, null=True, upload_to=form_question_directory)
     position = models.IntegerField(verbose_name='Нумерация')
     custom_answer = models.BooleanField(verbose_name='Кастомный ответ', default=False)
-    custom_answer_text = models.CharField(verbose_name='Текст кастомного ответа', max_length=50, null=True, blank=True)
+    custom_answer_text = models.CharField(verbose_name='Текст кастомного ответа', max_length=100, null=True, blank=True)
     one_row_btns = models.BooleanField(verbose_name='Однострочные ответы', default=False)
 
     def __str__(self):
@@ -355,7 +355,7 @@ class FormQuestion(BaseModel):
 class FormAnswer(BaseModel):
     question = models.ForeignKey(FormQuestion, on_delete=models.CASCADE, verbose_name='Вопрос', related_name='questions', null=True)
     is_correct = models.BooleanField(verbose_name='Правильный ответ', default=False)
-    text = models.CharField(max_length=50, verbose_name='Текст ответа')
+    text = models.CharField(max_length=100, verbose_name='Текст ответа')
     jump_to = models.ForeignKey(FormQuestion, on_delete=models.CASCADE, verbose_name='Ведет к вопросу', null=True, blank=True, related_name='jumps')
 
     def clean(self):

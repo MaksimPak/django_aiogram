@@ -499,6 +499,7 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
     actions = ('send_message',)
     list_filter = ('form', 'score',)
     change_form_template = 'admin/dashboard/contactformanswers/change_form.html'
+    change_list_template = 'admin/dashboard/contactformanswers/change_list.html'
 
     def has_add_permission(self, request, obj=None):
         return False
