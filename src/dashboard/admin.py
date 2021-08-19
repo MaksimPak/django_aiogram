@@ -505,7 +505,7 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
     def has_add_permission(self, request, obj=None):
         return False
 
-    @admin.display(description='Зареган', boolean=True)
+    @admin.display(description='Зареган', boolean=True, ordering='contact__is_registered')
     def is_registered(self, answer):
         return answer.contact.is_registered
 
