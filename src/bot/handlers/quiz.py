@@ -116,7 +116,8 @@ async def next_question(
         await bot.send_message(
             chat_id,
             form.end_message,
-            reply_markup=kb
+            reply_markup=kb,
+            parse_mode='html',
         )
         await state.finish()
 
