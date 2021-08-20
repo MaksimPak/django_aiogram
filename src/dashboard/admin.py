@@ -479,6 +479,7 @@ class FormAdmin(admin.ModelAdmin):
     inlines = (FormQuestionList,)
     readonly_fields = ('bot_command', 'link',)
     exclude = ('unique_code',)
+    actions = ('duplicate',)
     change_form_template = 'admin/dashboard/form/change_form.html'
 
     @admin.display(description='Бот команда')
@@ -488,6 +489,31 @@ class FormAdmin(admin.ModelAdmin):
     @admin.display(description='Человек ответило')
     def statistics(self, form):
         return form.contactformanswers_set.count()
+
+    @admin.display(description='Дублировать (Максимум 3)')
+    def duplicate(self, request, forms):
+        if len(forms) > 3:
+            self.message_user(request, 'Нельзя дублировать больше 3 форм', messages.ERROR)
+            return
+
+        for form in forms:
+            questions = list(form.formquestion_set.all())
+            form.pk = None
+
+            form.save()
+
+            for question in questions:
+                answers = list(question.answers.all())
+                question.id = None
+                question.form = form
+                question.save()
+
+                for answer in answers:
+                    answer.id = None
+                    answer.question = question
+                    answer.save()
+
+        self.message_user(request, '{0} форм(а) были успешно дублированны'.format(forms.count()), messages.SUCCESS)
 
 
 @admin.register(models.ContactFormAnswers)

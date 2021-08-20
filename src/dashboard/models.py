@@ -353,7 +353,7 @@ class FormQuestion(BaseModel):
 
 
 class FormAnswer(BaseModel):
-    question = models.ForeignKey(FormQuestion, on_delete=models.CASCADE, verbose_name='Вопрос', related_name='questions', null=True)
+    question = models.ForeignKey(FormQuestion, on_delete=models.CASCADE, verbose_name='Вопрос', related_name='answers', null=True)
     is_correct = models.BooleanField(verbose_name='Правильный ответ', default=False)
     text = models.CharField(max_length=100, verbose_name='Текст ответа')
     jump_to = models.ForeignKey(FormQuestion, on_delete=models.CASCADE, verbose_name='Ведет к вопросу', null=True, blank=True, related_name='jumps')
