@@ -1,5 +1,6 @@
 import datetime
 import json
+import os
 from functools import partial
 
 from celery.result import GroupResult
@@ -15,6 +16,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from dashboard import models, forms
+from dashboard.utils.helpers import random_int
 from dashboard.utils.telegram import Telegram
 
 
@@ -150,7 +152,22 @@ class PromoAdmin(admin.ModelAdmin):
     list_per_page = 10
     list_display_links = ('title',)
     readonly_fields = ('link',)
+    actions = ('duplicate',)
     inlines = (PromotionReport,)
+
+    @admin.display(description='Дублировать (Максимум 3)')
+    def duplicate(self, request, promos):
+        if len(promos) > 3:
+            self.message_user(request, 'Нельзя дублировать больше 3 форм', messages.ERROR)
+            return
+
+        for promo in promos:
+            promo.pk = None
+            promo.unique_code = ''
+            promo.invite_link = ''
+            promo.save()
+
+        self.message_user(request, '{0} промо были успешно дублированны'.format(promos.count()), messages.SUCCESS)
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         extra_context = extra_context or {}

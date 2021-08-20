@@ -1,17 +1,13 @@
 import datetime
 import json
 import os
-import random
 
 from django.db.models.signals import post_save, post_init
 from django.dispatch import receiver
 
 from dashboard.models import Lead, Course, Promotion, Form
+from dashboard.utils.helpers import random_int
 from dashboard.utils.telegram import Telegram
-
-
-def random_int():
-    return str(random.randint(100, 999))
 
 
 @receiver(post_init, sender=Course)

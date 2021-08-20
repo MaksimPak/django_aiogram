@@ -1,3 +1,6 @@
+import random
+
+
 def prepare_promo_data(
         chat_id,
         video_id,
@@ -19,3 +22,7 @@ def prepare_promo_data(
         data['video'] = video_id
 
     return data
+
+
+def random_int():
+    return str(random.randint(100, 999))
