@@ -2,8 +2,8 @@ from django import forms
 from flat_json_widget.widgets import FlatJsonWidget
 
 from dashboard import models
-from dashboard.widgets import AdminJsonWidget, AdminJsonFormWidget
-
+from dashboard.widgets import AdminJsonWidget
+import re
 
 class LeadForm(forms.ModelForm):
     class Meta:
@@ -56,6 +56,17 @@ class ContactFormAnswers(forms.ModelForm):
 
 
 class Form(forms.ModelForm):
+
+    def clean(self):
+        key_pattern = re.compile(r'\d+-\d+')
+        _valid_data = {}
+        for key, text in self.cleaned_data['end_message'].items():
+            if key_pattern.match(key) and isinstance(text, str):
+                _valid_data[key] = text
+
+        self.cleaned_data['end_message'] = _valid_data
+        return super(Form, self).clean()
+
     class Meta:
         model = models.Form
         fields = '__all__'
