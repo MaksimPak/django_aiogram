@@ -2,7 +2,7 @@ import re
 from contextlib import suppress
 
 from aiogram import types
-from aiogram.dispatcher.filters import CommandStart, ChatTypeFilter
+from aiogram.dispatcher.filters import CommandStart, ChatTypeFilter, Regexp
 from aiogram.utils.exceptions import Unauthorized
 
 from bot import repository as repo
@@ -40,13 +40,18 @@ async def register_deep_link(
         await message.reply(_('Вы уже зарегистрированы. Выберите опцию'), reply_markup=kb)
 
 
-@dp.message_handler(CommandStart(re.compile(r'promo_\d+')), ChatTypeFilter(types.ChatType.PRIVATE))
+@dp.message_handler(CommandStart(re.compile(r'promo_(\d+)')), ChatTypeFilter(types.ChatType.PRIVATE))
+@dp.message_handler(Regexp(re.compile(r'^/promo_(\d+)')))
 @create_session
 async def promo_deep_link(
         message: types.Message,
-        session: SessionLocal
+        session: SessionLocal,
+        regexp: re.Match = None,
+        deep_link: re.Match = None
 ):
-    promotion = await repo.PromotionRepository.get('unique_code', message.get_args().split('_')[1], session)
+
+    code = regexp.group(1) if regexp else deep_link.group(1)
+    promotion = await repo.PromotionRepository.get('unique_code', code, session)
     student = await repo.StudentRepository.get('tg_id', message.from_user.id, session)
     if not promotion:
         await message.reply(_('Неверный инвайт код'))
