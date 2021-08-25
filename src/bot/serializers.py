@@ -54,7 +54,6 @@ class MessageSender:
                 self.chat_id,
                 self.photo,
                 self.text,
-                'html',
                 reply_markup=self.markup
             )
         elif self.video:
@@ -66,7 +65,6 @@ class MessageSender:
                 self.height,
                 InputFile(ROOT_DIR / 'media' / self.thumbnail),
                 self.text,
-                'html',
                 reply_markup=self.markup
 
             )

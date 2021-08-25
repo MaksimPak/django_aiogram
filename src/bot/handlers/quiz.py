@@ -117,7 +117,6 @@ async def next_question(
             chat_id,
             form.end_message,
             reply_markup=kb,
-            parse_mode='html',
         )
         await state.finish()
 
@@ -218,6 +217,8 @@ async def form_initial(
 
     data = [('Начать', ('start_form', form.id)), ('Назад', ('forms',))]
     kb = KeyboardGenerator(data, row_width=1).keyboard
+
+    print(form.start_message)
 
     await MessageSender(
         response.from_user.id,

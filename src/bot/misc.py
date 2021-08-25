@@ -9,7 +9,7 @@ from loguru import logger
 from bot import config
 from bot.middlewares.i18n import I18nMiddleware
 
-bot = Bot(token=config.BOT_TOKEN)
+bot = Bot(token=config.BOT_TOKEN, parse_mode='html')
 redis = RedisStorage2(
     host=config.REDIS_HOST, port=config.REDIS_PORT,
     state_ttl=60, db=config.DATABASES['FSM']
