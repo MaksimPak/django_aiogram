@@ -8,5 +8,8 @@ window.addEventListener('load', function() {
                 $('.field-custom_answer_text').hide()
             }
         })
+
+        console.log($('#form_form').serialize());
+
     })(django.jQuery);
 });

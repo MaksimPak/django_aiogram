@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'dashboard.apps.DashboardConfig',
 
     'bootstrap4',
+    'flat_json_widget',
 
 ]
 

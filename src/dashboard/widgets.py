@@ -18,3 +18,17 @@ class AdminJsonWidget(forms.Textarea):
             answers = {key.text: value for key in questions for value in db_answers if key.id == int(value)}
             context['widget']['value'] = answers
         return context
+
+
+class AdminJsonFormWidget(forms.Textarea):
+    template_name = 'admin/dashboard/widgets/json_form_end_message.html'
+
+    def __init__(self, attrs=None, instance=None):
+        super(AdminJsonFormWidget, self).__init__(attrs)
+        self.instance = instance
+
+    def get_context(self, name, value, attrs):
+        context = super(AdminJsonFormWidget, self).get_context(name, value, attrs)
+        if self.instance.pk:
+            context['widget']['value'] = json.loads(context['widget']['value'])
+        return context

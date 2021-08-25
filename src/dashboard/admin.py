@@ -16,8 +16,10 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from dashboard import models, forms
+from dashboard.forms import Form
 from dashboard.utils.helpers import random_int
 from dashboard.utils.telegram import Telegram
+from flat_json_widget.widgets import FlatJsonWidget
 
 
 class StudentCourseList(admin.TabularInline):
@@ -501,7 +503,13 @@ class FormAdmin(admin.ModelAdmin):
     readonly_fields = ('bot_command', 'link',)
     exclude = ('unique_code',)
     actions = ('duplicate',)
+    form = Form
     change_form_template = 'admin/dashboard/form/change_form.html'
+
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        form = super(FormAdmin, self).get_form(request, obj=None, change=False, **kwargs)
+        form.req = request
+        return form
 
     @admin.display(description='Бот команда')
     def bot_command(self, form):

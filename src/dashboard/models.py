@@ -316,7 +316,7 @@ class Form(BaseModel):
     unique_code = models.IntegerField(verbose_name='Уникальный код', null=True, blank=True)
     link = models.CharField(max_length=50, verbose_name='Линк', null=True, blank=True)
     start_message = models.TextField(verbose_name='Сообщение для отправки при старте')
-    end_message = models.TextField(verbose_name='Сообщение для отправки при завершении')
+    end_message = models.JSONField(verbose_name='Сообщение для отправки при завершении', default=dict)
     is_active = models.BooleanField(verbose_name='Активна', default=False)
     one_off = models.BooleanField(verbose_name='Одноразовая форма', default=False)
     image = models.ImageField(verbose_name='Картинка', blank=True, null=True, upload_to=form_directory)
