@@ -151,9 +151,13 @@ class PromoAdmin(admin.ModelAdmin):
     list_display = ('id', 'title', 'description', 'course', 'counter', 'link')
     list_per_page = 10
     list_display_links = ('title',)
-    readonly_fields = ('link',)
+    readonly_fields = ('link', 'command',)
     actions = ('duplicate',)
     inlines = (PromotionReport,)
+
+    @admin.display(description='Команда для вызова')
+    def command(self, instance):
+        return f'/promo_{instance.unique_code}'
 
     @admin.display(description='Дублировать (Максимум 3)')
     def duplicate(self, request, promos):
