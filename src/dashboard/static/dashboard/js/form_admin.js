@@ -9,7 +9,6 @@ window.addEventListener('load', function() {
             }
         })
 
-        console.log($('#form_form').serialize());
-
+        $('.flat-json-toggle-textarea').hide()
     })(django.jQuery);
 });

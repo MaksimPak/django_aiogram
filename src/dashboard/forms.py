@@ -58,7 +58,11 @@ class ContactFormAnswers(forms.ModelForm):
 class Form(forms.ModelForm):
 
     def clean(self):
-        key_pattern = re.compile(r'\d+-\d+')
+        """
+        Validate end message json of the form for key to match pattern number-number.
+        Also check if value is str
+        """
+        key_pattern = re.compile(r'^\d+-\d+$')
         _valid_data = {}
         for key, text in self.cleaned_data['end_message'].items():
             if key_pattern.match(key) and isinstance(text, str):

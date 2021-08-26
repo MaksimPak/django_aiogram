@@ -60,9 +60,12 @@ async def start_question_sending(
         data['form_id'] = int(form_id)
 
     if not answer:
-        await state.update_data({'current_question_id': form.questions[0].id})
-        await state.update_data({'answers': {}})
-        await state.update_data({'score': 0})
+        await state.update_data({
+            'question_len': 1,
+            'current_question_id': form.questions[0].id,
+            'answers': {},
+            'score': 0,
+        })
 
         kb = await FormButtons(form, form.questions[0]).question_buttons()
 
@@ -102,6 +105,8 @@ async def next_question(
     await repo.ContactFormRepository.create_or_edit(contact.id, data['form_id'], data, session)
 
     if question:
+        count = data['question_len'] + 1
+        await state.update_data({'question_len': count})
         await state.update_data({'current_question_id': question.id})
         kb = await FormButtons(question.form, question).question_buttons()
 
@@ -112,10 +117,16 @@ async def next_question(
             markup=kb
         ).send()
     else:
+        percent_score = round((data['score'] / data['question_len']) * 100)
+        end_message = 'Спасибо за участие'
+        for key in form.end_message.keys():
+            num1, num2 = map(int, key.split('-'))
+            if percent_score in range(num1, num2+1):
+                end_message = form.end_message[key]
         kb = await KeyboardGenerator.main_kb(contact)
         await bot.send_message(
             chat_id,
-            form.end_message,
+            end_message,
             reply_markup=kb,
         )
         await state.finish()
@@ -217,8 +228,6 @@ async def form_initial(
 
     data = [('Начать', ('start_form', form.id)), ('Назад', ('forms',))]
     kb = KeyboardGenerator(data, row_width=1).keyboard
-
-    print(form.start_message)
 
     await MessageSender(
         response.from_user.id,
