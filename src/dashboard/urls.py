@@ -7,6 +7,7 @@ app_name = 'dashboard'
 urlpatterns = [
     path('watch/<slug:uuid>', views.watch_video, name='lesson_video'),
     path('watch/<int:lesson_id>', views.auth_and_watch, name='auth_and_watch'),
+    path('form-report/<int:form_id>', views.form_report, name='form_report'),
     path('send-message', views.message_to_students, name='send_message'),
     path('message-contacts', views.message_contacts, name='message_contacts'),
     path('send-lesson/<int:course_id>/<int:lesson_id>', views.send_lesson, name='send_lesson'),

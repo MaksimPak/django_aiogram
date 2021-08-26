@@ -1,17 +1,22 @@
 import datetime
 import json
 import os
+from typing import Optional
 
+from tempfile import NamedTemporaryFile
 import requests
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.http import HttpResponseNotFound, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
+from openpyxl import Workbook
+
 
 from dashboard.forms import LeadForm
-from dashboard.models import LessonUrl, Lead, Student, Course, Lesson, Promotion, Contact
+from dashboard.models import LessonUrl, Lead, Student, Course, Lesson, Promotion, Contact, Form
 from dashboard.tasks import message_students_task, message_contacts_task, initiate_promo_task
 from ffmpeg import get_resolution, get_duration
 from dashboard.utils.telegram import TelegramSender
@@ -19,6 +24,34 @@ from dashboard.utils.telegram import TelegramSender
 TELEGRAM_AGENT = 'TelegramBot (like TwitterBot)'
 MESSAGE_URL = f'https://api.telegram.org/bot{os.getenv("BOT_TOKEN")}/sendMessage'
 PHOTO_URL = f'https://api.telegram.org/bot{os.getenv("BOT_TOKEN")}/sendPhoto'
+
+
+@login_required
+def form_report(request, form_id: int):
+    form = Form.objects.get(pk=form_id)
+    questions = form.formquestion_set.all()
+    answers = form.contactformanswers_set.all()
+    workbook = Workbook()
+    ws = workbook.active
+    ws.title = form.name
+
+    ws.append(
+        ['Id', 'Студент', 'Зареган'] + [x.text for x in questions]
+    )
+
+    for answer in answers:
+        ws.append(
+            [answer.id, answer.contact.__str__(), answer.contact.is_registered]
+            + [answer.data.get(str(x.id), '-') for x in questions]
+        )
+
+    with NamedTemporaryFile() as tmp:
+        workbook.save(tmp.name)
+        tmp.seek(0)
+        stream = tmp.read()
+        response = HttpResponse(stream, content_type='application/vnd.ms-excel')
+        response['Content-Disposition'] = f'attachment; filename={form.id}.xlsx'
+        return response
 
 
 def watch_video(request, uuid):
