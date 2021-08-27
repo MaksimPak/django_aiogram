@@ -105,7 +105,6 @@ def form_report(request, form_id: int):
     answers = form.contactformanswers_set.all()
     workbook = Workbook()
     ws = workbook.active
-    ws.title = form.name
 
     headers = ['Id', 'Студент', 'Дата прохождения', 'Зареган'] + [x.text for x in questions]
     collected_answers = []
