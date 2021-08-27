@@ -15,6 +15,7 @@ from django.urls import reverse
 from openpyxl import Workbook
 from openpyxl.styles import Font
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.worksheet import Worksheet
 
 from dashboard.forms import LeadForm
 from dashboard.models import LessonUrl, Lead, Student, Course, Lesson, Promotion, Contact, Form
@@ -27,34 +28,56 @@ MESSAGE_URL = f'https://api.telegram.org/bot{os.getenv("BOT_TOKEN")}/sendMessage
 PHOTO_URL = f'https://api.telegram.org/bot{os.getenv("BOT_TOKEN")}/sendPhoto'
 
 
-def normalize_answer(answer: Union[str, list]):
+def normalize_answer(answer: Union[str, list]) -> str:
+    """
+    Line separate elements in answer if type is list
+    """
     if isinstance(answer, list):
         answer = f'{os.linesep}'.join(answer)
 
     return answer
 
 
-def stringify_bool(boolean: bool):
+def stringify_bool(boolean: bool) -> str:
+    """
+    Return stringified version of boolean
+    """
     return 'Да' if boolean else 'Нет'
 
 
-def adjust_width(ws, rows):
-    column_widths = []
+def _separated_line_width(cell) -> int:
+    """
+    Calculate max width of cell for line separated str
+    """
+    width = max(map(len, cell.split()))
 
+    return width
+
+
+def adjust_width(ws: Worksheet, rows: list) -> None:
+    """
+    Set width for cells in worksheet
+    """
+    column_widths = []
     for row in rows:
         for i, cell in enumerate(row):
             if len(column_widths) > i:
                 if len(cell) > column_widths[i]:
-                    column_widths[i] = len(cell)
+                    if os.linesep not in cell:
+                        column_widths[i] = len(cell)
+                    else:
+                        column_widths[i] = _separated_line_width(cell)
             else:
                 column_widths += [len(cell)]
-
     for i, column_width in enumerate(column_widths):
         # Adding extra + 1 to width just in case
         ws.column_dimensions[get_column_letter(i + 1)].width = column_width + 1
 
 
-def _stylize_cells(ws):
+def _stylize_cells(ws: Worksheet) -> None:
+    """
+    Styling cells in worksheet
+    """
     for idx, row in enumerate(ws.iter_rows()):
         for cell in row:
             if idx == 0:
@@ -62,7 +85,10 @@ def _stylize_cells(ws):
             cell.alignment = cell.alignment.copy(wrap_text=True)
 
 
-def populate_ws(ws, rows):
+def populate_ws(ws: Worksheet, rows: list) -> None:
+    """
+    Add data to worksheet
+    """
     for row in rows:
         ws.append(row)
 
@@ -71,6 +97,9 @@ def populate_ws(ws, rows):
 
 @login_required
 def form_report(request, form_id: int):
+    """
+    Generate xlsx file for form
+    """
     form = Form.objects.get(pk=form_id)
     questions = form.formquestion_set.all()
     answers = form.contactformanswers_set.all()

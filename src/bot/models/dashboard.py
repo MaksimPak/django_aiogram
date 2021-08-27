@@ -219,7 +219,7 @@ class FormTable(BaseModel):
     unique_code = Column(Integer, nullable=True)
     link = Column(String(50), nullable=True)
     start_message = Column(TEXT, nullable=False)
-    end_message = Column(TEXT, nullable=False)
+    end_message = Column(sqlalchemy_json.mutable_json_type(dbtype=JSONB, nested=True), nullable=False, default=dict)
     is_active = Column(Boolean, default=False)
     one_off = Column(Boolean, default=False)
     image = Column(String(255), nullable=True)
