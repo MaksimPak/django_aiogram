@@ -547,7 +547,7 @@ class FormAdmin(admin.ModelAdmin):
 
 @admin.register(models.ContactFormAnswers)
 class ContactFormAnswersAdmin(admin.ModelAdmin):
-    list_display = ('id', 'contact', 'is_registered', 'points')
+    list_display = ('id', 'contact', 'date_passed', 'is_registered', 'points')
     list_display_links = ('contact',)
     list_per_page = 20
     readonly_fields = ('contact', 'form', 'score',)
@@ -565,6 +565,10 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
         if answer.contact:
             return answer.contact.is_registered
         return False
+
+    @admin.display(description='Дата прохождения')
+    def date_passed(self, answer):
+        return answer.updated_at if answer.updated_at else answer.created_at
 
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, answers):

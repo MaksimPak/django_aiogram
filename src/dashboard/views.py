@@ -13,6 +13,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
 from openpyxl import Workbook
+from openpyxl.styles import Font
+from openpyxl.utils import get_column_letter
 
 from dashboard.forms import LeadForm
 from dashboard.models import LessonUrl, Lead, Student, Course, Lesson, Promotion, Contact, Form
@@ -32,11 +34,43 @@ def normalize_answer(answer: Union[str, list]):
     return answer
 
 
+def stringify_bool(boolean: bool):
+    return 'Да' if boolean else 'Нет'
+
+
+def adjust_width(ws, rows):
+    column_widths = []
+
+    for row in rows:
+        for i, cell in enumerate(row):
+            if len(column_widths) > i:
+                if len(cell) > column_widths[i]:
+                    column_widths[i] = len(cell)
+            else:
+                column_widths += [len(cell)]
+
+    for i, column_width in enumerate(column_widths):
+        # Adding extra + 1 to width just in case
+        ws.column_dimensions[get_column_letter(i + 1)].width = column_width + 1
+
+
+def _stylize_cells(ws):
+    for idx, row in enumerate(ws.iter_rows()):
+        for cell in row:
+            if idx == 0:
+                cell.font = Font(sz=12, b=True)
+            cell.alignment = cell.alignment.copy(wrap_text=True)
+
+
+def populate_ws(ws, rows):
+    for row in rows:
+        ws.append(row)
+
+    _stylize_cells(ws)
+
+
 @login_required
 def form_report(request, form_id: int):
-    """
-    todo: Report does not considerate multianswers which are collected in lists
-    """
     form = Form.objects.get(pk=form_id)
     questions = form.formquestion_set.all()
     answers = form.contactformanswers_set.all()
@@ -44,19 +78,21 @@ def form_report(request, form_id: int):
     ws = workbook.active
     ws.title = form.name
 
-    ws.append(
-        ['Id', 'Студент', 'Зареган'] + [x.text for x in questions]
-    )
-
+    headers = ['Id', 'Студент', 'Дата прохождения', 'Зареган'] + [x.text for x in questions]
+    collected_answers = []
     for answer in answers:
-        ws.append(
-            [answer.id, answer.contact.__str__(), answer.contact.is_registered]
+        date_passed = (answer.updated_at if answer.updated_at else answer.created_at).strftime('%m/%d/%Y, %H:%M')
+        collected_answers.append(
+            [str(answer.id), answer.contact.__str__(), date_passed, stringify_bool(answer.contact.is_registered)]
             + [normalize_answer(answer.data.get(str(x.id), '-')) for x in questions]
         )
 
+    rows = [headers, *collected_answers]
+    adjust_width(ws, rows)
+    populate_ws(ws, rows)
+
     with NamedTemporaryFile() as tmp:
         workbook.save(tmp.name)
-        tmp.seek(0)
         stream = tmp.read()
         response = HttpResponse(stream, content_type='application/vnd.ms-excel')
         response['Content-Disposition'] = f'attachment; filename={form.id}.xlsx'
