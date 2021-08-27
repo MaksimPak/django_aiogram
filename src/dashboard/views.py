@@ -122,9 +122,10 @@ def form_report(request, form_id: int):
     with NamedTemporaryFile() as tmp:
         workbook.save(tmp.name)
         stream = tmp.read()
-        response = HttpResponse(stream, content_type='application/vnd.ms-excel')
-        response['Content-Disposition'] = f'attachment; filename={form.id}.xlsx'
-        return response
+        return HttpResponse(stream, headers={
+            'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition': f'attachment; filename={form.id}.xlsx',
+        })
 
 
 def watch_video(request, uuid):
