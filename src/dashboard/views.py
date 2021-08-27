@@ -1,9 +1,9 @@
 import datetime
 import json
 import os
-from typing import Optional
-
 from tempfile import NamedTemporaryFile
+from typing import Union
+
 import requests
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -14,20 +14,29 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from openpyxl import Workbook
 
-
 from dashboard.forms import LeadForm
 from dashboard.models import LessonUrl, Lead, Student, Course, Lesson, Promotion, Contact, Form
 from dashboard.tasks import message_students_task, message_contacts_task, initiate_promo_task
-from ffmpeg import get_resolution, get_duration
 from dashboard.utils.telegram import TelegramSender
+from ffmpeg import get_resolution, get_duration
 
 TELEGRAM_AGENT = 'TelegramBot (like TwitterBot)'
 MESSAGE_URL = f'https://api.telegram.org/bot{os.getenv("BOT_TOKEN")}/sendMessage'
 PHOTO_URL = f'https://api.telegram.org/bot{os.getenv("BOT_TOKEN")}/sendPhoto'
 
 
+def normalize_answer(answer: Union[str, list]):
+    if isinstance(answer, list):
+        answer = f'{os.linesep}'.join(answer)
+
+    return answer
+
+
 @login_required
 def form_report(request, form_id: int):
+    """
+    todo: Report does not considerate multianswers which are collected in lists
+    """
     form = Form.objects.get(pk=form_id)
     questions = form.formquestion_set.all()
     answers = form.contactformanswers_set.all()
@@ -42,7 +51,7 @@ def form_report(request, form_id: int):
     for answer in answers:
         ws.append(
             [answer.id, answer.contact.__str__(), answer.contact.is_registered]
-            + [answer.data.get(str(x.id), '-') for x in questions]
+            + [normalize_answer(answer.data.get(str(x.id), '-')) for x in questions]
         )
 
     with NamedTemporaryFile() as tmp:
