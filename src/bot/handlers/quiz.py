@@ -24,6 +24,10 @@ class QuestionnaireMode(StatesGroup):
     accept_text = State()
 
 
+async def _normalize_end_msg(msg: str):
+    return msg.replace('<br>', '\n')
+
+
 async def store_answer(
         question: FormQuestionTable,
         answer: FormAnswerTable,
@@ -122,7 +126,7 @@ async def next_question(
         for key in form.end_message.keys():
             num1, num2 = map(int, key.split('-'))
             if percent_score in range(num1, num2+1):
-                end_message = form.end_message[key]
+                end_message = await _normalize_end_msg(form.end_message[key])
         kb = await KeyboardGenerator.main_kb(contact)
         await bot.send_message(
             chat_id,

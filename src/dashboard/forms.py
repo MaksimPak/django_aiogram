@@ -64,11 +64,12 @@ class Form(forms.ModelForm):
         """
         key_pattern = re.compile(r'^\d+-\d+$')
         _valid_data = {}
-        for key, text in self.cleaned_data['end_message'].items():
-            if key_pattern.match(key) and isinstance(text, str):
-                _valid_data[key] = text
+        if self.cleaned_data.get('end_message'):
+            for key, text in self.cleaned_data['end_message'].items():
+                if key_pattern.match(key) and isinstance(text, str):
+                    _valid_data[key] = text
 
-        self.cleaned_data['end_message'] = _valid_data
+            self.cleaned_data['end_message'] = _valid_data
         return super(Form, self).clean()
 
     class Meta:

@@ -95,6 +95,9 @@ class FormQuestionList(admin.StackedInline):
         js = (
             'dashboard/js/form_admin.js',
         )
+        css = {
+            'all': ('dashboard/css/form_admin.css',)
+        }
 
 
 class PromotionReport(admin.TabularInline):
