@@ -208,8 +208,8 @@ async def form_initial(
         response.from_user.last_name,
         session
     )
-    form = await repo.FormRepository.get(search_field, int(form_id), session)
 
+    form = await repo.FormRepository.get(search_field, int(form_id), session)
     if not form:
         return await bot.send_message(
             response.from_user.id,
@@ -222,7 +222,9 @@ async def form_initial(
             'Форма не активна. Свяжитесь с администрацией',
             reply_to_message_id=message_id
         )
-    is_record = await repo.ContactFormRepository.exists(contact.id, int(form_id), session)
+
+    is_record = await repo.ContactFormRepository.exists(contact.id, form.id, session)
+
     if form.one_off and is_record:
         return await bot.send_message(
             response.from_user.id,
