@@ -17,6 +17,7 @@ from django.utils.safestring import mark_safe
 
 from dashboard import models, forms
 from dashboard.forms import Form
+from dashboard.models import Contact
 from dashboard.utils.helpers import random_int
 from dashboard.utils.telegram import Telegram
 from flat_json_widget.widgets import FlatJsonWidget
@@ -189,13 +190,19 @@ class PromoAdmin(admin.ModelAdmin):
 
 @admin.register(models.Contact)
 class ContactAdmin(admin.ModelAdmin):
-    list_display = ('id', 'first_name', 'tg_id', 'data', 'created_at', 'updated_at')
+    list_display = ('id', 'first_name', 'tg_id', 'created_at', 'updated_at')
     list_display_links = ('first_name',)
     list_per_page = 20
     actions = ('send_message',)
-    readonly_fields = ('data', 'is_registered', 'blocked_bot', 'profile_link')
-    list_filter = ('is_registered',)
+    readonly_fields = ('data', 'is_registered', 'blocked_bot',)
     search_fields = ('id', 'first_name', 'last_name',)
+
+    def get_queryset(self, request):
+        qs = Contact.objects.all().filter(is_registered=True)
+        ordering = self.get_ordering(request)
+        if ordering:
+            qs = qs.order_by(*ordering)
+        return qs
 
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, contacts):
