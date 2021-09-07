@@ -32,9 +32,14 @@ async def enum_renderer(client, key):
 
 
 async def model_renderer(client, key, model_key):
+    instance = getattr(client, key)
+    if instance:
+        return getattr(getattr(client, key), model_key)
 
-    return getattr(getattr(client, key), model_key)
 
+async def lc_renderer(client, key):
+    lc = await model_renderer(client, key, 'title')
+    return lc if lc else 'Не указано'
 
 PROFILE_FIELDS = (
     (_('Имя'), 'first_name', default_renderer),
@@ -55,8 +60,10 @@ async def profile_kb(
     data = [(title, (key, client.id)) for title, key, _ in PROFILE_FIELDS]
 
     kb = KeyboardGenerator(data, row_width=2).keyboard
+    ro_fields = [('Учебный центр', 'learning_centre', lc_renderer)]
     message = ''
-    for title, key, renderer in PROFILE_FIELDS:
+    fields = (*PROFILE_FIELDS, *ro_fields)
+    for title, key, renderer in fields:
         message += '✅' if getattr(client, key) else '✍️'
         message += ' ' + title + ':' + ' ' + await renderer(client, key) + '\n'
 
@@ -74,7 +81,7 @@ async def my_profile(
     Starting point for profile view/edit
     """
     await state.reset_state()
-    client = await repo.StudentRepository.load_with_category('tg_id', int(message.from_user.id), session)
+    client = await repo.StudentRepository.load_with_lc('tg_id', int(message.from_user.id), session)
     kb = KeyboardGenerator([('Регистрация', ('tg_reg',))]).keyboard
     if not client:
         return await message.reply(
@@ -127,7 +134,7 @@ async def set_name(
     """
     data = await state.get_data()
 
-    client = await repo.StudentRepository.load_with_category('tg_id', int(message.from_user.id), session)
+    client = await repo.StudentRepository.load_with_lc('tg_id', int(message.from_user.id), session)
     await repo.StudentRepository.edit(client, {'first_name': message.text}, session)
 
     info, kb = await profile_kb(client)
@@ -175,7 +182,7 @@ async def set_last_name(
     Saves last_name into db
     """
     data = await state.get_data()
-    client = await repo.StudentRepository.load_with_category('tg_id', int(message.from_user.id), session)
+    client = await repo.StudentRepository.load_with_lc('tg_id', int(message.from_user.id), session)
     await repo.StudentRepository.edit(client, {'last_name': message.text}, session)
 
     info, kb = await profile_kb(client)
@@ -231,7 +238,7 @@ async def set_lang(
 
     data = await state.get_data()
 
-    client = await repo.StudentRepository.load_with_category('tg_id', int(cb.from_user.id), session)
+    client = await repo.StudentRepository.load_with_lc('tg_id', int(cb.from_user.id), session)
 
     await repo.StudentRepository.edit(client, {'language_type': lang}, session)
 
@@ -286,7 +293,7 @@ async def set_phone(
     """
     data = await state.get_data()
 
-    client = await repo.StudentRepository.load_with_category('tg_id', int(message.from_user.id), session)
+    client = await repo.StudentRepository.load_with_lc('tg_id', int(message.from_user.id), session)
     await repo.StudentRepository.edit(client, {'phone': message.text}, session)
 
     info, kb = await profile_kb(client)
@@ -335,7 +342,7 @@ async def set_city(
     """
     data = await state.get_data()
 
-    client = await repo.StudentRepository.load_with_category('tg_id', int(message.from_user.id), session)
+    client = await repo.StudentRepository.load_with_lc('tg_id', int(message.from_user.id), session)
     await repo.StudentRepository.edit(client, {'city': message.text}, session)
 
     info, kb = await profile_kb(client)

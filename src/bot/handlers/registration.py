@@ -22,7 +22,6 @@ class RegistrationState(StatesGroup):
     first_name = State()
     city = State()
     phone = State()
-    selected_field = State()
 
 
 @dp.message_handler(ChatTypeFilter(types.ChatType.PRIVATE), state=RegistrationState.invite_link)
@@ -114,7 +113,7 @@ async def set_first_name(
 
 @dp.message_handler(state=RegistrationState.phone)
 @create_session
-async def set_phone(
+async def create_record(
         message: types.Message,
         state: FSMContext,
         session: SessionLocal
@@ -125,35 +124,14 @@ async def set_phone(
     async with state.proxy() as data:
         data['phone'] = message.text
 
-    categories = await repo.CategoryRepository.get_categories(session)
-    lang = StudentTable.LanguageType(data['lang']).name
-
-    data = [(category.get_title(lang), ('field', category.id)) for category in categories]
-    kb = KeyboardGenerator(data).keyboard
-
-    await bot.send_message(message.chat.id, _('В каком направлении вы хотите учиться?'), reply_markup=kb)
-    await RegistrationState.selected_field.set()
-
-
-@dp.callback_query_handler(short_data.filter(property='field'), state=RegistrationState.selected_field)
-@create_session
-async def create_record(
-        cb: types.CallbackQuery,
-        state: FSMContext,
-        session: SessionLocal,
-        callback_data: dict
-):
-    await cb.answer()
-    field = int(callback_data['value'])
-    contact = await repo.ContactRepository.get('tg_id', cb.from_user.id, session)
+    contact = await repo.ContactRepository.get('tg_id', message.from_user.id, session)
     data = await state.get_data()
     lead_data = {
         'first_name': data['first_name'],
         'city': data['city'],
-        'tg_id': cb.from_user.id,
+        'tg_id': message.from_user.id,
         'language_type': data['lang'],
         'phone': data['phone'],
-        'chosen_field_id': field,
         'application_type': StudentTable.ApplicationType.telegram,
         'is_client': False,
         'contact_id': contact.id,
@@ -170,6 +148,6 @@ async def create_record(
         await repo.StudentCourseRepository.bunch_create(student.id, contact.data['courses'], session)
 
     reply_kb = await KeyboardGenerator.main_kb()
-    await bot.send_message(cb.from_user.id, _('Вы зарегистрированы! В ближайшее время с вами свяжется наш оператор'),
+    await bot.send_message(message.from_user.id, _('Вы зарегистрированы! В ближайшее время с вами свяжется наш оператор'),
                            reply_markup=reply_kb)
     await state.finish()

@@ -145,8 +145,8 @@ class LessonList(admin.StackedInline):
         return True
 
 
-@admin.register(models.CategoryType)
-class CategoryAdmin(admin.ModelAdmin):
+@admin.register(models.LearningCentre)
+class LearningCentreAdmin(admin.ModelAdmin):
     list_display = ('id', 'title')
     list_per_page = 10
     list_display_links = ('title',)
@@ -238,9 +238,9 @@ class ContactAdmin(admin.ModelAdmin):
 
 @admin.register(models.Lead)
 class LeadAdmin(admin.ModelAdmin):
-    list_display = ('id', '__str__', 'tg_id', 'application_type', 'blocked_bot', 'phone', 'language_type', 'chosen_field', 'checkout_date', 'get_courses', 'promo')
+    list_display = ('id', '__str__', 'tg_id', 'application_type', 'blocked_bot', 'phone', 'language_type', 'learning_centre', 'checkout_date', 'get_courses', 'promo')
     list_per_page = 20
-    list_filter = ('chosen_field', 'application_type', 'promo')
+    list_filter = ('learning_centre', 'application_type', 'promo')
     list_display_links = ('__str__',)
     readonly_fields = ('checkout_date', 'invite_link', 'created_at', 'blocked_bot')
     exclude = ('unique_code', 'contact')
@@ -399,14 +399,14 @@ class ClientAdmin(admin.ModelAdmin):
 
 @admin.register(models.Course)
 class CourseAdmin(admin.ModelAdmin):
-    list_display = ('id', '__str__', 'course_info', 'is_started', 'category', 'difficulty', 'price', 'student_count')
+    list_display = ('id', '__str__', 'course_info', 'is_started', 'learning_centre', 'difficulty', 'price', 'student_count')
     list_display_links = ('__str__',)
     list_editable = ('is_started',)
     readonly_fields = ('date_started', 'date_finished', 'created_at',)
     exclude = ('week_size', 'lesson_count',)
     list_per_page = 20
     search_fields = ('id', 'name')
-    list_filter = ('category', 'price',)
+    list_filter = ('learning_centre', 'price',)
     inlines = (LessonList, StudentCourseList, )
     ordering = ('id',)
     date_hierarchy = 'created_at'

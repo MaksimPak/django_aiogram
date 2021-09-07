@@ -38,13 +38,13 @@ class BaseModel(Base):
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
 
 
-class CategoryType(BaseModel):
-    __tablename__ = 'dashboard_categorytype'
+class LearningCentreTable(BaseModel):
+    __tablename__ = 'dashboard_learningcentre'
 
     title = Column(String(50), unique=True)
     uz_title = Column(String(50), unique=True, nullable=True)
 
-    student = relationship('StudentTable', back_populates='category')
+    student = relationship('StudentTable', back_populates='learning_centre')
 
     def get_title(self, lang: str):
         return self.title if lang == 'ru' else self.uz_title
@@ -92,7 +92,7 @@ class StudentTable(BaseModel):
     tg_id = Column(Integer, nullable=True, unique=True)
     language_type = Column(Enum(LanguageType, values_callable=lambda x: [e.value for e in x]), default=LanguageType.ru.value)
     phone = Column(String(20), unique=True)
-    chosen_field_id = Column(Integer, ForeignKey('dashboard_categorytype.id', ondelete='RESTRICT'))
+    learning_centre_id = Column(Integer, ForeignKey('dashboard_learningcentre.id', ondelete='RESTRICT'))
     application_type = Column(Enum(ApplicationType, values_callable=lambda x: [e.value for e in x]), default=ApplicationType.admin.value)
     is_client = Column(Boolean, default=False)
     checkout_date = Column(DateTime, nullable=True)
@@ -103,7 +103,7 @@ class StudentTable(BaseModel):
 
     courses = relationship('StudentCourse', back_populates='students')
     lessons = relationship('StudentLesson', back_populates='student')
-    category = relationship('CategoryType', back_populates='student')
+    learning_centre = relationship('LearningCentreTable', back_populates='student')
     promo = relationship('PromotionTable', back_populates='student')
     lesson_url = relationship('LessonUrlTable', back_populates='student')
     contact = relationship('ContactTable', back_populates='student')
@@ -124,7 +124,7 @@ class CourseTable(BaseModel):
     name = Column(String(50))
     info = Column(TEXT, nullable=True)
     hashtag = Column(String(20), nullable=True)
-    category_id = Column(Integer, ForeignKey('dashboard_categorytype.id', ondelete='RESTRICT'))
+    learning_centre_id = Column(Integer, ForeignKey('dashboard_learningcentre.id', ondelete='RESTRICT'))
     start_message = Column(String(200), nullable=True)
     end_message = Column(String(200), nullable=True)
     difficulty = Column(Enum(DifficultyType, values_callable=lambda x: [e.value for e in x]))

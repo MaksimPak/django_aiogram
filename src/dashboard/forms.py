@@ -5,10 +5,11 @@ from dashboard import models
 from dashboard.widgets import AdminJsonWidget
 import re
 
+
 class LeadForm(forms.ModelForm):
     class Meta:
         model = models.Lead
-        fields = ['first_name', 'last_name', 'language_type', 'phone', 'city', 'chosen_field']
+        fields = ['first_name', 'last_name', 'language_type', 'phone', 'city', 'learning_centre']
 
 
 class StudentAdmin(forms.ModelForm):

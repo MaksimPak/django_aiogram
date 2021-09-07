@@ -7,8 +7,8 @@ from sqlalchemy.orm import selectinload, with_parent
 from bot.models.dashboard import (
     StudentTable, CourseTable, StudentCourse,
     LessonTable, LessonUrlTable, StudentLesson,
-    CategoryType, PromotionTable, ContactTable,
-    FormTable, FormQuestionTable, FormAnswerTable, ContactFormTable
+    PromotionTable, ContactTable,
+    FormTable, FormQuestionTable, FormAnswerTable, ContactFormTable, LearningCentreTable
 )
 from bot.models.db import SessionLocal
 
@@ -124,11 +124,11 @@ class StudentRepository(BaseRepository):
     table = StudentTable
 
     @staticmethod
-    async def load_with_category(attribute: str, value: any, session: SessionLocal):
+    async def load_with_lc(attribute: str, value: any, session: SessionLocal):
         async with session:
             student = (await session.execute(
                 select(StudentTable).where(getattr(StudentTable, attribute) == value).options(
-                    selectinload(StudentTable.category)
+                    selectinload(StudentTable.learning_centre)
                 )
             )).scalar()
         return student
@@ -296,13 +296,13 @@ class StudentLessonRepository(BaseRepository):
 
 
 class CategoryRepository(BaseRepository):
-    table = CategoryType
+    table = LearningCentreTable
 
     @staticmethod
-    async def get_categories(session):
+    async def get_lcs(session):
         async with session:
             categories = (await session.execute(
-                select(CategoryType)
+                select(LearningCentreTable)
             )).scalars()
         return categories
 
