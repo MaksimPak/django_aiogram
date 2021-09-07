@@ -98,6 +98,12 @@ class ContactRepository(BaseRepository):
                 'tg_id': tg_id
             }, session)
 
+        async with session:
+            contact = (await session.execute(
+                select(ContactTable).where(
+                    ContactTable.id == contact.id).options(selectinload(ContactTable.student))
+            )).scalar()
+
         return contact
 
     @staticmethod

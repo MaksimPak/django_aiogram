@@ -3,11 +3,31 @@ import enum
 import uuid
 
 import sqlalchemy_json
-from sqlalchemy import Column, String, Enum, Boolean, ForeignKey, DateTime, Integer
+from sqlalchemy import Column, String, Enum, Boolean, ForeignKey, DateTime, Integer, types
 from sqlalchemy.dialects.postgresql import TEXT, VARCHAR, JSONB
 from sqlalchemy.orm import relationship
 
 from bot.models.db import Base
+
+
+class IntEnum(types.TypeDecorator):
+    impl = Integer
+
+    def __init__(self, enumtype, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._enumtype = enumtype
+
+    def process_bind_param(self, value, dialect):
+        return value.value
+
+    def process_result_value(self, value, dialect):
+        return self._enumtype(value)
+
+
+class AccessLevel(enum.Enum):
+    contact = 1
+    lead = 2
+    client = 3
 
 
 class BaseModel(Base):
@@ -41,6 +61,17 @@ class ContactTable(BaseModel):
     blocked_bot = Column(Boolean, default=False)
 
     student = relationship('StudentTable', back_populates='contact', uselist=False)
+
+    @property
+    def access_level(self):
+        if not self.student:
+            access_level = 1
+        elif self.student and self.student.is_client is False:
+            access_level = 2
+        else:
+            access_level = 3
+
+        return access_level
 
 
 class StudentTable(BaseModel):
@@ -104,6 +135,7 @@ class CourseTable(BaseModel):
     is_finished = Column(Boolean, default=False)
     chat_id = Column(Integer, nullable=True)
     autosend = Column(Boolean, default=False)
+    access_level = Column(IntEnum(AccessLevel), nullable=False, default=AccessLevel.client.value)
 
     date_started = Column(DateTime, nullable=True)
     date_finished = Column(DateTime, nullable=True)
@@ -223,6 +255,7 @@ class FormTable(BaseModel):
     is_active = Column(Boolean, default=False)
     one_off = Column(Boolean, default=False)
     image = Column(String(255), nullable=True)
+    access_level = Column(IntEnum(AccessLevel), nullable=False, default=AccessLevel.client.value)
 
     questions = relationship('FormQuestionTable', back_populates='form', order_by='[FormQuestionTable.position, FormQuestionTable.id]')
 

@@ -210,6 +210,7 @@ async def form_initial(
     )
 
     form = await repo.FormRepository.get(search_field, int(form_id), session)
+
     if not form:
         return await bot.send_message(
             response.from_user.id,
@@ -222,25 +223,32 @@ async def form_initial(
             'Форма не активна. Свяжитесь с администрацией',
             reply_to_message_id=message_id
         )
+    if contact.access_level >= form.access_level.value:
+        is_record = await repo.ContactFormRepository.exists(contact.id, form.id, session)
 
-    is_record = await repo.ContactFormRepository.exists(contact.id, form.id, session)
+        if form.one_off and is_record:
+            return await bot.send_message(
+                response.from_user.id,
+                'Данный опросник нельзя пройти дважды',
+                reply_to_message_id=message_id
+            )
 
-    if form.one_off and is_record:
-        return await bot.send_message(
+        data = [('Начать', ('start_form', form.id)), ('Назад', ('forms',))]
+        kb = KeyboardGenerator(data, row_width=1).keyboard
+
+        await MessageSender(
             response.from_user.id,
-            'Данный опросник нельзя пройти дважды',
-            reply_to_message_id=message_id
-        )
-
-    data = [('Начать', ('start_form', form.id)), ('Назад', ('forms',))]
-    kb = KeyboardGenerator(data, row_width=1).keyboard
-
-    await MessageSender(
-        response.from_user.id,
-        form.start_message,
-        form.image,
-        markup=kb
-    ).send()
+            form.start_message,
+            form.image,
+            markup=kb
+        ).send()
+    else:
+        delta = form.access_level.value - contact.access_level
+        if delta == 2:
+            kb = KeyboardGenerator([('Регистрация', ('tg_reg',))]).keyboard
+            return await bot.send_message(contact.tg_id, 'Пожалуйста, пройдите регистрацию', reply_markup=kb)
+        else:
+            await bot.send_message(contact.tg_id, 'Не достаточно доступа')
 
 
 @dp.callback_query_handler(short_data.filter(property='start_form'))

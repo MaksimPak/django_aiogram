@@ -198,7 +198,7 @@ class ContactAdmin(admin.ModelAdmin):
     search_fields = ('id', 'first_name', 'last_name',)
 
     def get_queryset(self, request):
-        qs = Contact.objects.all().filter(is_registered=True)
+        qs = Contact.objects.all().filter(is_registered=False)
         ordering = self.get_ordering(request)
         if ordering:
             qs = qs.order_by(*ordering)

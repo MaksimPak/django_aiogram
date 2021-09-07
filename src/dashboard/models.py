@@ -39,6 +39,12 @@ def generate_uuid():
     return str(uuid.uuid4())[:8]
 
 
+class AccessType(models.IntegerChoices):
+    contact = 1, 'ТГ Профиль'
+    lead = 2, 'Лид'
+    client = 3, 'Клиент'
+
+
 class BaseModel(models.Model):
     created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True, null=True, blank=True)
@@ -180,6 +186,7 @@ class Course(BaseModel):
     is_finished = models.BooleanField(verbose_name='Курс закончен', default=False)
     chat_id = models.BigIntegerField(verbose_name='Telegram ID', help_text=COURSE_HELP_TEXT)
     autosend = models.BooleanField(verbose_name='Авто-отправка', default=False)
+    access_level = models.IntegerField(verbose_name='Доступ', default=AccessType.client, choices=AccessType.choices)
 
     date_started = models.DateTimeField(verbose_name='Дата начала курса', null=True, blank=True)
     date_finished = models.DateTimeField(verbose_name='Дата окончания курса', null=True, blank=True)
@@ -320,6 +327,7 @@ class Form(BaseModel):
     is_active = models.BooleanField(verbose_name='Активна', default=False)
     one_off = models.BooleanField(verbose_name='Одноразовая форма', default=False)
     image = models.ImageField(verbose_name='Картинка', blank=True, null=True, upload_to=form_directory)
+    access_level = models.IntegerField(verbose_name='Доступ', default=AccessType.client, choices=AccessType.choices)
 
     def __str__(self):
         return f'Форма: [{self.name}]'
