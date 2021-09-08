@@ -320,7 +320,7 @@ class LeadAdmin(admin.ModelAdmin):
 class ClientAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__', 'blocked_bot', 'phone', 'language_type', 'get_courses',)
     list_per_page = 20
-    list_filter = ('studentcourse__course__name',)
+    list_filter = ('studentcourse__course__name', 'learning_centre',)
     list_display_links = ('__str__',)
     actions = ('send_message', 'send_checkout', 'assign_courses', 'assign_free_courses')
     readonly_fields = ('unique_code', 'checkout_date', 'invite_link', 'created_at', 'blocked_bot')

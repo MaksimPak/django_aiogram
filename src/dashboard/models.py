@@ -27,6 +27,10 @@ def promo_upload_directory(instance, filename):
         return f'promos/{filename}'
 
 
+def lc_upload_directory(instance, filename):
+    return f'learning_centres/{filename}'
+
+
 def form_question_directory(instance, filename):
     return f'form_questions/{instance.form.id}/{filename}'
 
@@ -71,8 +75,12 @@ class User(AbstractUser):
 
 
 class LearningCentre(BaseModel):
-    title = models.CharField(max_length=100, verbose_name='Название категории', unique=True)
+    title = models.CharField(max_length=100, verbose_name='Название Уч центра', unique=True)
     uz_title = models.CharField(max_length=50, verbose_name='Узбекская версия', unique=True, blank=True, null=True)
+    photo = models.ImageField(blank=True, null=True, verbose_name='Картинка', upload_to=lc_upload_directory, validators=[validate_image_file_extension])
+    description = models.TextField(verbose_name='Описание')
+    link = models.CharField(max_length=255, blank=True, null=True, verbose_name='Ссылка')
+    slug = models.SlugField(unique=True, verbose_name='Поисковое поле')
 
     def __str__(self):
         return self.title

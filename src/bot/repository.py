@@ -295,16 +295,16 @@ class StudentLessonRepository(BaseRepository):
         return record
 
 
-class CategoryRepository(BaseRepository):
+class LearningCentreRepository(BaseRepository):
     table = LearningCentreTable
 
     @staticmethod
     async def get_lcs(session):
         async with session:
-            categories = (await session.execute(
+            lcs = (await session.execute(
                 select(LearningCentreTable)
             )).scalars()
-        return categories
+        return lcs
 
 
 class PromotionRepository(BaseRepository):

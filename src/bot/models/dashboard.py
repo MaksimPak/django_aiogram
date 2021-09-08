@@ -43,6 +43,10 @@ class LearningCentreTable(BaseModel):
 
     title = Column(String(50), unique=True)
     uz_title = Column(String(50), unique=True, nullable=True)
+    photo = Column(String(255), nullable=True)
+    description = Column(TEXT, nullable=False)
+    link = Column(String(255), nullable=True)
+    slug = Column(String(50), nullable=False)
 
     student = relationship('StudentTable', back_populates='learning_centre')
 
