@@ -248,7 +248,7 @@ async def form_initial(
             kb = KeyboardGenerator([('Регистрация', ('tg_reg',))]).keyboard
             return await bot.send_message(contact.tg_id, 'Пожалуйста, пройдите регистрацию', reply_markup=kb)
         else:
-            await bot.send_message(contact.tg_id, 'Не достаточно доступа')
+            await bot.send_message(contact.tg_id, 'Недостаточно доступа')
 
 
 @dp.callback_query_handler(short_data.filter(property='start_form'))
