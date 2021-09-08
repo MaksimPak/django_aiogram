@@ -166,6 +166,7 @@ class KeyboardGenerator:
             KeyboardButton('🧑‍🎓 Профиль'),
             KeyboardButton('📚 Домашка'),
             KeyboardButton('🤔 Опросники'),
+            KeyboardButton('🏫 Центры'),
         ]
 
         if contact:
