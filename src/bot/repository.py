@@ -383,13 +383,13 @@ class FormQuestionRepository(BaseRepository):
     table = FormQuestionTable
 
     @staticmethod
-    async def next_question(question_id, form_id, session):
+    async def next_question(question_id, position, form_id, session):
         async with session:
             next_question = (
                 await session.execute(
                     select(FormQuestionTable).where(
                         FormQuestionTable.form_id == form_id,
-                        FormQuestionTable.id > question_id
+                        FormQuestionTable.position > position
                     ).options(selectinload(FormQuestionTable.answers))
                     .options(selectinload(FormQuestionTable.form))
                     .order_by(FormQuestionTable.position, FormQuestionTable.id)
