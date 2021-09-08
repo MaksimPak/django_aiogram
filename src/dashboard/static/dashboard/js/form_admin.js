@@ -33,8 +33,12 @@ window.addEventListener('load', function() {
                 const textDiv = $(this).find('.writeDiv')
                 textDiv.on('change keyup paste input', (data) => {
                     const text = data.target.innerText.replace(/(?:\r\n|\r|\n)/g, '<br>');
-                    console.log(text);
-                    child.val(text.substr(0, text.length - 4)).trigger('input');
+
+                    if (text.substr(text.length - 4) == '<br>') {
+                        child.val(text.substr(0, text.length - 4)).trigger('input');
+                    } else {
+                        child.val(text).trigger('input');
+                    }
                 })
             })
         }
