@@ -13,7 +13,7 @@ from bot.misc import dp, i18n, bot
 from bot.models.dashboard import FormAnswerTable, FormQuestionTable
 from bot.models.db import SessionLocal
 from bot.serializers import KeyboardGenerator, FormButtons, MessageSender
-from bot.utils.callback_settings import short_data, simple_data
+from bot.utils.callback_settings import short_data, simple_data, two_valued_data
 from bot.utils.throttling import throttled
 
 # todo: need to localize
@@ -67,6 +67,7 @@ async def start_question_sending(
         await state.update_data({
             'question_len': 1,
             'current_question_id': form.questions[0].id,
+            'position': form.questions[0].position,
             'answers': {},
             'score': 0,
         })
@@ -99,6 +100,7 @@ async def next_question(
     else:
         question = await repo.FormQuestionRepository.next_question(
             data['current_question_id'],
+            data['position'],
             data['form_id'],
             session
         )
@@ -110,8 +112,11 @@ async def next_question(
 
     if question:
         count = data['question_len'] + 1
-        await state.update_data({'question_len': count})
-        await state.update_data({'current_question_id': question.id})
+        await state.update_data({
+            'question_len': count,
+            'current_question_id': question.id,
+            'position': question.position,
+        })
         kb = await FormButtons(question.form, question).question_buttons()
 
         await MessageSender(
@@ -150,6 +155,7 @@ async def process_multianswer(
     kb = await FormButtons(answer.question.form_id).mark_selected(
         answer.id,
         answer.question_id,
+        answer.question.position,
         keyboard.to_python()
     )
 
@@ -303,7 +309,7 @@ async def get_inline_answer(
         )
 
 
-@dp.callback_query_handler(short_data.filter(property='proceed'))
+@dp.callback_query_handler(two_valued_data.filter(property='proceed'))
 @dp.throttled(throttled, rate=.7)
 async def proceed(
         cb: types.CallbackQuery,
@@ -315,7 +321,8 @@ async def proceed(
     async with state.proxy() as data:
         if all(data['is_correct']):
             data['score'] += 1
-        data['current_question_id'] = int(callback_data['value'])
+        data['current_question_id'] = int(callback_data['first_value'])
+        data['position'] = int(callback_data['second_value'])
 
     await next_question(cb.from_user.id, state)
 

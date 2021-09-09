@@ -199,6 +199,7 @@ class FormButtons(KeyboardGenerator):
             self,
             answer_id: int,
             question_id: int,
+            position: int,
             keyboard: dict
     ):
         # todo REFACTOR
@@ -212,7 +213,7 @@ class FormButtons(KeyboardGenerator):
                         key['text'] = key['text'][1:]
         self.keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard['inline_keyboard'])
         if self.keyboard.inline_keyboard[-1][-1].text != 'Следующий вопрос ➡️':
-            self.add(('Следующий вопрос ➡️', ('proceed', question_id)))
+            self.add(('Следующий вопрос ➡️', ('proceed', question_id, position)))
 
         return self.keyboard
 
