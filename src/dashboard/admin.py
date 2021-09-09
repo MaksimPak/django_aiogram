@@ -6,8 +6,7 @@ from functools import partial
 from celery.result import GroupResult
 from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.contenttypes.models import ContentType
-from django.db.models.expressions import RawSQL, OrderBy
+from django.db.models.expressions import RawSQL
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.template.loader import render_to_string
@@ -18,9 +17,7 @@ from django.utils.safestring import mark_safe
 from dashboard import models, forms
 from dashboard.forms import Form
 from dashboard.models import Contact
-from dashboard.utils.helpers import random_int
 from dashboard.utils.telegram import Telegram
-from flat_json_widget.widgets import FlatJsonWidget
 
 
 class StudentCourseList(admin.TabularInline):
@@ -626,6 +623,18 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
         js = (
             'dashboard/js/contactformanswers_admin.js',
         )
+
+
+@admin.register(models.Asset)
+class AssetAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'desc', 'access_level',)
+    list_display_links = ('title',)
+    readonly_fields = ('link',)
+    list_per_page = 20
+
+    @admin.display(description='Линк')
+    def link(self, instance):
+        return f'https://t.me/{os.getenv("BOT_NAME")}?start=asset_{instance.id}'
 
 
 admin.site.register(models.User, UserAdmin)

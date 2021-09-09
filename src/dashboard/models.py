@@ -39,6 +39,10 @@ def form_directory(instance, filename):
     return f'forms/{instance.id}/{filename}'
 
 
+def asset_directory(instance, filename):
+    return f'assets/{filename}'
+
+
 def generate_uuid():
     return str(uuid.uuid4())[:8]
 
@@ -390,3 +394,26 @@ class ContactFormAnswers(BaseModel):
         verbose_name_plural = 'Ответы на форму'
         unique_together = [['contact', 'form']]
 
+
+class Asset(BaseModel):
+    title = models.CharField(max_length=50, verbose_name='Название')
+    file = models.FileField(verbose_name='Файл', upload_to=asset_directory)
+    desc = models.TextField(verbose_name='Описание', blank=True, null=True)
+    access_level = models.IntegerField(verbose_name='Доступ', default=AccessType.client, choices=AccessType.choices)
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = 'Ассет'
+        verbose_name_plural = 'Ассеты'
+
+
+class ContactAsset(BaseModel):
+    contact = models.ForeignKey(Contact, on_delete=models.CASCADE, null=True, verbose_name='Студент')
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE, null=True, verbose_name='Ассет')
+
+    class Meta:
+        verbose_name = 'Ассет студента'
+        verbose_name_plural = 'Ассеты студента'
+        unique_together = [['contact', 'asset']]

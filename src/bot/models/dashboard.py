@@ -65,6 +65,7 @@ class ContactTable(BaseModel):
     blocked_bot = Column(Boolean, default=False)
 
     student = relationship('StudentTable', back_populates='contact', uselist=False)
+    contact_asset = relationship('ContactAssetTable', back_populates='contact')
 
     @property
     def access_level(self):
@@ -301,3 +302,24 @@ class ContactFormTable(BaseModel):
     form_id = Column(Integer, ForeignKey('dashboard_form.id', ondelete='SET NULL'), nullable=False)
     score = Column(Integer, nullable=True)
     data = Column(sqlalchemy_json.mutable_json_type(dbtype=JSONB, nested=True), nullable=True, default=dict)
+
+
+class AssetTable(BaseModel):
+    __tablename__ = 'dashboard_asset'
+
+    title = Column(String(50), nullable=False)
+    file = Column(String(255), nullable=False)
+    desc = Column(TEXT, nullable=True)
+    access_level = Column(IntEnum(AccessLevel), nullable=False, default=AccessLevel.client.value)
+
+    contact_asset = relationship('ContactAssetTable', back_populates='asset')
+
+
+class ContactAssetTable(BaseModel):
+    __tablename__ = 'dashboard_contactasset'
+
+    contact_id = Column(Integer, ForeignKey('dashboard_contact.id', ondelete='CASCADE'), nullable=False)
+    asset_id = Column(Integer, ForeignKey('dashboard_asset.id', ondelete='CASCADE'), nullable=False)
+
+    asset = relationship('AssetTable', back_populates='contact_asset')
+    contact = relationship('ContactTable', back_populates='contact_asset')
