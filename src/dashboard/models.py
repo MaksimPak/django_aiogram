@@ -6,6 +6,7 @@ from django.core.validators import validate_image_file_extension
 from django.db import models, transaction
 from django.template.defaultfilters import truncatewords
 
+from dashboard.utils.decorators import deprecated
 from dashboard.validators import (
     validate_video_extension, validate_photo_extension,
     validate_hashtag, validate_file_size,
@@ -139,6 +140,7 @@ class Student(BaseModel):
     comment = models.TextField(verbose_name='Комментарий к пользователю', blank=True, null=True)
     contact = models.OneToOneField(Contact, on_delete=models.SET_NULL, verbose_name='ТГ Профиль', null=True, blank=True)
 
+    @deprecated
     def __str__(self):
         return f'{self.first_name} {self.last_name or ""}'
 
@@ -162,6 +164,9 @@ class Lead(Student):
 
     objects = LeadManager()
 
+    def __str__(self):
+        return f'Лид[{self.first_name} {self.last_name or ""}]'
+
     class Meta:
         proxy = True
         verbose_name = 'Лид'
@@ -171,6 +176,9 @@ class Lead(Student):
 class Client(Student):
 
     objects = ClientManager()
+
+    def __str__(self):
+        return f'Клиент[{self.first_name} {self.last_name or ""}]'
 
     class Meta:
         proxy = True

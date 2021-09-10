@@ -13,4 +13,5 @@ urlpatterns = [
     path('send-lesson/<int:course_id>/<int:lesson_id>', views.send_lesson, name='send_lesson'),
     path('send-promo/<int:promo_id>/<str:lang>', views.send_promo, name='send_promo'),
     path('send-promo-myself/<int:promo_id>/', views.send_promo_myself, name='send_promo_myself'),
+    path('send-promo-v2/', views.send_promo_v2, name='send_promo_v2'),
 ]

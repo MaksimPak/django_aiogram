@@ -191,7 +191,7 @@ class ContactAdmin(admin.ModelAdmin):
     list_display_links = ('profile_link',)
     list_per_page = 20
     list_filter = (StatusFilter, 'blocked_bot')
-    actions = ('send_message',)
+    actions = ('send_message', 'send_promo',)
     readonly_fields = ('data', 'is_registered', 'blocked_bot', 'profile_link',)
     search_fields = ('id', 'first_name', 'student__first_name',)
 
@@ -228,6 +228,13 @@ class ContactAdmin(admin.ModelAdmin):
         )
 
         return mark_safe(f'<a href="{changeform_url}" target="_blank">{self.get_name(instance)}</a>')
+
+    @admin.display(description='Отправить промо')
+    def send_promo(self, request, contacts):
+        ids = [contact.id for contact in contacts]
+        params = f'?_selected_action={"&_selected_action=".join(str(id) for id in ids)}'
+        return HttpResponseRedirect(reverse(
+            'dashboard:send_promo_v2') + f'{params}')
 
     @staticmethod
     def get_name(instance):

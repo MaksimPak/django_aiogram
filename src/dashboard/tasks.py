@@ -56,10 +56,16 @@ def send_message(data):
 
 @shared_task
 def initiate_promo_task(config):
-    if config['lang'] != 'all':
+    # todo refactor
+    if config.get('lang') and config.get('lang') != 'all':
         students = Student.objects.filter(language_type=config['lang'])
+        lang = config.get('lang')
+    elif config.get('contact_ids'):
+        students = Contact.objects.filter(pk__in=config['contact_ids'])
+        lang = 'undefined'
     else:
         students = Student.objects.all()
+        lang = 'all'
 
     promotion = Promotion.objects.get(pk=config['promo_id'])
     message = config['message']
@@ -77,7 +83,7 @@ def initiate_promo_task(config):
         duration = get_duration(promotion.video.path)
         width, height = get_resolution(promotion.video.path)
 
-    report = SendingReport.objects.create(lang=config['lang'], promotion=promotion, sent=students.count())
+    report = SendingReport.objects.create(lang=lang, promotion=promotion, sent=students.count())
 
     tasks = []
     for i, student in enumerate(students):
