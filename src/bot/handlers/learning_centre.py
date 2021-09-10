@@ -29,7 +29,7 @@ async def list_all(
     markup = KeyboardGenerator(lcs_data).keyboard
 
     await message.reply(
-        'Выберите центр',
+        _('Выберите центр'),
         reply_markup=markup
     )
 
@@ -57,11 +57,11 @@ async def display_lc(
 
     lc = await repo.LearningCentreRepository.get('slug', slug, session)
     if not lc:
-        return await response.reply('Такого центра не существует')
+        return await response.reply(_('Такого центра не существует'))
     msg = f'{lc.title}\n{lc.description}'
     kb = InlineKeyboardMarkup()
     if lc.link:
-        kb.add(InlineKeyboardButton('Геолокация', url=lc.link))
+        kb.add(InlineKeyboardButton(_('Геолокация'), url=lc.link))
 
     await MessageSender(
         response.from_user.id,

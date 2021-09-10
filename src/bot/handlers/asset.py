@@ -7,11 +7,13 @@ from aiogram.dispatcher.filters import CommandStart, Regexp
 
 from bot import repository as repo
 from bot.decorators import create_session
-from bot.misc import dp, bot
+from bot.misc import dp, bot, i18n
 from bot.models.db import SessionLocal
 from bot.serializers import MessageSender, KeyboardGenerator
 from bot.utils.callback_settings import short_data
 from aiogram.dispatcher.filters import Text
+
+_ = i18n.gettext
 
 
 @dp.message_handler(Text(equals='🛠️ Ассеты'), state='*')
@@ -28,7 +30,7 @@ async def list_assets(
     markup = KeyboardGenerator(assets_data).keyboard
 
     await message.reply(
-        'Выберите Ассет',
+        _('Выберите Ассет'),
         reply_markup=markup
     )
 
@@ -65,7 +67,7 @@ async def send_asset(
     else:
         delta = asset.access_level.value - contact.access_level
         if delta == 2:
-            kb = KeyboardGenerator([('Регистрация', ('tg_reg',))]).keyboard
-            return await bot.send_message(contact.tg_id, 'Пожалуйста, пройдите регистрацию', reply_markup=kb)
+            kb = KeyboardGenerator([(_('Регистрация'), ('tg_reg',))]).keyboard
+            return await bot.send_message(contact.tg_id, _('Пожалуйста, пройдите регистрацию'), reply_markup=kb)
         else:
-            await bot.send_message(contact.tg_id, 'Недостаточно доступа')
+            await bot.send_message(contact.tg_id, _('Недостаточно доступа'))

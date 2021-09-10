@@ -127,7 +127,7 @@ async def next_question(
         ).send()
     else:
         percent_score = round((data['score'] / data['question_len']) * 100)
-        end_message = 'Спасибо за участие'
+        end_message = _('Спасибо за участие')
         for key in form.end_message.keys():
             num1, num2 = map(int, key.split('-'))
             if percent_score in range(num1, num2+1):
@@ -181,7 +181,7 @@ async def display_forms(
 
     await bot.send_message(
         response.from_user.id,
-        'Выберите опросник',
+        _('Выберите опросник'),
         reply_to_message_id=message_id,
         allow_sending_without_reply=True,
         reply_markup=markup
@@ -220,13 +220,13 @@ async def form_initial(
     if not form:
         return await bot.send_message(
             response.from_user.id,
-            'Ошибка системы. Получите опросники снова',
+            _('Ошибка системы. Получите опросники снова'),
             reply_to_message_id=message_id
         )
     elif not form.is_active:
         return await bot.send_message(
             response.from_user.id,
-            'Форма не активна. Свяжитесь с администрацией',
+            _('Форма не активна. Свяжитесь с администрацией'),
             reply_to_message_id=message_id
         )
     if contact.access_level >= form.access_level.value:
@@ -235,11 +235,11 @@ async def form_initial(
         if form.one_off and is_record:
             return await bot.send_message(
                 response.from_user.id,
-                'Данный опросник нельзя пройти дважды',
+                _('Данный опросник нельзя пройти дважды'),
                 reply_to_message_id=message_id
             )
 
-        data = [('Начать', ('start_form', form.id)), ('Назад', ('forms',))]
+        data = [(_('Начать'), ('start_form', form.id)), ('Назад', ('forms',))]
         kb = KeyboardGenerator(data, row_width=1).keyboard
 
         await MessageSender(
@@ -251,10 +251,10 @@ async def form_initial(
     else:
         delta = form.access_level.value - contact.access_level
         if delta == 2:
-            kb = KeyboardGenerator([('Регистрация', ('tg_reg',))]).keyboard
-            return await bot.send_message(contact.tg_id, 'Пожалуйста, пройдите регистрацию', reply_markup=kb)
+            kb = KeyboardGenerator([(_('Регистрация'), ('tg_reg',))]).keyboard
+            return await bot.send_message(contact.tg_id, _('Пожалуйста, пройдите регистрацию'), reply_markup=kb)
         else:
-            await bot.send_message(contact.tg_id, 'Недостаточно доступа')
+            await bot.send_message(contact.tg_id, _('Недостаточно доступа'))
 
 
 @dp.callback_query_handler(short_data.filter(property='start_form'))
@@ -336,7 +336,7 @@ async def custom_answer(
     await cb.message.edit_reply_markup(None)
     await bot.send_message(
         cb.from_user.id,
-        'Напишите свой ответ',
+        _('Напишите свой ответ'),
     )
     await QuestionnaireMode.accept_text.set()
 
