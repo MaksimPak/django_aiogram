@@ -15,8 +15,8 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from dashboard import models, forms
+from dashboard.admin_filters import StatusFilter
 from dashboard.forms import Form
-from dashboard.models import Contact
 from dashboard.utils.telegram import Telegram
 
 
@@ -187,19 +187,13 @@ class PromoAdmin(admin.ModelAdmin):
 
 @admin.register(models.Contact)
 class ContactAdmin(admin.ModelAdmin):
-    list_display = ('id', 'first_name', 'tg_id', 'created_at', 'updated_at')
-    list_display_links = ('first_name',)
+    list_display = ('id', 'profile_link', 'tg_id', 'created_at', 'updated_at')
+    list_display_links = ('profile_link',)
     list_per_page = 20
+    list_filter = (StatusFilter, 'blocked_bot')
     actions = ('send_message',)
-    readonly_fields = ('data', 'is_registered', 'blocked_bot',)
-    search_fields = ('id', 'first_name', 'last_name',)
-
-    def get_queryset(self, request):
-        qs = Contact.objects.all().filter(is_registered=False)
-        ordering = self.get_ordering(request)
-        if ordering:
-            qs = qs.order_by(*ordering)
-        return qs
+    readonly_fields = ('data', 'is_registered', 'blocked_bot', 'profile_link',)
+    search_fields = ('id', 'first_name', 'student__first_name',)
 
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, contacts):
@@ -223,14 +217,24 @@ class ContactAdmin(admin.ModelAdmin):
 
     @admin.display(description='Ссылка на профиль')
     def profile_link(self, instance):
-        try:
+        if hasattr(instance, 'student'):
+            obj = instance.student
             model = 'client' if instance.student.is_client else 'lead'
-            changeform_url = reverse(
-                f'admin:dashboard_{model}_change', args=(instance.student.id,)
-            )
-            return mark_safe(f'<a href="{changeform_url}" target="_blank">Ссылка на профиль</a>')
-        except models.Student.DoesNotExist:
-            return 'Не зарегистрирован'
+        else:
+            obj = instance
+            model = instance._meta.model_name
+        changeform_url = reverse(
+            f'admin:dashboard_{model}_change', args=(obj.id,)
+        )
+
+        return mark_safe(f'<a href="{changeform_url}" target="_blank">{self.get_name(instance)}</a>')
+
+    @staticmethod
+    def get_name(instance):
+        return instance.student.first_name if hasattr(instance, 'student') else instance.first_name
+
+    class Media:
+        js = ('dashboard/js/contact_admin.js',)
 
 
 @admin.register(models.Lead)
@@ -629,12 +633,16 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
 class AssetAdmin(admin.ModelAdmin):
     list_display = ('id', 'title', 'desc', 'access_level',)
     list_display_links = ('title',)
-    readonly_fields = ('link',)
+    readonly_fields = ('link', 'count')
     list_per_page = 20
 
     @admin.display(description='Линк')
     def link(self, instance):
         return f'https://t.me/{os.getenv("BOT_NAME")}?start=asset_{instance.id}'
+
+    @admin.display(description='Подсчет')
+    def count(self, isntance):
+        return isntance.contactasset_set.count()
 
 
 admin.site.register(models.User, UserAdmin)
