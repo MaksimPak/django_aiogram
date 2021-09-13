@@ -1,3 +1,4 @@
+import os
 import re
 from typing import Optional, Union
 
@@ -5,9 +6,9 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text, Regexp, CommandStart, ChatTypeFilter
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.types import InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup, ContentType
 
-from bot import repository as repo
+from bot import repository as repo, config
 from bot.decorators import create_session
 from bot.misc import dp, i18n, bot
 from bot.models.dashboard import FormAnswerTable, FormQuestionTable
@@ -22,6 +23,7 @@ _ = i18n.gettext
 
 class QuestionnaireMode(StatesGroup):
     accept_text = State()
+    accept_file = State()
 
 
 async def _normalize_end_msg(msg: str):
@@ -30,7 +32,7 @@ async def _normalize_end_msg(msg: str):
 
 async def store_answer(
         question: FormQuestionTable,
-        answer: FormAnswerTable,
+        answer: str,
         state: FSMContext,
 ):
     data = await state.get_data()
@@ -341,6 +343,20 @@ async def custom_answer(
     await QuestionnaireMode.accept_text.set()
 
 
+@dp.callback_query_handler(simple_data.filter(value='file_answer'))
+@dp.throttled(throttled, rate=.7)
+async def file_answer(
+        cb: types.CallbackQuery,
+):
+    await cb.answer()
+    await cb.message.edit_reply_markup(None)
+    await bot.send_message(
+        cb.from_user.id,
+        _('Вышлите файл'),
+    )
+    await QuestionnaireMode.accept_file.set()
+
+
 @dp.message_handler(state=QuestionnaireMode.accept_text)
 @dp.throttled(throttled, rate=.7)
 @create_session
@@ -357,5 +373,27 @@ async def get_text_answer(
         session
     )
     await store_answer(question, message.text, state)
+
+    await next_question(message.from_user.id, state)
+
+
+@dp.message_handler(state=QuestionnaireMode.accept_file, content_types=ContentType.DOCUMENT)
+@dp.throttled(throttled, rate=.7)
+@create_session
+async def get_file_answer(
+        message: types.Message,
+        state: FSMContext,
+        session: SessionLocal
+):
+    await state.reset_state(False)
+    data = await state.get_data()
+    question = await repo.FormQuestionRepository.get(
+        'id',
+        data['current_question_id'],
+        session
+    )
+    await store_answer(question, message.document.file_name, state)
+    chat_id = question.chat_id if question.chat_id else config.CHAT_ID
+    await bot.forward_message(chat_id, message.from_user.id, message.message_id)
 
     await next_question(message.from_user.id, state)

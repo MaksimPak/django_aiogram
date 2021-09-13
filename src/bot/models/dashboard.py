@@ -275,6 +275,8 @@ class FormQuestionTable(BaseModel):
     position = Column(Integer, nullable=False)
     custom_answer = Column(Boolean, default=False)
     custom_answer_text = Column(String(50), nullable=True)
+    accept_file = Column(Boolean, default=False)
+    chat_id = Column(String(255), nullable=True)
 
     one_row_btns = Column(Boolean, default=False)
 

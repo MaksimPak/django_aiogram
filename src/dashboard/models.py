@@ -365,6 +365,8 @@ class FormQuestion(BaseModel):
     position = models.IntegerField(verbose_name='Нумерация')
     custom_answer = models.BooleanField(verbose_name='Кастомный ответ', default=False)
     custom_answer_text = models.CharField(verbose_name='Текст кастомного ответа', max_length=100, null=True, blank=True)
+    accept_file = models.BooleanField(verbose_name='Принимать файл', default=False)
+    chat_id = models.CharField(max_length=255, blank=True, null=True)
     one_row_btns = models.BooleanField(verbose_name='Однострочные ответы', default=False)
 
     def __str__(self):

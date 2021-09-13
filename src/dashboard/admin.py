@@ -76,7 +76,7 @@ class FormAnswerList(admin.StackedInline):
 class FormQuestionList(admin.StackedInline):
     model = models.FormQuestion
     fields = ('text', 'multi_answer', 'image', 'custom_answer', 'custom_answer_text',
-              'position', 'one_row_btns', 'changeform_link')
+              'position', 'chat_id', 'accept_file','one_row_btns', 'changeform_link')
     readonly_fields = ('changeform_link', )
 
     @admin.display(description='Дополнительно')

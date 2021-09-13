@@ -244,4 +244,6 @@ class FormButtons(KeyboardGenerator):
         if self.question.custom_answer:
             text = self.question.custom_answer_text if self.question.custom_answer_text else 'Другое'
             kb.add((text, ('custom_answer',)))
+        elif self.question.accept_file:
+            kb.add(('Отправить файл', ('file_answer',)))
         return kb.keyboard
