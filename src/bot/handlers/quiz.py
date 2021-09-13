@@ -377,7 +377,7 @@ async def get_text_answer(
     await next_question(message.from_user.id, state)
 
 
-@dp.message_handler(state=QuestionnaireMode.accept_file, content_types=[ContentType.ANY])
+@dp.message_handler(state=QuestionnaireMode.accept_file, content_types=[ContentType.PHOTO, ContentType.VIDEO, ContentType.DOCUMENT])
 @dp.throttled(throttled, rate=.7)
 @create_session
 async def get_file_answer(
@@ -392,13 +392,10 @@ async def get_file_answer(
         data['current_question_id'],
         session
     )
-    if message.content_type in [ContentType.PHOTO, ContentType.VIDEO, ContentType.DOCUMENT]:
-        if message.content_type is not ContentType.PHOTO:
-            filename = getattr(message, message.content_type).file_name
-        else:
-            filename = 'pic'
+    if message.content_type is not ContentType.PHOTO:
+        filename = getattr(message, message.content_type).file_name
     else:
-        return
+        filename = 'pic'
 
     await store_answer(question, filename, state)
     chat_id = question.chat_id if question.chat_id else config.CHAT_ID
