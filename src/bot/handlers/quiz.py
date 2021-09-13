@@ -273,7 +273,8 @@ async def start_form(
 
     async with state.proxy() as data:
         data['form_id'] = int(form_id)
-
+        
+    await cb.message.edit_reply_markup(reply_markup=None)
     await start_question_sending(form_id, cb.from_user.id, message_id, state)
 
 
