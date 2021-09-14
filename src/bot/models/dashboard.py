@@ -4,8 +4,9 @@ import uuid
 
 import sqlalchemy_json
 from sqlalchemy import Column, String, Enum, Boolean, ForeignKey, DateTime, Integer, types
-from sqlalchemy.dialects.postgresql import TEXT, VARCHAR, JSONB
+from sqlalchemy.dialects.postgresql import TEXT, VARCHAR, JSONB, ARRAY
 from sqlalchemy.orm import relationship
+from geoalchemy2 import Geometry
 
 from bot.models.db import Base
 
@@ -105,6 +106,8 @@ class StudentTable(BaseModel):
     promo_id = Column(Integer, ForeignKey('dashboard_promotion.id', ondelete='SET NULL'), nullable=True)
     blocked_bot = Column(Boolean, default=False)
     contact_id = Column(Integer, ForeignKey('dashboard_contact.id'))
+    location = Column(Geometry('POINT'), nullable=True)
+    games = Column(ARRAY(String(50)), nullable=True)
 
     courses = relationship('StudentCourse', back_populates='students')
     lessons = relationship('StudentLesson', back_populates='student')

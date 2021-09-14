@@ -4,6 +4,8 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import ChatTypeFilter
 from aiogram.dispatcher.filters.state import StatesGroup, State
+from aiogram.types import ContentType
+from geoalchemy2 import WKTElement
 
 from bot import repository as repo
 from bot.decorators import create_session
@@ -22,6 +24,7 @@ class RegistrationState(StatesGroup):
     first_name = State()
     city = State()
     phone = State()
+    location = State()
 
 
 @dp.message_handler(ChatTypeFilter(types.ChatType.PRIVATE), state=RegistrationState.invite_link)
@@ -113,7 +116,7 @@ async def set_first_name(
 
 @dp.message_handler(state=RegistrationState.phone)
 @create_session
-async def create_record(
+async def set_first_name(
         message: types.Message,
         state: FSMContext,
         session: SessionLocal
@@ -121,11 +124,24 @@ async def create_record(
     is_phone_exists = await repo.StudentRepository.is_exist('phone', message.text, session)
     if is_phone_exists:
         return await message.reply('Данный номер уже используется')
+
     async with state.proxy() as data:
         data['phone'] = message.text
 
+    await message.reply(_('Хорошо, теперь пожалуйста отправь свою геопозицию'))
+    await RegistrationState.location.set()
+
+
+@dp.message_handler(state=RegistrationState.location, content_types=ContentType.LOCATION)
+@create_session
+async def create_record(
+        message: types.Message,
+        state: FSMContext,
+        session: SessionLocal
+):
     contact = await repo.ContactRepository.get('tg_id', message.from_user.id, session)
     data = await state.get_data()
+    location = WKTElement(f'POINT({message.location.longitude} {message.location.latitude})')
     lead_data = {
         'first_name': data['first_name'],
         'city': data['city'],
@@ -135,6 +151,7 @@ async def create_record(
         'application_type': StudentTable.ApplicationType.telegram,
         'is_client': False,
         'contact_id': contact.id,
+        'location': location,
     }
     if contact:
         lead_data['promo_id'] = contact.data.get('promo')

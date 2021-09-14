@@ -1,6 +1,8 @@
 import uuid
 
 from django.contrib.auth.models import AbstractUser
+from django.contrib.gis.db.models import PointField
+from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_image_file_extension
 from django.db import models, transaction
@@ -139,6 +141,9 @@ class Student(BaseModel):
     blocked_bot = models.BooleanField(verbose_name='Заблокировал бота', default=False)
     comment = models.TextField(verbose_name='Комментарий к пользователю', blank=True, null=True)
     contact = models.OneToOneField(Contact, on_delete=models.SET_NULL, verbose_name='ТГ Профиль', null=True, blank=True)
+
+    location = PointField(null=True, blank=True, verbose_name='Локация')
+    games = ArrayField(models.CharField(max_length=50, blank=True), null=True, blank=True, verbose_name='Игры')
 
     @deprecated
     def __str__(self):

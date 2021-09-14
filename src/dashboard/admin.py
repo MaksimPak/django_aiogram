@@ -4,8 +4,10 @@ import os
 from functools import partial
 
 from celery.result import GroupResult
+from django.conf import settings
 from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.gis.db.models import PointField
 from django.db.models.expressions import RawSQL
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
@@ -13,6 +15,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
+from mapwidgets.widgets import GooglePointFieldWidget
 
 from dashboard import models, forms
 from dashboard.admin_filters import StatusFilter
@@ -322,7 +325,10 @@ class LeadAdmin(admin.ModelAdmin):
                 'courses': lead.courses.values_list('name', flat=True)
             }
         )
-
+    
+    formfield_overrides = {
+            PointField: {"widget": GooglePointFieldWidget(settings=settings.MAP_WIDGETS)}
+        }
 
 @admin.register(models.Client)
 class ClientAdmin(admin.ModelAdmin):
@@ -403,6 +409,10 @@ class ClientAdmin(admin.ModelAdmin):
         courses = models.Course.objects.filter(is_free=True, is_started=False, is_finished=False)
         return render(request, 'dashboard/assign_courses.html',
                       context={'entities': clients, 'courses': courses, 'action': 'assign_free_courses'})
+
+    formfield_overrides = {
+        PointField: {"widget": GooglePointFieldWidget(settings=settings.MAP_WIDGETS)}
+    }
 
 
 @admin.register(models.Course)

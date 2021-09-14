@@ -1,8 +1,8 @@
 version: '3'
 
 services:
-  parcel-db:
-    image: postgres:13
+  db:
+    image: gangstead/postgis:latest-arm
     restart: on-failure
     environment:
       POSTGRES_DB: parcel
@@ -17,7 +17,7 @@ services:
       - 6379:6379
   web:
     build: .
-    image: parcel-image
+    image: parcel:latest
     command: python manage.py runserver 0.0.0.0:8000
     environment:
       PYTHONPATH: /parcel
@@ -26,12 +26,14 @@ services:
     ports:
       - 8000:8000
     depends_on:
-      - parcel-db
+      - db
       - redis
   celery:
-    image: parcel-image
+    image: parcel
+    build: .
     command: celery -A app worker -l info --pool=gevent --concurrency=10
     volumes:
       - ./src:/parcel
     depends_on:
+      - web
       - redis
