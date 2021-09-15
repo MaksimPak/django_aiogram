@@ -325,10 +325,11 @@ class LeadAdmin(admin.ModelAdmin):
                 'courses': lead.courses.values_list('name', flat=True)
             }
         )
-    
+
     formfield_overrides = {
             PointField: {"widget": GooglePointFieldWidget(settings=settings.MAP_WIDGETS)}
         }
+
 
 @admin.register(models.Client)
 class ClientAdmin(admin.ModelAdmin):
