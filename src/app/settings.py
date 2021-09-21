@@ -47,7 +47,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.gis',
 
-    'dashboard.apps.DashboardConfig',
+    'contacts.apps.ContactsConfig',
+    'assets.apps.AssetsConfig',
+    'courses.apps.CoursesConfig',
+    'companies.apps.CompaniesConfig',
+    'users.apps.UsersConfig',
+    'forms.apps.FormsConfig',
+    'broadcast.apps.BroadcastConfig',
 
     'bootstrap4',
     'flat_json_widget',
@@ -145,7 +151,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-AUTH_USER_MODEL = 'dashboard.User'
+AUTH_USER_MODEL = 'users.User'
 
 # Celery config
 CELERY_BROKER_URL = f'redis://{os.getenv("REDIS_HOST", "redis")}:{os.getenv("REDIS_PORT", 6379)}/0'
