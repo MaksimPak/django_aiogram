@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.gis.db.models import PointField
 from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
-
+from django.urls import reverse
 
 from general.models import BaseModel
 from general.utils.decorators import deprecated
@@ -55,6 +55,15 @@ class Student(BaseModel):
     @property
     def short_name(self):
         return f'{self.first_name[0]}.{self.last_name or ""}'
+
+    @property
+    def status(self):
+        return 'client' if self.is_client else 'lead'
+
+    @property
+    def admin_change_link(self):
+        app = self._meta.app_label
+        return reverse(f'admin:{app}_{self.status}_change', args=(self.id,))
 
     @transaction.atomic
     def assign_courses(self, courses, is_client=False):

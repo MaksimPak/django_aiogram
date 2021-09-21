@@ -33,22 +33,16 @@
                     <td>{{data.viewed|length}}</td>
                     <td> {% if data.lesson.has_homework %}{{ data.hw|length}} {% else %} - {% endif %}</td>
                     <td>
-                        <form action="{% url 'dashboard:send_message' %}" method="post" class="receivedVid">
+                        <form action="{% url 'broadcast:send_message' %}" method="post" class="receivedVid">
                             {% csrf_token %}
                             <input type="hidden" name="course_id" value="{{object_id}}">
                             <input type="hidden" name="lesson_id" value="{{data.lesson.id}}">
                             {% for student in data.received %}
                                 {% if student not in data.viewed %}
                                     <input type="hidden" name="_selected_action" value="{{student.id}}">
-                                    {% if student.is_client %}
-                                    <a href="{% url 'admin:dashboard_client_change' student.id %}" style="font-size:11px;">
+                                    <a href="{{student.admin_change_link}}" style="font-size:11px;">
                                         {{student.short_name}}{% if not forloop.last%},{% endif %}
                                     </a>
-                                    {% else %}
-                                    <a href="{% url 'admin:dashboard_lead_change' student.id %}" style="font-size:11px;">
-                                        {{student.short_name}}{% if not forloop.last%},{% endif %}
-                                    </a>
-                                    {% endif %}
                                 {% endif %}
                             {% endfor %}
                             {%  if data.received %}
@@ -59,22 +53,16 @@
                     </td>
 
                     <td>
-                        <form action="{% url 'dashboard:send_message' %}" method="post" class="viewedVid">
+                        <form action="{% url 'broadcast:send_message' %}" method="post" class="viewedVid">
                             {% csrf_token %}
                             <input type="hidden" name="course_id" value="{{object_id}}">
                             <input type="hidden" name="lesson_id" value="{{data.lesson.id}}">
                             {% for student in data.viewed %}
                                 {% if student not in data.hw %}
                                 <input type="hidden" name="_selected_action" value="{{student.id}}">
-                                {% if student.is_client %}
-                                    <a href="{% url 'admin:dashboard_client_change' student.id %}" style="font-size:11px;">
-                                        {{student.short_name}}{% if not forloop.last%},{% endif %}
-                                    </a>
-                                    {% else %}
-                                    <a href="{% url 'admin:dashboard_lead_change' student.id %}" style="font-size:11px;">
-                                        {{student.short_name}}{% if not forloop.last%},{% endif %}
-                                    </a>
-                                    {% endif %}
+                                <a href="{{student.admin_change_link}}" style="font-size:11px;">
+                                    {{student.short_name}}{% if not forloop.last%},{% endif %}
+                                </a>
                                 {% endif %}
                             {% endfor %}
                             {% if data.viewed %}
@@ -86,21 +74,15 @@
 
                     <td>
                         {% if data.lesson.has_homework %}
-                        <form action="{% url 'dashboard:send_message' %}" method="post" class="hwSubmitted">
+                        <form action="{% url 'broadcast:send_message' %}" method="post" class="hwSubmitted">
                             {% csrf_token %}
                             <input type="hidden" name="course_id" value="{{object_id}}">
                             <input type="hidden" name="lesson_id" value="{{data.lesson.id}}">
                             {% for student in data.hw %}
                                 <input type="hidden" name="_selected_action" value="{{student.id}}">
-                                {% if student.is_client %}
-                                    <a href="{% url 'admin:dashboard_client_change' student.id %}" style="font-size:11px;">
-                                        {{student.short_name}}{% if not forloop.last%},{% endif %}
-                                    </a>
-                                    {% else %}
-                                    <a href="{% url 'admin:dashboard_lead_change' student.id %}" style="font-size:11px;">
-                                        {{student.short_name}}{% if not forloop.last%},{% endif %}
-                                    </a>
-                                    {% endif %}
+                                <a href="{{student.admin_change_link}}" style="font-size:11px;">
+                                    {{student.short_name}}{% if not forloop.last%},{% endif %}
+                                </a>
                             {% endfor %}
                             {% if data.hw %}
                                 <button type="submit" style="font-size:13px; background-color: transparent;
@@ -121,7 +103,7 @@
                          {% endif %}
                     </td>
 
-                    <td><a href="{% url 'dashboard:send_lesson' object_id data.lesson.id %}" {% if data.lesson.date_sent %} class="btn-disabled" disabled="disabled" {% endif %}>📨</a></td>
+<!--                    <td><a href=" url 'dashboard:send_lesson' object_id data.lesson.id " {% if data.lesson.date_sent %} class="btn-disabled" disabled="disabled" {% endif %}>📨</a></td>-->
 
                 </tr>
             {% endfor %}

@@ -28,7 +28,7 @@ class StudentCourseList(admin.TabularInline):
     @admin.display(description='message')
     def message_student(self, instance):
         return render_to_string(
-            'dashboard/message_link.html',
+            'courses/message_link.html',
             {
                 'data': instance,
                 'course_id': instance.course.id
@@ -67,7 +67,7 @@ class CourseAdmin(admin.ModelAdmin):
     inlines = (LessonList, StudentCourseList, )
     ordering = ('id',)
     date_hierarchy = 'created_at'
-    change_form_template = 'admin/dashboard/course/change_form.html'
+    change_form_template = 'courses/admin/change_form.html'
     actions = ['duplicate']
 
     def change_view(self, request, object_id, form_url='', extra_context=None):

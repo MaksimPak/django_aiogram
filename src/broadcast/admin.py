@@ -3,6 +3,7 @@ from django.contrib import admin, messages
 
 # Register your models here.
 from broadcast import models
+from users import models as users_models
 
 
 class PromotionReport(admin.TabularInline):
@@ -67,7 +68,7 @@ class PromoAdmin(admin.ModelAdmin):
     def change_view(self, request, object_id, form_url='', extra_context=None):
         extra_context = extra_context or {}
 
-        extra_context['student_model'] = models.Student
+        extra_context['student_model'] = users_models.Student
         return super().change_view(
             request, object_id, form_url, extra_context=extra_context,
         )

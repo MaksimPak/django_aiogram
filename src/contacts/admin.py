@@ -1,8 +1,6 @@
 import json
 
 from django.contrib import admin
-
-# Register your models here.
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
@@ -51,8 +49,9 @@ class ContactAdmin(admin.ModelAdmin):
         else:
             obj = instance
             model = instance._meta.model_name
+        app = obj._meta.app_label
         changeform_url = reverse(
-            f'admin:dashboard_{model}_change', args=(obj.id,)
+            f'admin:{app}_{model}_change', args=(obj.id,)
         )
 
         return mark_safe(f'<a href="{changeform_url}" target="_blank">{self.get_name(instance)}</a>')

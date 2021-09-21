@@ -40,7 +40,7 @@ class FormQuestionList(admin.StackedInline):
     def changeform_link(self, object):
         if object.id:
             changeform_url = reverse(
-                'admin:dashboard_formquestion_change', args=(object.id,)
+                'admin:forms_formquestion_change', args=(object.id,)
             )
             return mark_safe(f'<a href="{changeform_url}" target="_blank">Создать Ответы</a>')
         else:
@@ -48,10 +48,10 @@ class FormQuestionList(admin.StackedInline):
 
     class Media:
         js = (
-            'dashboard/js/form_admin.js',
+            'forms/js/form_admin.js',
         )
         css = {
-            'all': ('dashboard/css/form_admin.css',)
+            'all': ('forms/css/form_admin.css',)
         }
 
 
@@ -75,7 +75,7 @@ class FormAdmin(admin.ModelAdmin):
     exclude = ('unique_code',)
     actions = ('duplicate',)
     form = web_forms.Form
-    change_form_template = 'admin/dashboard/form/change_form.html'
+    change_form_template = 'forms/admin/change_form.html'
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super(FormAdmin, self).get_form(request, obj=None, change=False, **kwargs)
@@ -125,8 +125,8 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
     form = web_forms.ContactFormAnswers
     actions = ('send_message',)
     list_filter = ('form', 'score',)
-    change_form_template = 'admin/dashboard/contactformanswers/change_form.html'
-    change_list_template = 'admin/dashboard/contactformanswers/change_list.html'
+    change_form_template = 'forms/admin/answers_change_form.html'
+    change_list_template = 'forms/admin/answers_change_list.html'
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -171,7 +171,7 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
         key = field.split('_')[-1]
 
         return render_to_string(
-            'dashboard/display_answers.html',
+            'forms/display_answers.html',
             {
                 'answers': instance.data.get(key)
             }
@@ -185,7 +185,7 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
 
     class Media:
         js = (
-            'dashboard/js/contactformanswers_admin.js',
+            'forms/js/answers_admin.js',
         )
 
 

@@ -27,7 +27,7 @@ class LeadAdmin(admin.ModelAdmin):
     ordering = ('id',)
     date_hierarchy = 'created_at'
     form = forms.StudentAdmin
-    change_form_template = 'admin/dashboard/student/change_form.html'
+    change_form_template = 'users/admin/change_form.html'
 
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, leads):
@@ -111,7 +111,7 @@ class ClientAdmin(admin.ModelAdmin):
     ordering = ('id',)
     date_hierarchy = 'created_at'
     form = forms.StudentAdmin
-    change_form_template = 'admin/dashboard/student/change_form.html'
+    change_form_template = 'users/admin/change_form.html'
 
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, clients):
@@ -181,9 +181,5 @@ class ClientAdmin(admin.ModelAdmin):
     formfield_overrides = {
         PointField: {"widget": GooglePointFieldWidget(settings=settings.MAP_WIDGETS)}
     }
-
-
-
-
 
 admin.site.register(models.User, UserAdmin)
