@@ -18,12 +18,11 @@ from django.contrib import admin
 from django.urls import path, include
 
 from app import settings
-# from dashboard import views
-
+from users.views import signup
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # path('dashboard/', include('dashboard.urls')),
-    # path('start/', views.signup, name='web_signup'),
+    path('start/', signup, name='web_signup'),
+    path('broadcast/', include('broadcast.urls')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
   + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
