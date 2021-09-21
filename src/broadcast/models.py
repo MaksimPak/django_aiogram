@@ -37,3 +37,25 @@ class Promotion(BaseModel):
     class Meta:
         verbose_name = 'Промо'
         verbose_name_plural = 'Промо'
+
+
+class SendingReport(BaseModel):
+    class LanguageType(models.TextChoices):
+        all = 'all', 'Всем'
+        ru = '1', 'Russian'
+        uz = '2', 'Uzbek'
+
+    lang = models.CharField(max_length=20, choices=LanguageType.choices, verbose_name='Язык отправки')
+    promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE, verbose_name='Промо')
+    sent = models.IntegerField(verbose_name='Кол-во получателей', default=0)
+    received = models.IntegerField(verbose_name='Итого отправлено', default=0)
+    failed = models.IntegerField(verbose_name='Не получило', default=0)
+    celery_id = models.CharField(verbose_name='Celery group uuid', max_length=36, editable=False)
+    status = models.CharField(verbose_name='Статус отправки', max_length=50, null=True, blank=True)
+
+    def __str__(self):
+        return f'Отправка №{self.id}'
+
+    class Meta:
+        verbose_name_plural = 'Отчеты'
+        verbose_name = 'Отчет'
