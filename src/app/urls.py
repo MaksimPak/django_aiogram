@@ -19,10 +19,12 @@ from django.urls import path, include
 
 from app import settings
 from users.views import signup
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('start/', signup, name='web_signup'),
     path('broadcast/', include('broadcast.urls')),
+    path('forms/', include('forms.urls')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
   + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

@@ -22,6 +22,5 @@
 
 {% block object-tools-items %}
     {{block.super}}
-<!--todo fix url-->
-    <li><a href=" url 'dashboard:form_report' request.GET.form__id__exact ">Выкачать xlsx</a></li>
+    <li><a href="{% url 'forms:form_report' request.GET.form__id__exact %}">Выкачать xlsx</a></li>
 {% endblock %}

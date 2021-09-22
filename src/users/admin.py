@@ -87,7 +87,7 @@ class LeadAdmin(admin.ModelAdmin):
     @admin.display(description='Курсы')
     def get_courses(self, lead):
         return render_to_string(
-            'dashboard/display_courses.html',
+            'users/display_courses.html',
             {
                 'courses': lead.courses.values_list('name', flat=True)
             }
@@ -148,7 +148,7 @@ class ClientAdmin(admin.ModelAdmin):
     @admin.display(description='Курсы')
     def get_courses(self, client):
         return render_to_string(
-            'dashboard/display_courses.html',
+            'users/display_courses.html',
             {
                 'courses': client.courses.values_list('name', flat=True)
             }
@@ -181,5 +181,6 @@ class ClientAdmin(admin.ModelAdmin):
     formfield_overrides = {
         PointField: {"widget": GooglePointFieldWidget(settings=settings.MAP_WIDGETS)}
     }
+
 
 admin.site.register(models.User, UserAdmin)

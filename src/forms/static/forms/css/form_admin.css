@@ -1,0 +1,15 @@
+.writeDiv {
+    border: 1px solid var(--border-color);
+    display: inline-block;
+    min-height:60px;
+    width:610px;
+    padding: 3px;
+}
+
+.form-row img, .form-row input {
+    vertical-align: top;
+}
+
+.form-row strong {
+    vertical-align: top;
+}

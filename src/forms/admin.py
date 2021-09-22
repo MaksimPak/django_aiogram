@@ -1,8 +1,6 @@
 from functools import partial
 
 from django.contrib import admin, messages
-
-# Register your models here.
 from django.db.models.expressions import RawSQL
 from django.http import HttpResponseRedirect
 from django.template.loader import render_to_string
