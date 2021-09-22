@@ -9,7 +9,7 @@ from django.shortcuts import render
 from django.template.loader import render_to_string
 from mapwidgets import GooglePointFieldWidget
 
-from general.utils.telegram import Telegram
+from broadcast.utils.telegram import Telegram
 from users import models, forms
 from django.contrib.gis.db.models import PointField
 

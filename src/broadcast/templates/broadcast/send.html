@@ -1,0 +1,43 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+
+<h1>Отправить сообщение</h1>
+<table>
+    <tbody>
+    <tr>
+        <td style="border: none; padding: 0;">
+            <form action="" method="POST">
+                <div>
+                    {% csrf_token %}
+                    <input type="hidden" name="referer" value="{{ referer }}" />
+                    <input type="hidden" name="course_id" value="{{ course_id }}" />
+                    <input type="hidden" name="lesson_id" value="{{ lesson_id }}" />
+                    {% for entity in entities %}
+                    <input type="hidden" name="_selected_action" value="{{ entity.pk }}" />
+                    {% endfor %}
+                    <textarea name="message" cols="50" rows="10"></textarea>
+                    <input type="hidden" name="action" value="send_message" />
+                </div>
+                <div>
+                    <label for="isFeedback">Это фидбек?</label>
+                    <input type="checkbox" id="isFeedback" name="is_feedback">
+                    <br>
+                    <input type="submit" name="send" value="Send message" style="margin-top:1em;"/>
+                </div>
+
+            </form>
+        </td>
+
+        <td style="border: none; padding: 0 0 0 1em;" >
+            <p><strong>Вы собираетесь отправить сообщение следующим людям:</strong></p>
+            <div>
+                {% for entity in entities %}
+                {{ entity }}
+                {% endfor %}
+            </div>
+        </td>
+    </tr>
+    </tbody>
+</table>
+{% endblock %}

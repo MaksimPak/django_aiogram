@@ -1,8 +1,64 @@
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 
-from broadcast.tasks import message_students_task
+from broadcast.tasks import message_students_task, send_to_queue
 from users.models import Student
+from contacts import models as contact_models
+
+
+def send(request, contact_id: int):
+    referer = request.META['HTTP_REFERER']
+    contact = contact_models.Contact.objects.filter(pk=contact_id)
+    context = {
+        'entities': contact,
+        'referer': referer,
+    }
+
+    if 'send' in request.POST:
+        config = {
+            'ids': contact_id,
+            'is_feedback': request.POST.get('is_feedback'),
+            'text': request.POST['message'],
+        }
+
+        send_to_queue.delay(config)
+
+        return HttpResponseRedirect(request.POST.get('referer'))
+
+    return render(request, 'broadcast/send.html', context=context)
+
+
+def send_multiple(request):
+    pass
+
+
+def message_contacts(request):
+    """
+        Handles message sending to students from Course in Admin panel
+        """
+    contacts = Contact.objects.all()
+    selected = getattr(request, request.method).getlist('_selected_action')
+    referer = request.META['HTTP_REFERER']
+    if selected:
+        contacts = Contact.objects.filter(pk__in=selected)
+    if 'send' in request.POST:
+        selected = request.POST.getlist('_selected_action')
+
+        is_feedback = request.POST.get('is_feedback')
+        config = {
+            'is_feedback': is_feedback,
+            'contacts': 'all' if not selected else selected,
+            'message': request.POST['message'],
+        }
+
+        message_contacts_task.delay(config)
+
+        return HttpResponseRedirect(request.POST.get('referer'))
+
+    return render(request, 'dashboard/send_intermediate.html', context={
+        'entities': contacts,
+        'referer': referer,
+    })
 
 
 def message_to_students(request):

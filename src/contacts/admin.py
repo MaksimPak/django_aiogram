@@ -8,7 +8,7 @@ from django.utils.safestring import mark_safe
 
 from contacts import models
 from contacts.filters import StatusFilter
-from general.utils.telegram import Telegram
+from broadcast.utils.telegram import Telegram
 
 
 @admin.register(models.Contact)
@@ -20,6 +20,7 @@ class ContactAdmin(admin.ModelAdmin):
     actions = ('send_message', 'send_promo',)
     readonly_fields = ('data', 'is_registered', 'blocked_bot', 'profile_link',)
     search_fields = ('id', 'first_name', 'student__first_name',)
+    change_form_template = 'contacts/admin/change_form.html'
 
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, contacts):
@@ -68,4 +69,4 @@ class ContactAdmin(admin.ModelAdmin):
         return instance.student.first_name if hasattr(instance, 'student') else instance.first_name
 
     class Media:
-        js = ('dashboard/js/contact_admin.js',)
+        js = ('contacts/js/contact_admin.js',)

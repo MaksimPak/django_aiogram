@@ -37,8 +37,7 @@ def send_single_message_task(data):
     Telegram.send_single_message(data)
 
 
-def set_blocked(chat_id):
-    Contact.objects.filter(tg_id=chat_id).update(blocked_bot=True)
+
 
 
 @shared_task
@@ -108,27 +107,3 @@ def initiate_promo_task(config):
 
 
 
-@shared_task
-def message_contacts_task(config):
-    contacts = Contact.objects.all() if config['contacts'] == 'all'\
-        else Contact.objects.filter(pk__in=config['contacts'])
-
-    for contact in contacts:
-        kb = {
-                'inline_keyboard': [[
-                    {
-                        'text': 'Ответить',
-                        'callback_data': f'data|feedback_student|{contact.id}'
-                    }]
-                ]
-        } if config['is_feedback'] else None
-
-        data = {
-            'chat_id': contact.tg_id,
-            'text': config['message']
-        }
-        if kb:
-            data['markup'] = json.dumps(kb)
-
-        if not contact.blocked_bot:
-            send_message.delay(data)
