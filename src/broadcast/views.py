@@ -29,36 +29,22 @@ def send(request, contact_id: int):
 
 
 def send_multiple(request):
-    pass
-
-
-def message_contacts(request):
     """
-        Handles message sending to students from Course in Admin panel
-        """
-    contacts = Contact.objects.all()
-    selected = getattr(request, request.method).getlist('_selected_action')
-    referer = request.META['HTTP_REFERER']
-    if selected:
-        contacts = Contact.objects.filter(pk__in=selected)
-    if 'send' in request.POST:
-        selected = request.POST.getlist('_selected_action')
+    Handles message sending to students from Course in Admin panel
+    """
+    selected = request.POST.getlist('_selected_action')
 
-        is_feedback = request.POST.get('is_feedback')
-        config = {
-            'is_feedback': is_feedback,
-            'contacts': 'all' if not selected else selected,
-            'message': request.POST['message'],
-        }
+    is_feedback = request.POST.get('is_feedback')
+    config = {
+        'is_feedback': is_feedback,
+        'ids': selected,
+        'text': request.POST['broadcast_text'],
+    }
 
-        message_contacts_task.delay(config)
+    send_to_queue.delay(config)
 
-        return HttpResponseRedirect(request.POST.get('referer'))
+    return HttpResponseRedirect(request.POST.get('referer'))
 
-    return render(request, 'dashboard/send_intermediate.html', context={
-        'entities': contacts,
-        'referer': referer,
-    })
 
 
 def message_to_students(request):

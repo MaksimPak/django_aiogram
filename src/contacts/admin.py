@@ -9,6 +9,7 @@ from django.utils.safestring import mark_safe
 from contacts import models
 from contacts.filters import StatusFilter
 from broadcast.utils.telegram import Telegram
+from contacts.forms import BroadcastForm
 
 
 @admin.register(models.Contact)
@@ -24,23 +25,14 @@ class ContactAdmin(admin.ModelAdmin):
 
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, contacts):
-        if 'send' in request.POST:
-            is_feedback = request.POST.get('is_feedback')
-            if is_feedback:
-                for contact in contacts:
-                    kb = {'inline_keyboard': [[{'text': 'Ответить', 'callback_data': f'data|feedback_student|{contact.id}'}]]}
-                    data = {
-                        'chat_id': contact.tg_id,
-                        'parse_mode': 'html',
-                        'text': request.POST['message'],
-                        'reply_markup': json.dumps(kb)
-                    }
-                    Telegram.send_single_message(data)
-            else:
-                Telegram.send_to_people(contacts, request.POST['message'])
-            return HttpResponseRedirect(request.get_full_path())
-
-        return render(request, 'dashboard/send_intermediate.html', context={'entities': contacts})
+        form = BroadcastForm(initial={'_selected_action': contacts.values_list('id', flat=True)})
+        context = {
+            'form_url': 'broadcast:message_multiple',
+            'entities': contacts,
+            'form': form,
+            'referer': request.META['HTTP_REFERER'],
+        }
+        return render(request, "broadcast/send.html", context=context)
 
     @admin.display(description='Ссылка на профиль')
     def profile_link(self, instance):
