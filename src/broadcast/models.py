@@ -15,28 +15,16 @@ A thumbnail\'s width and height should not exceed 320.
 
 
 class MessageSent(BaseModel):
+    contact = models.ForeignKey('contacts.Contact', verbose_name='Кому отправлено', on_delete=models.CASCADE)
     text = models.TextField(verbose_name='Описание')
-    video = models.FileField(verbose_name='Промо видео', null=True,
-                             blank=True, upload_to=message_media_directory,
-                             validators=[validate_video_extension, validate_file_size],
-                             help_text='Не больше 50 мб')
-    image = models.ImageField(verbose_name='Картинка', upload_to=message_media_directory,
-                              blank=True, null=True,
-                              validators=[validate_image_file_extension],
-                              help_text=THUMBNAIL_HELP_TEXT)
     link = models.CharField(max_length=255, null=True, blank=True, verbose_name='Cсылка')
 
-    def clean(self):
-        if self.video and self.image:
-            validate_dimensions(self.image)
-            validate_thumbnail_size(self.image)
-
     def __str__(self):
-        return self.title
+        return f'MessageId{self.id}'
 
     class Meta:
-        verbose_name = 'Промо'
-        verbose_name_plural = 'Промо'
+        verbose_name = 'Отправленное Сообщение'
+        verbose_name_plural = 'Отправленные Сообщения'
 
 #
 # class SendingReport(BaseModel):

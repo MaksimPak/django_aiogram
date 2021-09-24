@@ -15,23 +15,21 @@ from contacts import models as contact_models
 from broadcast import models
 import pickle
 
+
 def send_multiple(request):
     """
     Handles message sending to students from Course in Admin panel
     """
-    print(request.POST)
-    print(request.FILES)
-    data = request.FILES['image']
-    default_storage.save(f'tmp/{data.name}', ContentFile(data.read()))
+    video, image = request.FILES.get('video'), request.FILES.get('image')
+    image = default_storage.save(f'tmp/{image.name}', ContentFile(image.read()))
 
-    return
     selected = request.POST.getlist('_selected_action')
     is_feedback = request.POST.get('is_feedback')
     config = {
         'ids': selected,
         'is_feedback': is_feedback,
         'text': request.POST.get('text'),
-        'photo': pickle.dumps(request.FILES['image'].read()),
+        'photo': 'media/' + image,
     }
 
     send_to_queue.delay(config)

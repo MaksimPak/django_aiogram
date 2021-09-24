@@ -141,9 +141,10 @@ cython_debug/
 .DS_Store
 
 media/
-!media/.gitkeep
+!/media/.gitkeep
+!/media/tmp/.gitkeep
 !*/*/media/
 
 static/
-!static/.gitkeep
+!/static/.gitkeep
 !*/*/static/

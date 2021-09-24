@@ -45,7 +45,7 @@ def send_message(data):
     logger.info(resp)
 
 
-@shared_task(serializer='pickle')
+@shared_task
 def send_to_queue(config):
     print(config)
     contacts = contact_models.Contact.objects.filter(pk__in=_listify(config['ids']))
