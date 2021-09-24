@@ -10,6 +10,7 @@ from contacts import models
 from contacts.filters import StatusFilter
 from broadcast.utils.telegram import Telegram
 # from contacts.forms import BroadcastForm, PromoForm
+from contacts.forms import BroadcastForm
 
 
 @admin.register(models.Contact)
@@ -18,22 +19,20 @@ class ContactAdmin(admin.ModelAdmin):
     list_display_links = ('profile_link',)
     list_per_page = 20
     list_filter = (StatusFilter, 'blocked_bot')
-    # actions = ('send_message', 'send_promo',)
+    actions = ('send_message',)
     readonly_fields = ('data', 'is_registered', 'blocked_bot', 'profile_link',)
     search_fields = ('id', 'first_name', 'student__first_name',)
     change_form_template = 'contacts/admin/change_form.html'
 
-    # @admin.display(description='Массовая рассылка')
-    # def send_message(self, request, contacts):
-    #     form = BroadcastForm(initial={'_selected_action': contacts.values_list('id', flat=True)})
-    #     context = {
-    #         'submission_type': 'text',
-    #         'form_url': 'broadcast:message_multiple',
-    #         'entities': contacts,
-    #         'form': form,
-    #         'referer': request.META['HTTP_REFERER'],
-    #     }
-    #     return render(request, "broadcast/send.html", context=context)
+    @admin.display(description='Массовая рассылка')
+    def send_message(self, request, contacts):
+        form = BroadcastForm(initial={'_selected_action': contacts.values_list('id', flat=True)})
+        context = {
+            'entities': contacts,
+            'form': form,
+            'referer': request.META['HTTP_REFERER'],
+        }
+        return render(request, "broadcast/send.html", context=context)
     #
     # @admin.display(description='Отправить промо')
     # def send_promo(self, request, contacts):

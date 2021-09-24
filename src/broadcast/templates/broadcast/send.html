@@ -6,17 +6,24 @@
 <table>
     <tbody>
     <tr>
-        <td style="border: none; padding: 0;">
-            <form action="{% url form_url %}" method="POST">
-                <div>
-                    {% csrf_token %}
-                    <input type="hidden" name="referer" value="{{ referer }}" />
-                    <input type="hidden" name="submission_type" value="{{ submission_type }}" />
-                    <input type="hidden" name="promo_id" value="{{ promo_id }}" />
-
-                    {{ form.as_p }}
-                    <input type="submit" value="Отправить" />
-                </div>
+        <td style="padding: 0;">
+            <form action="{% url 'broadcast:message_multiple' %}" method="POST">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+                <input type="hidden" name="referer" value="{{ referer }}" />
+                <table style="margin-bottom: 15px;">
+                {% for field in form.visible_fields %}
+                      <tr>
+                        <th>{{ field.label_tag }}</th>
+                        <td>
+                          {{ field.errors }}
+                          {{ field }}
+                          <div style="font-size: 12px;">{{ field.help_text }}</div>
+                        </td>
+                      </tr>
+                {% endfor %}
+                </table>
+                <input type="submit" value="Отправить" />
             </form>
         </td>
 

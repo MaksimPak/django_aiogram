@@ -7,5 +7,5 @@ app_name = 'broadcast'
 urlpatterns = [
     path('send-message', views.message_to_students, name='send_message'),
     path('send/<int:contact_id>', views.send, name='message'),
-    path('send_multiple/', views.send_multiple, name='message_multiple'),
+    path('send/', views.send_multiple, name='message_multiple'),
 ]
