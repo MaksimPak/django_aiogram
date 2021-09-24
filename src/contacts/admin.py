@@ -9,7 +9,7 @@ from django.utils.safestring import mark_safe
 from contacts import models
 from contacts.filters import StatusFilter
 from broadcast.utils.telegram import Telegram
-from contacts.forms import BroadcastForm
+from contacts.forms import BroadcastForm, PromoForm
 
 
 @admin.register(models.Contact)
@@ -26,6 +26,18 @@ class ContactAdmin(admin.ModelAdmin):
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, contacts):
         form = BroadcastForm(initial={'_selected_action': contacts.values_list('id', flat=True)})
+        context = {
+            'submission_type': 'text',
+            'form_url': 'broadcast:message_multiple',
+            'entities': contacts,
+            'form': form,
+            'referer': request.META['HTTP_REFERER'],
+        }
+        return render(request, "broadcast/send.html", context=context)
+
+    @admin.display(description='Отправить промо')
+    def send_promo(self, request, contacts):
+        form = PromoForm(initial={'_selected_action': contacts.values_list('id', flat=True)})
         context = {
             'form_url': 'broadcast:message_multiple',
             'entities': contacts,
@@ -48,13 +60,6 @@ class ContactAdmin(admin.ModelAdmin):
         )
 
         return mark_safe(f'<a href="{changeform_url}" target="_blank">{self.get_name(instance)}</a>')
-
-    @admin.display(description='Отправить промо')
-    def send_promo(self, request, contacts):
-        ids = [contact.id for contact in contacts]
-        params = f'?_selected_action={"&_selected_action=".join(str(id) for id in ids)}'
-        return HttpResponseRedirect(reverse(
-            'dashboard:send_promo_v2') + f'{params}')
 
     @staticmethod
     def get_name(instance):

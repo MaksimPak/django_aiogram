@@ -65,6 +65,40 @@ def send_to_queue(config):
             send_message.delay(data)
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @shared_task
 def send_single_message_task(data):
     Telegram.send_single_message(data)

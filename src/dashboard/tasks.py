@@ -1,11 +1,10 @@
-import json
 import time
 
 from celery import shared_task, group
 from django.db.models import F
 
 from dashboard.models import Student, Promotion, SendingReport, Contact
-from ffmpeg import get_duration, get_resolution
+from general.utils.ffmpeg import get_duration, get_resolution
 from loguru import logger
 from dashboard.utils.telegram import Telegram, TelegramSender
 

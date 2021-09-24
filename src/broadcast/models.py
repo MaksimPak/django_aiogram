@@ -15,16 +15,17 @@ A thumbnail\'s width and height should not exceed 320.
 
 
 class Promotion(BaseModel):
-    title = models.CharField(max_length=100, verbose_name='Название')
+    # todo message model
+    title = models.CharField(max_length=100, verbose_name='Название') # todo remove
     video = models.FileField(verbose_name='Промо видео', null=True, blank=True, upload_to=promo_upload_directory, validators=[validate_video_extension, validate_file_size], help_text='Не больше 50 мб')
     image = models.ImageField(verbose_name='Картинка', upload_to=promo_upload_directory, validators=[validate_image_file_extension], help_text=THUMBNAIL_HELP_TEXT)
-    description = models.TextField(verbose_name='Описание')
-    course = models.ForeignKey('courses.Course', on_delete=models.SET_NULL, verbose_name='Курс', null=True, blank=True)
-    counter = models.IntegerField('Подсчет просмотра', default=0)
-    link = models.CharField(max_length=255, editable=False, null=True, blank=True, verbose_name='Инвайт ссылка')
-    unique_code = models.CharField(max_length=255, verbose_name='Инвайт код', unique=True, null=True, blank=True, editable=False)
-    start_message = models.TextField(verbose_name='Сообщение после регистрации на курс')
-    display_link = models.BooleanField(verbose_name='Показать ссылку', default=False)
+    description = models.TextField(verbose_name='Описание') #todo text
+    course = models.ForeignKey('courses.Course', on_delete=models.SET_NULL, verbose_name='Курс', null=True, blank=True) # remove
+    counter = models.IntegerField('Подсчет просмотра', default=0) #remove
+    link = models.CharField(max_length=255, editable=False, null=True, blank=True, verbose_name='Инвайт ссылка') # remove
+    unique_code = models.CharField(max_length=255, verbose_name='Инвайт код', unique=True, null=True, blank=True, editable=False) #remove
+    start_message = models.TextField(verbose_name='Сообщение после регистрации на курс') # remove
+    display_link = models.BooleanField(verbose_name='Показать ссылку', default=False) #rename link
 
     def clean(self):
         if self.video and self.image:
@@ -40,6 +41,7 @@ class Promotion(BaseModel):
 
 
 class SendingReport(BaseModel):
+    # message history model
     class LanguageType(models.TextChoices):
         all = 'all', 'Всем'
         ru = '1', 'Russian'

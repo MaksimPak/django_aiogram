@@ -1,9 +1,8 @@
 {% extends "admin/base_site.html" %}
 
 {% block content %}
-
+{{test}}
 <h1>Отправить сообщение</h1>
-
 <table>
     <tbody>
     <tr>
@@ -12,10 +11,12 @@
                 <div>
                     {% csrf_token %}
                     <input type="hidden" name="referer" value="{{ referer }}" />
-                    {{ form.as_p }}
-                    <input type="submit" name="apply" value="Отправить" />
-                </div>
+                    <input type="hidden" name="submission_type" value="{{ submission_type }}" />
+                    <input type="hidden" name="promo_id" value="{{ promo_id }}" />
 
+                    {{ form.as_p }}
+                    <input type="submit" value="Отправить" />
+                </div>
             </form>
         </td>
 

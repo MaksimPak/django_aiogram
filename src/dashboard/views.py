@@ -19,9 +19,9 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from dashboard.forms import LeadForm
 from dashboard.models import LessonUrl, Lead, Student, Course, Lesson, Promotion, Contact, Form
-from dashboard.tasks import message_students_task, message_contacts_task, initiate_promo_task
+from dashboard.tasks import message_contacts_task, initiate_promo_task
 from dashboard.utils.telegram import TelegramSender
-from ffmpeg import get_resolution, get_duration
+from general.utils.ffmpeg import get_resolution, get_duration
 
 TELEGRAM_AGENT = 'TelegramBot (like TwitterBot)'
 MESSAGE_URL = f'https://api.telegram.org/bot{os.getenv("BOT_TOKEN")}/sendMessage'
