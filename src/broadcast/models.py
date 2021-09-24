@@ -21,6 +21,7 @@ class MessageSent(BaseModel):
                              validators=[validate_video_extension, validate_file_size],
                              help_text='Не больше 50 мб')
     image = models.ImageField(verbose_name='Картинка', upload_to=message_media_directory,
+                              blank=True, null=True,
                               validators=[validate_image_file_extension],
                               help_text=THUMBNAIL_HELP_TEXT)
     link = models.CharField(max_length=255, null=True, blank=True, verbose_name='Cсылка')

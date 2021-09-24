@@ -7,10 +7,20 @@
     <tbody>
     <tr>
         <td style="padding: 0;">
-            <form action="{% url 'broadcast:message_multiple' %}" method="POST">
+            <form action="{% url 'broadcast:message_multiple' %}" method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
                 {{ form.non_field_errors }}
                 <input type="hidden" name="referer" value="{{ referer }}" />
+                  {% for hidden_field in form.hidden_fields %}
+                    {% if hidden_field.errors %}
+                      <ul>
+                        {% for error in hidden_field.errors %}
+                          <li>(Hidden field {{ hidden_field.name }}) {{ error }}</li>
+                        {% endfor %}
+                      </ul>
+                    {% endif %}
+                    {{ hidden_field }}
+                  {% endfor %}
                 <table style="margin-bottom: 15px;">
                 {% for field in form.visible_fields %}
                       <tr>

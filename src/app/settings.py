@@ -161,7 +161,6 @@ CELERY_BROKER_URL = f'redis://{os.getenv("REDIS_HOST", "redis")}:{os.getenv("RED
 CELERY_TIMEZONE = 'Asia/Tashkent'
 CELERY_RESULT_BACKEND = f'redis://{os.getenv("REDIS_HOST", "redis")}:{os.getenv("REDIS_PORT", 6379)}/0'
 
-
 # REDIS
 REDIS_CUSTOM_DATA = 4
 

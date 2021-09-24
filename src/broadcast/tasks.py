@@ -45,8 +45,9 @@ def send_message(data):
     logger.info(resp)
 
 
-@shared_task
+@shared_task(serializer='pickle')
 def send_to_queue(config):
+    print(config)
     contacts = contact_models.Contact.objects.filter(pk__in=_listify(config['ids']))
     for contact in contacts:
         if not contact.blocked_bot:
