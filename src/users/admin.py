@@ -16,9 +16,9 @@ from django.contrib.gis.db.models import PointField
 
 @admin.register(models.Lead)
 class LeadAdmin(admin.ModelAdmin):
-    list_display = ('id', '__str__', 'tg_id', 'application_type', 'blocked_bot', 'phone', 'language_type', 'learning_centre', 'checkout_date', 'get_courses', 'promo')
+    list_display = ('id', '__str__', 'tg_id', 'application_type', 'blocked_bot', 'phone', 'language_type', 'learning_centre', 'checkout_date', 'get_courses',)
     list_per_page = 20
-    list_filter = ('learning_centre', 'application_type', 'promo')
+    list_filter = ('learning_centre', 'application_type',)
     list_display_links = ('__str__',)
     readonly_fields = ('checkout_date', 'invite_link', 'created_at', 'blocked_bot')
     exclude = ('unique_code', 'contact')
