@@ -1,16 +1,11 @@
-import json
-
 from django.contrib import admin
-from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 
+from broadcast.forms import BroadcastForm
 from contacts import models
 from contacts.filters import StatusFilter
-from broadcast.utils.telegram import Telegram
-# from contacts.forms import BroadcastForm, PromoForm
-from contacts.forms import BroadcastForm
 
 
 @admin.register(models.Contact)
@@ -33,17 +28,6 @@ class ContactAdmin(admin.ModelAdmin):
             'referer': request.META['HTTP_REFERER'],
         }
         return render(request, "broadcast/send.html", context=context)
-    #
-    # @admin.display(description='Отправить промо')
-    # def send_promo(self, request, contacts):
-    #     form = PromoForm(initial={'_selected_action': contacts.values_list('id', flat=True)})
-    #     context = {
-    #         'form_url': 'broadcast:message_multiple',
-    #         'entities': contacts,
-    #         'form': form,
-    #         'referer': request.META['HTTP_REFERER'],
-    #     }
-    #     return render(request, "broadcast/send.html", context=context)
 
     @admin.display(description='Ссылка на профиль')
     def profile_link(self, instance):

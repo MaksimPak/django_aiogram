@@ -1,35 +1,46 @@
-import time
-
-from celery import group
-from django.core.files.base import ContentFile
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
-from django.template.loader import render_to_string
-from django.core.files.storage import default_storage
 
-
-from broadcast.tasks import message_students_task, send_to_queue
-from general.utils.ffmpeg import get_duration, get_resolution
-from users.models import Student
-from contacts import models as contact_models
 from broadcast import models
-import pickle
+from broadcast.forms import BroadcastForm
+from broadcast.tasks import message_students_task, send_to_queue
+from contacts import models as contact_models
+from users.models import Student
+
+
+def send_one(request, contact_id: int):
+    """
+    Render send template for specific contact
+    """
+    contact = contact_models.Contact.objects.filter(pk=contact_id)
+    form = BroadcastForm(initial={'_selected_action': [contact_id]})
+    context = {
+        'entities': contact,
+        'form': form,
+        'referer': request.META['HTTP_REFERER'],
+    }
+
+    return render(request, 'broadcast/send.html', context=context)
 
 
 def send_multiple(request):
     """
-    Handles message sending to students from Course in Admin panel
+    Handles POST Requests.
+    Save submitted message and pass to celery for sending
     """
-    video, image = request.FILES.get('video'), request.FILES.get('image')
-    image = default_storage.save(f'tmp/{image.name}', ContentFile(image.read()))
+    message = models.Message.objects.create(
+        text=request.POST.get('text'),
+        video=request.FILES.get('video'),
+        image=request.FILES.get('image'),
+        link=request.POST.get('link')
+    )
 
     selected = request.POST.getlist('_selected_action')
     is_feedback = request.POST.get('is_feedback')
     config = {
         'ids': selected,
+        'message_id': message.id,
         'is_feedback': is_feedback,
-        'text': request.POST.get('text'),
-        'photo': 'media/' + image,
     }
 
     send_to_queue.delay(config)
@@ -37,26 +48,7 @@ def send_multiple(request):
     return HttpResponseRedirect(request.POST.get('referer'))
 
 
-def send(request, contact_id: int):
-    referer = request.META['HTTP_REFERER']
-    contact = contact_models.Contact.objects.filter(pk=contact_id)
-    context = {
-        'entities': contact,
-        'referer': referer,
-    }
 
-    if 'send' in request.POST:
-        config = {
-            'ids': contact_id,
-            'is_feedback': request.POST.get('is_feedback'),
-            'text': request.POST['message'],
-        }
-
-        send_to_queue.delay(config)
-
-        return HttpResponseRedirect(request.POST.get('referer'))
-
-    return render(request, 'broadcast/send.html', context=context)
 
 
 

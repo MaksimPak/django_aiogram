@@ -68,12 +68,14 @@ class TelegramSender:
         self.data['duration'] = self.duration
         self.data['width'] = self.width
         self.data['height'] = self.height
-
-        files = {'thumb': open(self.thumbnail, 'rb')}
+        files = {}
+        if self.thumbnail:
+            files['thumb'] = open(self.thumbnail, 'rb')
         if type(self.video) is not BufferedReader:
             self.data['video'] = self.video
         else:
             files['video'] = self.video
+
         return requests.post(url, files=files, data=self.data).json()
 
     def send_image(self):
