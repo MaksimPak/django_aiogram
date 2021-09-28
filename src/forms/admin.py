@@ -3,10 +3,12 @@ from functools import partial
 from django.contrib import admin, messages
 from django.db.models.expressions import RawSQL
 from django.http import HttpResponseRedirect
+from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 
+from broadcast.forms import BroadcastForm
 from forms import models
 from forms import web_forms
 
@@ -141,10 +143,14 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
 
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, answers):
-        s = [x.contact.id for x in answers]
-        params = f'?_selected_action={"&_selected_action=".join(str(x)  for x in s)}'
-        return HttpResponseRedirect(reverse(
-                'dashboard:message_contacts') + f'{params}')
+        contacts = [x.contact for x in answers]
+        form = BroadcastForm(initial={'_selected_action': [contact.id for contact in contacts]})
+        context = {
+            'entities': contacts,
+            'form': form,
+            'referer': request.META['HTTP_REFERER'],
+        }
+        return render(request, "broadcast/send.html", context=context)
 
     @admin.display(description='Балл')
     def points(self, instance):
