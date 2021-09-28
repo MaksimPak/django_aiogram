@@ -40,7 +40,7 @@ class BaseModel(Base):
 
 
 class LearningCentreTable(BaseModel):
-    __tablename__ = 'dashboard_learningcentre'
+    __tablename__ = 'companies_learningcentre'
 
     title = Column(String(50), unique=True)
     uz_title = Column(String(50), unique=True, nullable=True)
@@ -56,7 +56,7 @@ class LearningCentreTable(BaseModel):
 
 
 class ContactTable(BaseModel):
-    __tablename__ = 'dashboard_contact'
+    __tablename__ = 'contacts_contact'
 
     first_name = Column(String(255))
     last_name = Column(String(255), nullable=True)
@@ -90,12 +90,11 @@ class StudentTable(BaseModel):
         telegram = '2'
         web = '3'
 
-    __tablename__ = 'dashboard_student'
+    __tablename__ = 'users_student'
 
     first_name = Column(String(50))
     last_name = Column(String(50), nullable=True)
     city = Column(String(50))
-    tg_id = Column(Integer, nullable=True, unique=True)
     language_type = Column(Enum(LanguageType, values_callable=lambda x: [e.value for e in x]), default=LanguageType.ru.value)
     phone = Column(String(20), unique=True)
     learning_centre_id = Column(Integer, ForeignKey('dashboard_learningcentre.id', ondelete='RESTRICT'))
@@ -103,10 +102,10 @@ class StudentTable(BaseModel):
     is_client = Column(Boolean, default=False)
     checkout_date = Column(DateTime, nullable=True)
     unique_code = Column(String(255), nullable=True, unique=True)
-    promo_id = Column(Integer, ForeignKey('dashboard_promotion.id', ondelete='SET NULL'), nullable=True)
-    blocked_bot = Column(Boolean, default=False)
+    invite_link = Column(String(255), nullable=True)
     contact_id = Column(Integer, ForeignKey('dashboard_contact.id'))
     location = Column(Geometry('POINT'), nullable=True)
+    comment = Column(String(255), nullable=True)
     games = Column(ARRAY(String(50)), nullable=True)
 
     courses = relationship('StudentCourse', back_populates='students')
@@ -127,7 +126,7 @@ class CourseTable(BaseModel):
         intermediate = '2'
         advanced = '3'
 
-    __tablename__ = 'dashboard_course'
+    __tablename__ = 'courses_course'
 
     name = Column(String(50))
     info = Column(TEXT, nullable=True)
@@ -153,26 +152,8 @@ class CourseTable(BaseModel):
     promo = relationship('PromotionTable', back_populates='course')
 
 
-class PromotionTable(BaseModel):
-    __tablename__ = 'dashboard_promotion'
-
-    title = Column(String(50))
-    video = Column(String(100))
-    image = Column(String(100), nullable=True)
-    description = Column(TEXT)
-    course_id = Column(Integer, ForeignKey('dashboard_course.id', ondelete='SET NULL'), nullable=True)
-    counter = Column(Integer, default=0)
-    link = Column(String(255), nullable=True)
-    unique_code = Column(String(255), nullable=True, unique=True)
-    start_message = Column(TEXT, nullable=False)
-    display_link = Column(Boolean, default=False)
-
-    student = relationship('StudentTable', back_populates='promo')
-    course = relationship('CourseTable', back_populates='promo')
-
-
 class LessonTable(BaseModel):
-    __tablename__ = 'dashboard_lesson'
+    __tablename__ = 'courses_lesson'
 
     title = Column(String(50))
     info = Column(TEXT, nullable=True)
@@ -190,7 +171,7 @@ class LessonTable(BaseModel):
 
 
 class LessonUrlTable(BaseModel):
-    __tablename__ = 'dashboard_lessonurl'
+    __tablename__ = 'courses_lessonurl'
 
     student_id = Column(Integer, ForeignKey('dashboard_student.id'), nullable=False)
     hash = Column(VARCHAR(length=36), nullable=False, unique=True, default=lambda: str(uuid.uuid4())[:8])
@@ -202,7 +183,7 @@ class LessonUrlTable(BaseModel):
 
 
 class StudentCourse(BaseModel):
-    __tablename__ = 'dashboard_studentcourse'
+    __tablename__ = 'courses_studentcourse'
 
     course_id = Column(Integer, ForeignKey('dashboard_course.id'), nullable=False)
     student_id = Column(Integer, ForeignKey('dashboard_student.id'), nullable=False)
@@ -213,7 +194,7 @@ class StudentCourse(BaseModel):
 
 
 class StudentLesson(BaseModel):
-    __tablename__ = 'dashboard_studentlesson'
+    __tablename__ = 'courses_studentlesson'
 
     student_id = Column(Integer, ForeignKey('dashboard_student.id'))
     lesson_id = Column(Integer, ForeignKey('dashboard_lesson.id'))
@@ -226,22 +207,6 @@ class StudentLesson(BaseModel):
     student = relationship('StudentTable', back_populates='lessons')
 
 
-class SendingReportTable(BaseModel):
-    class ReportStatus(enum.Enum):
-        pending = 'PENDING'
-        done = 'DONE'
-
-    __tablename__ = 'dashboard_sendingreport'
-
-    lang = Column(String(255), nullable=True)
-    promotion_id = Column(Integer, ForeignKey('dashboard_student.id'))
-    sent = Column(Integer, nullable=False, default=0)
-    received = Column(Integer, nullable=False, default=0)
-    failed = Column(Integer, nullable=False, default=0)
-    celery_id = Column(VARCHAR(length=36), nullable=False, unique=True)
-    status = Column(Enum(ReportStatus, values_callable=lambda x: [e.value for e in x]), default=ReportStatus.pending.value)
-
-
 class FormTable(BaseModel):
     class FormType(enum.Enum):
         private = 'private'
@@ -251,7 +216,7 @@ class FormTable(BaseModel):
         quiz = 'quiz'
         questionnaire = 'questionnaire'
 
-    __tablename__ = 'dashboard_form'
+    __tablename__ = 'forms_form'
 
     name = Column(String(50), nullable=False)
     type = Column(Enum(FormType, values_callable=lambda x: [e.value for e in x]), nullable=False, default=FormType.public.value)
@@ -269,7 +234,7 @@ class FormTable(BaseModel):
 
 
 class FormQuestionTable(BaseModel):
-    __tablename__ = 'dashboard_formquestion'
+    __tablename__ = 'forms_formquestion'
 
     form_id = Column(Integer, ForeignKey('dashboard_form.id', ondelete='CASCADE'))
     multi_answer = Column(Boolean, default=False)
@@ -289,7 +254,7 @@ class FormQuestionTable(BaseModel):
 
 
 class FormAnswerTable(BaseModel):
-    __tablename__ = 'dashboard_formanswer'
+    __tablename__ = 'forms_formanswer'
 
     is_correct = Column(Boolean, default=False)
     text = Column(String(50), nullable=False)
@@ -301,7 +266,7 @@ class FormAnswerTable(BaseModel):
 
 
 class ContactFormTable(BaseModel):
-    __tablename__ = 'dashboard_contactformanswers'
+    __tablename__ = 'forms_contactformanswers'
 
     contact_id = Column(Integer, ForeignKey('dashboard_contact.id', ondelete='SET NULL'), nullable=False)
     form_id = Column(Integer, ForeignKey('dashboard_form.id', ondelete='SET NULL'), nullable=False)
@@ -310,7 +275,7 @@ class ContactFormTable(BaseModel):
 
 
 class AssetTable(BaseModel):
-    __tablename__ = 'dashboard_asset'
+    __tablename__ = 'assets_asset'
 
     title = Column(String(50), nullable=False)
     file = Column(String(255), nullable=False)
@@ -321,7 +286,7 @@ class AssetTable(BaseModel):
 
 
 class ContactAssetTable(BaseModel):
-    __tablename__ = 'dashboard_contactasset'
+    __tablename__ = 'assets_contactasset'
 
     contact_id = Column(Integer, ForeignKey('dashboard_contact.id', ondelete='CASCADE'), nullable=False)
     asset_id = Column(Integer, ForeignKey('dashboard_asset.id', ondelete='CASCADE'), nullable=False)
