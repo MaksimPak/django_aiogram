@@ -8,7 +8,7 @@ from aiogram.utils.exceptions import Unauthorized
 from bot import repository as repo
 from bot.decorators import create_session
 from bot.misc import dp, jinja_env, i18n
-from bot.models.db import SessionLocal
+from bot.db.config import SessionLocal
 from bot.serializers import KeyboardGenerator, MessageSender
 from bot.views import main
 from general.utils.ffmpeg import get_duration, get_resolution

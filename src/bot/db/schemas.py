@@ -8,7 +8,7 @@ from sqlalchemy.dialects.postgresql import TEXT, VARCHAR, JSONB, ARRAY
 from sqlalchemy.orm import relationship
 from geoalchemy2 import Geometry
 
-from bot.models.db import Base
+from bot.db.config import Base
 
 
 class IntEnum(types.TypeDecorator):
@@ -97,13 +97,13 @@ class StudentTable(BaseModel):
     city = Column(String(50))
     language_type = Column(Enum(LanguageType, values_callable=lambda x: [e.value for e in x]), default=LanguageType.ru.value)
     phone = Column(String(20), unique=True)
-    learning_centre_id = Column(Integer, ForeignKey('dashboard_learningcentre.id', ondelete='RESTRICT'))
+    learning_centre_id = Column(Integer, ForeignKey('companies_learningcentre.id', ondelete='RESTRICT'))
     application_type = Column(Enum(ApplicationType, values_callable=lambda x: [e.value for e in x]), default=ApplicationType.admin.value)
     is_client = Column(Boolean, default=False)
     checkout_date = Column(DateTime, nullable=True)
     unique_code = Column(String(255), nullable=True, unique=True)
     invite_link = Column(String(255), nullable=True)
-    contact_id = Column(Integer, ForeignKey('dashboard_contact.id'))
+    contact_id = Column(Integer, ForeignKey('contacts_contact.id'))
     location = Column(Geometry('POINT'), nullable=True)
     comment = Column(String(255), nullable=True)
     games = Column(ARRAY(String(50)), nullable=True)
@@ -111,7 +111,6 @@ class StudentTable(BaseModel):
     courses = relationship('StudentCourse', back_populates='students')
     lessons = relationship('StudentLesson', back_populates='student')
     learning_centre = relationship('LearningCentreTable', back_populates='student')
-    promo = relationship('PromotionTable', back_populates='student')
     lesson_url = relationship('LessonUrlTable', back_populates='student')
     contact = relationship('ContactTable', back_populates='student')
 
@@ -131,7 +130,7 @@ class CourseTable(BaseModel):
     name = Column(String(50))
     info = Column(TEXT, nullable=True)
     hashtag = Column(String(20), nullable=True)
-    learning_centre_id = Column(Integer, ForeignKey('dashboard_learningcentre.id', ondelete='RESTRICT'))
+    learning_centre_id = Column(Integer, ForeignKey('companies_learningcentre.id', ondelete='RESTRICT'))
     start_message = Column(String(200), nullable=True)
     end_message = Column(String(200), nullable=True)
     difficulty = Column(Enum(DifficultyType, values_callable=lambda x: [e.value for e in x]))
@@ -149,7 +148,6 @@ class CourseTable(BaseModel):
 
     students = relationship('StudentCourse', back_populates='courses')
     lessons = relationship('LessonTable', back_populates='course')
-    promo = relationship('PromotionTable', back_populates='course')
 
 
 class LessonTable(BaseModel):
@@ -160,7 +158,7 @@ class LessonTable(BaseModel):
     video = Column(String(100))
     image = Column(String(255), nullable=True)
     image_file_id = Column(String(255), nullable=True)
-    course_id = Column(Integer, ForeignKey('dashboard_course.id'))
+    course_id = Column(Integer, ForeignKey('courses_course.id'))
     has_homework = Column(Boolean, default=False)
     homework_desc = Column(TEXT, nullable=True)
     date_sent = Column(DateTime, nullable=True)
@@ -173,9 +171,9 @@ class LessonTable(BaseModel):
 class LessonUrlTable(BaseModel):
     __tablename__ = 'courses_lessonurl'
 
-    student_id = Column(Integer, ForeignKey('dashboard_student.id'), nullable=False)
+    student_id = Column(Integer, ForeignKey('users_student.id'), nullable=False)
     hash = Column(VARCHAR(length=36), nullable=False, unique=True, default=lambda: str(uuid.uuid4())[:8])
-    lesson_id = Column(Integer, ForeignKey('dashboard_lesson.id'), nullable=False)
+    lesson_id = Column(Integer, ForeignKey('courses_lesson.id'), nullable=False)
     hits = Column(Integer, default=0)
 
     lesson = relationship('LessonTable', back_populates='lesson_url')
@@ -185,8 +183,8 @@ class LessonUrlTable(BaseModel):
 class StudentCourse(BaseModel):
     __tablename__ = 'courses_studentcourse'
 
-    course_id = Column(Integer, ForeignKey('dashboard_course.id'), nullable=False)
-    student_id = Column(Integer, ForeignKey('dashboard_student.id'), nullable=False)
+    course_id = Column(Integer, ForeignKey('courses_course.id'), nullable=False)
+    student_id = Column(Integer, ForeignKey('users_student.id'), nullable=False)
     has_paid = Column(Boolean, default=False)
 
     courses = relationship('CourseTable', back_populates='students')
@@ -196,8 +194,8 @@ class StudentCourse(BaseModel):
 class StudentLesson(BaseModel):
     __tablename__ = 'courses_studentlesson'
 
-    student_id = Column(Integer, ForeignKey('dashboard_student.id'))
-    lesson_id = Column(Integer, ForeignKey('dashboard_lesson.id'))
+    student_id = Column(Integer, ForeignKey('users_student.id'))
+    lesson_id = Column(Integer, ForeignKey('courses_lesson.id'))
 
     date_sent = Column(DateTime, nullable=True)
     date_watched = Column(DateTime, nullable=True)
@@ -236,7 +234,7 @@ class FormTable(BaseModel):
 class FormQuestionTable(BaseModel):
     __tablename__ = 'forms_formquestion'
 
-    form_id = Column(Integer, ForeignKey('dashboard_form.id', ondelete='CASCADE'))
+    form_id = Column(Integer, ForeignKey('forms_form.id', ondelete='CASCADE'))
     multi_answer = Column(Boolean, default=False)
     text = Column(String(50))
     image = Column(String(255), nullable=True)
@@ -258,8 +256,8 @@ class FormAnswerTable(BaseModel):
 
     is_correct = Column(Boolean, default=False)
     text = Column(String(50), nullable=False)
-    question_id = Column(Integer, ForeignKey('dashboard_formquestion.id', ondelete='CASCADE'), nullable=False)
-    jump_to_id = Column(Integer, ForeignKey('dashboard_formquestion.id', ondelete='CASCADE'), nullable=True)
+    question_id = Column(Integer, ForeignKey('forms_formquestion.id', ondelete='CASCADE'), nullable=False)
+    jump_to_id = Column(Integer, ForeignKey('forms_formquestion.id', ondelete='CASCADE'), nullable=True)
 
     question = relationship('FormQuestionTable', back_populates='answers', foreign_keys=[question_id])
     jump_to_question = relationship('FormQuestionTable', back_populates='jump_answers', foreign_keys=[jump_to_id])
@@ -268,8 +266,8 @@ class FormAnswerTable(BaseModel):
 class ContactFormTable(BaseModel):
     __tablename__ = 'forms_contactformanswers'
 
-    contact_id = Column(Integer, ForeignKey('dashboard_contact.id', ondelete='SET NULL'), nullable=False)
-    form_id = Column(Integer, ForeignKey('dashboard_form.id', ondelete='SET NULL'), nullable=False)
+    contact_id = Column(Integer, ForeignKey('contacts_contact.id', ondelete='SET NULL'), nullable=False)
+    form_id = Column(Integer, ForeignKey('forms_form.id', ondelete='SET NULL'), nullable=False)
     score = Column(Integer, nullable=True)
     data = Column(sqlalchemy_json.mutable_json_type(dbtype=JSONB, nested=True), nullable=True, default=dict)
 
@@ -288,8 +286,8 @@ class AssetTable(BaseModel):
 class ContactAssetTable(BaseModel):
     __tablename__ = 'assets_contactasset'
 
-    contact_id = Column(Integer, ForeignKey('dashboard_contact.id', ondelete='CASCADE'), nullable=False)
-    asset_id = Column(Integer, ForeignKey('dashboard_asset.id', ondelete='CASCADE'), nullable=False)
+    contact_id = Column(Integer, ForeignKey('contacts_contact.id', ondelete='CASCADE'), nullable=False)
+    asset_id = Column(Integer, ForeignKey('assets_asset.id', ondelete='CASCADE'), nullable=False)
 
     asset = relationship('AssetTable', back_populates='contact_asset')
     contact = relationship('ContactTable', back_populates='contact_asset')

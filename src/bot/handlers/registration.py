@@ -10,8 +10,8 @@ from geoalchemy2 import WKTElement
 from bot import repository as repo
 from bot.decorators import create_session
 from bot.misc import dp, bot, i18n
-from bot.models.dashboard import StudentTable
-from bot.models.db import SessionLocal
+from bot.db.schemas import StudentTable
+from bot.db.config import SessionLocal
 from bot.serializers import KeyboardGenerator
 from bot.utils.callback_settings import short_data, simple_data
 from bot.utils.throttling import throttled
@@ -29,51 +29,39 @@ class RegistrationState(StatesGroup):
     location = State()
 
 
-@dp.message_handler(ChatTypeFilter(types.ChatType.PRIVATE), state=RegistrationState.invite_link)
+@dp.message_handler(state=RegistrationState.location, content_types=ContentType.LOCATION)
+async def set_loc(
+        message: types.Message,
+        state: FSMContext,
+):
+    async with state.proxy() as data:
+        data['location'] = {
+            'longitude': message.location.longitude,
+            'latitude': message.location.latitude
+        }
+
+    await create_record(message.from_user.id, state)
+
+
+@dp.message_handler(state=RegistrationState.phone)
 @create_session
-async def check_invite_code(
+async def set_phone(
         message: types.Message,
         state: FSMContext,
         session: SessionLocal
 ):
-    student = await repo.StudentRepository.get('unique_code', message.text, session)
-    if student:
-        await repo.StudentRepository.edit(student, {'tg_id': message.from_user.id}, session)
-        await message.reply(('Спасибо {first_name},'
-                             ' вы были успешно'
-                             ' зарегистрированы в боте').format(first_name=message.from_user.first_name))
-        await state.finish()
-    else:
-        await message.reply(_('Неверный инвайт код'))
+    is_phone_exists = await repo.StudentRepository.is_exist('phone', message.text, session)
+    if is_phone_exists:
+        return await message.reply('Данный номер уже используется')
 
+    async with state.proxy() as data:
+        print(data)
+        data['phone'] = message.text
 
-@dp.message_handler(commands=['register'])
-@dp.callback_query_handler(simple_data.filter(value='tg_reg'))
-@create_session
-async def tg_reg(
-        response: Union[types.CallbackQuery, types.Message],
-        session: SessionLocal
-):
-    if type(response) == types.CallbackQuery:
-        await response.answer()
-    client = await repo.StudentRepository.get('tg_id', response.from_user.id, session)
-    if client:
-        return await bot.send_message(
-            response.from_user.id,
-            'Вы уже зарегистрированы'
-        )
-    data = [(name.capitalize(), ('lang', member.value))
-            for name, member in StudentTable.LanguageType.__members__.items()]
+    data = [('Пропустить', ('skip_loc',)), ('Отправить', ('send_loc',))]
 
     kb = KeyboardGenerator(data).keyboard
-
-    await bot.send_message(
-        response.from_user.id,
-        _('Регистрация в боте MegaSkill.\n'
-          'Выберите язык:'),
-        reply_markup=kb
-    )
-    await RegistrationState.lang.set()
+    await message.reply(_('отправить не отправить'), reply_markup=kb)
 
 
 @dp.callback_query_handler(short_data.filter(property='lang'), state=RegistrationState.lang)
@@ -104,23 +92,23 @@ async def set_first_name(
     await RegistrationState.city.set()
 
 
-async def mark_selected(
-        game: str,
-        keyboard: dict
-):
-    # todo REFACTOR
-    for row in keyboard['inline_keyboard']:
-        for key in row:
-            game_name = key['callback_data'].split('|')[-1]
-            if key['text'][0] != '✅' and game == game_name:
-                key['text'] = '✅ ' + key['text']
-            elif key['text'][0] == '✅' and game == game_name:
-                key['text'] = key['text'][1:]
-    keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard['inline_keyboard'])
-    if keyboard.inline_keyboard[-1][-1].text != 'Следующий вопрос ➡️':
-        keyboard.add(InlineKeyboardButton(text='Следующий вопрос ➡️', callback_data='data|continue'))
 
-    return keyboard
+@dp.message_handler(ChatTypeFilter(types.ChatType.PRIVATE), state=RegistrationState.invite_link)
+@create_session
+async def check_invite_code(
+        message: types.Message,
+        state: FSMContext,
+        session: SessionLocal
+):
+    student = await repo.StudentRepository.get('unique_code', message.text, session)
+    if student:
+        await repo.StudentRepository.edit(student, {'tg_id': message.from_user.id}, session)
+        await message.reply(('Спасибо {first_name},'
+                             ' вы были успешно'
+                             ' зарегистрированы в боте').format(first_name=message.from_user.first_name))
+        await state.finish()
+    else:
+        await message.reply(_('Неверный инвайт код'))
 
 
 @dp.message_handler(state=RegistrationState.city)
@@ -140,6 +128,54 @@ async def set_city(
     kb = KeyboardGenerator(data, row_width=3).add(('Svoi otvet', ('custom_answer',))).keyboard
     await message.reply(_('Хорошо, выбирай игры'), reply_markup=kb)
     await RegistrationState.games.set()
+
+
+@dp.message_handler(commands=['register'])
+@dp.callback_query_handler(simple_data.filter(value='tg_reg'))
+@create_session
+async def tg_reg(
+        response: Union[types.CallbackQuery, types.Message],
+        session: SessionLocal
+):
+    if type(response) == types.CallbackQuery:
+        await response.answer()
+    contact = await repo.ContactRepository.get('tg_id', response.from_user.id, session)
+    if contact.student:
+        return await bot.send_message(
+            response.from_user.id,
+            'Вы уже зарегистрированы'
+        )
+    data = [(name.capitalize(), ('lang', member.value))
+            for name, member in StudentTable.LanguageType.__members__.items()]
+
+    kb = KeyboardGenerator(data).keyboard
+
+    await bot.send_message(
+        response.from_user.id,
+        _('Регистрация в боте MegaSkill.\n'
+          'Выберите язык:'),
+        reply_markup=kb
+    )
+    await RegistrationState.lang.set()
+
+
+async def mark_selected(
+        game: str,
+        keyboard: dict
+):
+    # todo REFACTOR
+    for row in keyboard['inline_keyboard']:
+        for key in row:
+            game_name = key['callback_data'].split('|')[-1]
+            if key['text'][0] != '✅' and game == game_name:
+                key['text'] = '✅ ' + key['text']
+            elif key['text'][0] == '✅' and game == game_name:
+                key['text'] = key['text'][1:]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard['inline_keyboard'])
+    if keyboard.inline_keyboard[-1][-1].text != 'Следующий вопрос ➡️':
+        keyboard.add(InlineKeyboardButton(text='Следующий вопрос ➡️', callback_data='data|continue'))
+
+    return keyboard
 
 
 async def process_multianswer(
@@ -213,25 +249,6 @@ async def next_question(
     await RegistrationState.phone.set()
 
 
-@dp.message_handler(state=RegistrationState.phone)
-@create_session
-async def set_phone(
-        message: types.Message,
-        state: FSMContext,
-        session: SessionLocal
-):
-    is_phone_exists = await repo.StudentRepository.is_exist('phone', message.text, session)
-    if is_phone_exists:
-        return await message.reply('Данный номер уже используется')
-
-    async with state.proxy() as data:
-        print(data)
-        data['phone'] = message.text
-
-    data = [('Пропустить', ('skip_loc',)), ('Отправить', ('send_loc',))]
-
-    kb = KeyboardGenerator(data).keyboard
-    await message.reply(_('отправить не отправить'), reply_markup=kb)
 
 
 @dp.callback_query_handler(simple_data.filter(value='send_loc'), state='*')
@@ -249,19 +266,6 @@ async def dismiss_loc(
 ):
     await create_record(cb.from_user.id, state)
 
-
-@dp.message_handler(state=RegistrationState.location, content_types=ContentType.LOCATION)
-async def set_loc(
-        message: types.Message,
-        state: FSMContext,
-):
-    async with state.proxy() as data:
-        data['location'] = {
-            'longitude': message.location.longitude,
-            'latitude': message.location.latitude
-        }
-
-    await create_record(message.from_user.id, state)
 
 
 @create_session

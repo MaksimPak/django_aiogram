@@ -12,7 +12,7 @@ from bot import repository as repo
 from bot.decorators import create_session
 from bot.misc import dp, bot, i18n
 from bot.misc import jinja_env
-from bot.models.db import SessionLocal
+from bot.db.config import SessionLocal
 from bot.serializers import KeyboardGenerator
 from bot.utils.callback_settings import short_data, two_valued_data, three_valued_data
 

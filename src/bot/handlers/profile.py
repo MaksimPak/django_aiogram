@@ -6,8 +6,8 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 from bot import repository as repo
 from bot.decorators import create_session
 from bot.misc import dp, bot, i18n
-from bot.models.dashboard import StudentTable
-from bot.models.db import SessionLocal
+from bot.db.schemas import StudentTable
+from bot.db.config import SessionLocal
 from bot.serializers import KeyboardGenerator
 from bot.utils.callback_settings import short_data
 

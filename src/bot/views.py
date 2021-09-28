@@ -3,8 +3,8 @@ from aiogram import types
 from bot import repository as repo
 from bot.decorators import create_session
 from bot.misc import bot, i18n
-from bot.models.dashboard import ContactTable, StudentTable
-from bot.models.db import SessionLocal
+from bot.db.schemas import ContactTable, StudentTable
+from bot.db.config import SessionLocal
 from bot.serializers import KeyboardGenerator
 
 _ = i18n.gettext

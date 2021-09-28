@@ -14,7 +14,7 @@ from aiogram.types import (
 from bot import config
 from bot.config import DATABASES
 from bot.misc import bot
-from bot.models.dashboard import FormTable, FormQuestionTable, FormAnswerTable
+from bot.db.schemas import FormTable, FormQuestionTable, FormAnswerTable
 from bot.utils.callback_settings import (
     simple_data,
     short_data,

@@ -11,8 +11,8 @@ from aiogram.types import InlineKeyboardMarkup, ContentType
 from bot import repository as repo, config
 from bot.decorators import create_session
 from bot.misc import dp, i18n, bot
-from bot.models.dashboard import FormAnswerTable, FormQuestionTable
-from bot.models.db import SessionLocal
+from bot.db.schemas import FormAnswerTable, FormQuestionTable
+from bot.db.config import SessionLocal
 from bot.serializers import KeyboardGenerator, FormButtons, MessageSender
 from bot.utils.callback_settings import short_data, simple_data, two_valued_data
 from bot.utils.throttling import throttled

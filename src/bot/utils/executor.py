@@ -4,7 +4,7 @@ from loguru import logger
 
 from bot import config
 from bot.misc import dp
-from bot.models.db import engine
+from bot.db.config import engine
 
 runner = Executor(dp)
 

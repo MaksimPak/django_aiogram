@@ -1,7 +1,6 @@
 from django.core.validators import validate_image_file_extension
 from django.db import models
 
-# Create your models here.
 from companies.utils.uploaders import lc_upload_directory
 from general.models import BaseModel
 

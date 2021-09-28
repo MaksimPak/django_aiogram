@@ -1,6 +1,5 @@
 from django.db import models
 
-# Create your models here.
 from assets.utils.uploaders import asset_directory
 from general.models import BaseModel, AccessType
 

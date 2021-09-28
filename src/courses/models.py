@@ -1,7 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 
-# Create your models here.
 from django.template.defaultfilters import truncatewords
 
 from courses.utils.uploaders import lesson_upload_directory

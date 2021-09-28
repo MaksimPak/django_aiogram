@@ -1,6 +1,6 @@
 import functools
 
-from bot.models.db import SessionLocal
+from bot.db.config import SessionLocal
 
 
 def create_session(func):

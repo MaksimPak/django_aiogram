@@ -4,7 +4,7 @@ from aiogram.dispatcher.filters import Text
 
 from bot.decorators import create_session
 from bot.misc import dp, i18n
-from bot.models.db import SessionLocal
+from bot.db.config import SessionLocal
 
 _ = i18n.gettext
 
