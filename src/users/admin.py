@@ -13,7 +13,9 @@ from users import models, forms
 
 @admin.register(models.Lead)
 class LeadAdmin(admin.ModelAdmin):
-    list_display = ('id', '__str__', 'tg_id', 'application_type', 'blocked_bot', 'phone', 'language_type', 'learning_centre', 'checkout_date', 'get_courses',)
+    list_display = ('id', '__str__', 'tg_id', 'application_type',
+                    'blocked_bot', 'phone', 'language_type',
+                    'learning_centre', 'checkout_date', 'get_courses',)
     list_per_page = 20
     list_filter = ('learning_centre', 'application_type',)
     list_display_links = ('__str__',)
@@ -28,11 +30,13 @@ class LeadAdmin(admin.ModelAdmin):
 
     @admin.display(description='Блокнул бота', boolean=True)
     def blocked_bot(self, lead):
-        return lead.contact.blocked_bot
+        if lead.contact:
+            return lead.contact.blocked_bot
 
     @admin.display(description='TG ID')
     def tg_id(self, lead):
-        return lead.contact.tg_id
+        if lead.contact:
+            return lead.contact.tg_id
 
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, leads):
@@ -111,8 +115,9 @@ class ClientAdmin(admin.ModelAdmin):
     change_form_template = 'users/admin/change_form.html'
 
     @admin.display(description='Блокнул бота', boolean=True)
-    def blocked_bot(self, lead):
-        return lead.contact.blocked_bot
+    def blocked_bot(self, client):
+        if client.contact:
+            return client.contact.blocked_bot
 
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, leads):

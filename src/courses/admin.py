@@ -56,7 +56,8 @@ class LessonList(admin.StackedInline):
 
 @admin.register(models.Course)
 class CourseAdmin(admin.ModelAdmin):
-    list_display = ('id', '__str__', 'course_info', 'is_started', 'learning_centre', 'difficulty', 'price', 'student_count')
+    list_display = ('id', '__str__', 'course_info', 'is_started',
+                    'learning_centre', 'difficulty', 'price', 'student_count')
     list_display_links = ('__str__',)
     list_editable = ('is_started',)
     readonly_fields = ('date_started', 'date_finished', 'created_at',)

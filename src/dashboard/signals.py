@@ -51,53 +51,6 @@ def send_course_finish_message(sender, instance, created, **kwargs):
         Course.objects.filter(pk=instance.id).update(date_finished=datetime.datetime.now())
 
 
-@receiver(post_save, sender=Lead)
-def lead_invite_data(sender, instance, created, **kwargs):
-    """
-    Create a unique code and invite link for registration for lead upon saving.
-    """
-
-    if created:
-        unique_code = str(instance.id) + random_int()
-        invite_link = f'https://t.me/{os.getenv("BOT_NAME")}?start={unique_code}'
-
-        Lead.objects.filter(pk=instance.id).update(unique_code=unique_code, invite_link=invite_link)
 
 
-@receiver(post_init, sender=Promotion)
-def promo_locals_copy(sender, instance, *args, **kwargs):
-    """
-    Setting local variable _is_started to track if course was started during editing of the course
-    """
-    instance._video = instance.video.name
 
-
-@receiver(post_save, sender=Promotion)
-def promo_modify_data(sender, instance, created, **kwargs):
-    """
-    Create a unique code and invite link for registration for promotion upon saving.
-    """
-    if created:
-        unique_code = str(instance.id) + random_int()
-        link = f'https://t.me/{os.getenv("BOT_NAME")}?start=promo_{unique_code}'
-        instance.unique_code = unique_code
-        instance.link = link
-
-        Promotion.objects.filter(pk=instance.id).update(unique_code=unique_code, link=link)
-    else:
-        if instance._video != instance.video.name and instance.video.name is not None:
-            Promotion.objects.filter(pk=instance.id).update(video_file_id=None)
-
-
-@receiver(post_save, sender=Form)
-def form_modify_data(sender, instance, created, **kwargs):
-    """
-    Create a unique code and invite link for registration for promotion upon saving.
-    """
-    if created:
-        unique_code = str(instance.id) + random_int()
-        link = f'https://t.me/{os.getenv("BOT_NAME")}?start=quiz{unique_code}'
-        instance.unique_code = unique_code
-        instance.link = link
-
-        Form.objects.filter(pk=instance.id).update(unique_code=unique_code, link=link)

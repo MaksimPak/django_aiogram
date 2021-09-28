@@ -29,10 +29,13 @@ class Student(BaseModel):
     first_name = models.CharField(max_length=50, verbose_name='Имя')
     last_name = models.CharField(max_length=50, verbose_name='Фамилия', null=True, blank=True)
     city = models.CharField(max_length=50, verbose_name='Город проживания')
-    language_type = models.CharField(max_length=20, verbose_name='Язык ученика', choices=LanguageType.choices, default=LanguageType.ru)
+    language_type = models.CharField(max_length=20, verbose_name='Язык ученика',
+                                     choices=LanguageType.choices, default=LanguageType.ru)
     phone = models.CharField(max_length=20, verbose_name='Контактный телефон', unique=True)
-    learning_centre = models.ForeignKey('companies.LearningCentre', on_delete=models.PROTECT, verbose_name='Учебный центр', null=True, blank=True)
-    application_type = models.CharField(verbose_name='Как заполнил форму', max_length=20, choices=ApplicationType.choices, default=ApplicationType.admin)
+    learning_centre = models.ForeignKey('companies.LearningCentre', on_delete=models.PROTECT,
+                                        verbose_name='Учебный центр', null=True, blank=True)
+    application_type = models.CharField(verbose_name='Как заполнил форму', max_length=20,
+                                        choices=ApplicationType.choices, default=ApplicationType.admin)
     unique_code = models.CharField(max_length=255, verbose_name='Инвайт код', unique=True, null=True, blank=True)
     is_client = models.BooleanField(verbose_name='Клиент', default=False)
     checkout_date = models.DateTimeField(blank=True, null=True, verbose_name='Дата чекаута',)
@@ -40,7 +43,8 @@ class Student(BaseModel):
     courses = models.ManyToManyField('courses.Course', through='courses.StudentCourse')
     lessons = models.ManyToManyField('courses.Lesson', through='courses.StudentLesson')
     comment = models.TextField(verbose_name='Комментарий к пользователю', blank=True, null=True)
-    contact = models.OneToOneField('contacts.Contact', on_delete=models.SET_NULL, verbose_name='ТГ Профиль', null=True, blank=True)
+    contact = models.OneToOneField('contacts.Contact', on_delete=models.SET_NULL,
+                                   verbose_name='ТГ Профиль', null=True, blank=True)
 
     location = PointField(null=True, blank=True, verbose_name='Локация')
     games = ArrayField(models.CharField(max_length=50, blank=True), null=True, blank=True, verbose_name='Игры')

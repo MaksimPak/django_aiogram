@@ -16,8 +16,8 @@ A thumbnail\'s width and height should not exceed 320.
 
 
 class Message(BaseModel):
-    text = models.TextField(verbose_name='Описание')
-    video = models.FileField(verbose_name='Промо видео', null=True,
+    text = models.TextField(verbose_name='Текст')
+    video = models.FileField(verbose_name='Видео', null=True,
                              blank=True, upload_to=message_media_directory,
                              validators=[validate_video_extension, validate_file_size],
                              help_text='Не больше 50 мб')
@@ -27,8 +27,8 @@ class Message(BaseModel):
                               help_text=THUMBNAIL_HELP_TEXT)
     link = models.CharField(max_length=255, null=True, blank=True, verbose_name='Cсылка')
 
-    delivery_start_time = models.DateTimeField('Дата создания', default=timezone.now)
-    delivery_end_time = models.DateTimeField('Дата обновления', null=True, blank=True)
+    delivery_start_time = models.DateTimeField('Начало отправки', default=timezone.now)
+    delivery_end_time = models.DateTimeField('Окончание отправки', null=True, blank=True)
 
     def __str__(self):
         return f'MessageId{self.id}'

@@ -23,10 +23,14 @@ class Course(BaseModel):
 
     name = models.CharField(max_length=100, verbose_name='Название курса')
     info = models.TextField(blank=True, null=True, verbose_name='Описание')
-    hashtag = models.CharField(max_length=20, verbose_name='Хештег', null=True, blank=True, validators=[validate_hashtag])
-    learning_centre = models.ForeignKey('companies.LearningCentre', on_delete=models.PROTECT, verbose_name='Уч центр')
-    start_message = models.TextField(verbose_name='Сообщение для отправки студентам после начала курса', blank=True, null=True)
-    end_message = models.TextField(verbose_name='Сообщение для отправки студентам после завершения курса', blank=True, null=True)
+    hashtag = models.CharField(max_length=20, verbose_name='Хештег',
+                               null=True, blank=True, validators=[validate_hashtag])
+    learning_centre = models.ForeignKey('companies.LearningCentre',
+                                        on_delete=models.PROTECT, verbose_name='Уч центр')
+    start_message = models.TextField(verbose_name='Сообщение для отправки студентам после начала курса',
+                                     blank=True, null=True)
+    end_message = models.TextField(verbose_name='Сообщение для отправки студентам после завершения курса',
+                                   blank=True, null=True)
     difficulty = models.CharField(max_length=20, choices=DifficultyType.choices, verbose_name='Сложность')
     price = models.BigIntegerField(verbose_name='Цена')
     is_free = models.BooleanField(verbose_name='Бесплатный курс', default=False)
@@ -59,9 +63,12 @@ class Course(BaseModel):
 class Lesson(BaseModel):
     title = models.CharField(max_length=100, verbose_name='Название урока')
     info = models.TextField(blank=True, null=True, verbose_name='Описание')
-    image = models.ImageField(verbose_name='Картинка', null=True, blank=True, upload_to=lesson_upload_directory, validators=[validate_photo_extension])
-    image_file_id = models.CharField(verbose_name='Photo file ID', null=True, blank=True, editable=False, max_length=255)
-    video = models.FileField(verbose_name='Видео к уроку', upload_to=lesson_upload_directory, validators=[validate_video_extension])
+    image = models.ImageField(verbose_name='Картинка', null=True, blank=True,
+                              upload_to=lesson_upload_directory, validators=[validate_photo_extension])
+    image_file_id = models.CharField(verbose_name='Photo file ID', null=True,
+                                     blank=True, editable=False, max_length=255)
+    video = models.FileField(verbose_name='Видео к уроку', upload_to=lesson_upload_directory,
+                             validators=[validate_video_extension])
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     has_homework = models.BooleanField(verbose_name='Есть домашнее задание', default=False)
     homework_desc = models.TextField(verbose_name='Homework description', null=True, blank=True)
