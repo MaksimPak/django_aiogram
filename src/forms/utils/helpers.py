@@ -43,13 +43,13 @@ def adjust_width(ws: Worksheet, rows: list) -> None:
     for row in rows:
         for i, cell in enumerate(row):
             if len(column_widths) > i:
-                if len(cell) > column_widths[i]:
+                if len(str(cell)) > column_widths[i]:
                     if os.linesep not in cell:
-                        column_widths[i] = len(cell)
+                        column_widths[i] = len(str(cell))
                     else:
                         column_widths[i] = _separated_line_width(cell)
             else:
-                column_widths += [len(cell)]
+                column_widths += [len(str(cell))]
     for i, column_width in enumerate(column_widths):
         # Adding extra + 1 to width just in case
         ws.column_dimensions[get_column_letter(i + 1)].width = column_width + 1

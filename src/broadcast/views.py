@@ -8,14 +8,20 @@ from contacts import models as contact_models
 from users.models import Student
 
 
-def send_one(request, contact_id: int):
+def send_one(request):
     """
     Render send template for specific contact
     """
-    contact = contact_models.Contact.objects.filter(pk=contact_id)
-    form = BroadcastForm(initial={'_selected_action': [contact_id]})
+    selected = request.GET.getlist('_selected_action')
+
+    if 'all' in request.GET:
+        contacts = contact_models.Contact.objects.all()
+    else:
+        contacts = contact_models.Contact.objects.filter(pk__in=selected)
+
+    form = BroadcastForm(initial={'_selected_action': [x.id for x in contacts]})
     context = {
-        'entities': contact,
+        'entities': contacts,
         'form': form,
         'referer': request.META['HTTP_REFERER'],
     }

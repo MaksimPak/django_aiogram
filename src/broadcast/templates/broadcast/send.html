@@ -6,7 +6,7 @@
     <tbody>
     <tr>
         <td style="padding: 0;">
-            <form action="{% url 'broadcast:message_multiple' %}" method="POST" enctype="multipart/form-data">
+            <form action="{% url 'broadcast:send' %}" method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
                 {{ form.non_field_errors }}
                 <input type="hidden" name="referer" value="{{ referer }}" />

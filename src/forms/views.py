@@ -15,7 +15,7 @@ def form_report(request, form_id: int):
     for answer in answers:
         date_passed = (answer.updated_at if answer.updated_at else answer.created_at).strftime('%m/%d/%Y, %H:%M')
         collected_answers.append(
-            [str(answer.id), answer.contact.__str__(), date_passed, stringify_bool(answer.contact.is_registered)]
+            [answer.id, answer.contact.__str__(), date_passed, stringify_bool(answer.contact.is_registered)]
             + [normalize_answer(answer.data.get(str(x.id), '-')) for x in questions]
         )
 
