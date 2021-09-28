@@ -15,8 +15,8 @@ def lead_invite_data(sender, instance, created, **kwargs):
     if created:
         unique_code = str(instance.id) + random_int()
         invite_link = f'https://t.me/{os.getenv("BOT_NAME")}?start={unique_code}'
+        instance.unique_code = unique_code
+        instance.invite_link = invite_link
+        instance.save()
 
-        # todo for some reasons this stopped working. Need to figure out
-        # ps. Signal itself works. All variables have vals. DB performs update query but db values do not change.
-        Lead.objects.filter(pk=instance.id).update(unique_code=unique_code, invite_link=invite_link)
 

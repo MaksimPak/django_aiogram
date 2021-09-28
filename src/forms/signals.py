@@ -17,5 +17,4 @@ def form_modify_data(sender, instance, created, **kwargs):
         link = f'https://t.me/{os.getenv("BOT_NAME")}?start=quiz{unique_code}'
         instance.unique_code = unique_code
         instance.link = link
-
-        Form.objects.filter(pk=instance.id).update(unique_code=unique_code, link=link)
+        instance.save()
