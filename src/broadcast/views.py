@@ -8,7 +8,7 @@ from contacts import models as contact_models
 from users.models import Student
 
 
-def send_one(request):
+def render_send(request):
     """
     Render send template for specific contact
     """
@@ -29,7 +29,7 @@ def send_one(request):
     return render(request, 'broadcast/send.html', context=context)
 
 
-def send_multiple(request):
+def send(request):
     """
     Handles POST Requests.
     Save submitted message and pass to celery for sending

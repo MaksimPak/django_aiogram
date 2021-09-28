@@ -1,17 +1,14 @@
-import datetime
-import json
-
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.gis.db.models import PointField
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from mapwidgets import GooglePointFieldWidget
 
-from broadcast.utils.telegram import Telegram
+from broadcast.forms import BroadcastForm
 from users import models, forms
-from django.contrib.gis.db.models import PointField
 
 
 @admin.register(models.Lead)
@@ -39,34 +36,26 @@ class LeadAdmin(admin.ModelAdmin):
 
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, leads):
-        if 'send' in request.POST:
-            is_feedback = request.POST.get('is_feedback')
-            if is_feedback:
-                for student in leads:
-                    kb = {'inline_keyboard': [[{'text': 'Ответить', 'callback_data': f'data|feedback_student|{student.contact.id}'}]]}
-                    data = {
-                        'chat_id': student.tg_id,
-                        'parse_mode': 'html',
-                        'text': request.POST['message'],
-                        'reply_markup': json.dumps(kb)
-                    }
-                    Telegram.send_single_message(data)
-            else:
-                Telegram.send_to_people(leads, request.POST['message'])
-            return HttpResponseRedirect(request.get_full_path())
-
-        return render(request, 'dashboard/send_intermediate.html', context={'entities': leads})
+        contact_ids = [lead.contact.id for lead in leads]
+        form = BroadcastForm(initial={'_selected_action': contact_ids})
+        context = {
+            'entities': leads,
+            'form': form,
+            'referer': request.META['HTTP_REFERER'],
+        }
+        return render(request, "broadcast/send.html", context=context)
 
     @admin.display(description='Рассылка чекаута')
     def send_checkout(self, request, leads):
-        for lead in leads:
-            data = {
-                'chat_id': lead.tg_id,
-                'text': 'https://paynet.uz/checkout_test'
-            }
-            resp = Telegram.send_single_message(data=data)
-            resp['ok'] and models.Student.objects.filter(pk=lead.id).update(checkout_date=datetime.datetime.now())
-        return HttpResponseRedirect(request.get_full_path())
+        contact_ids = [lead.contact.id for lead in leads]
+        form = BroadcastForm(initial={'_selected_action': contact_ids})
+        form.fields['text'].initial = 'https://paynet.uz/checkout_test'
+        context = {
+            'entities': leads,
+            'form': form,
+            'referer': request.META['HTTP_REFERER'],
+        }
+        return render(request, "broadcast/send.html", context=context)
 
     @admin.display(description='Назначить курсы')
     def assign_courses(self, request, leads):
@@ -126,36 +115,27 @@ class ClientAdmin(admin.ModelAdmin):
         return lead.contact.blocked_bot
 
     @admin.display(description='Массовая рассылка')
-    def send_message(self, request, clients):
-        if 'send' in request.POST:
-            is_feedback = request.POST.get('is_feedback')
-            if is_feedback:
-                for student in clients:
-                    kb = {'inline_keyboard': [
-                        [{'text': 'Ответить', 'callback_data': f'data|feedback_student|{student.contact.id}'}]]}
-                    data = {
-                        'chat_id': student.tg_id,
-                        'parse_mode': 'html',
-                        'text': request.POST['message'],
-                        'reply_markup': json.dumps(kb)
-                    }
-                    Telegram.send_single_message(data)
-            else:
-                Telegram.send_to_people(clients, request.POST['message'])
-            return HttpResponseRedirect(request.get_full_path())
+    def send_message(self, request, leads):
+        contact_ids = [lead.contact.id for lead in leads]
+        form = BroadcastForm(initial={'_selected_action': contact_ids})
+        context = {
+            'entities': leads,
+            'form': form,
+            'referer': request.META['HTTP_REFERER'],
+        }
+        return render(request, "broadcast/send.html", context=context)
 
-        return render(request, 'dashboard/send_intermediate.html', context={'entities': clients})
-
-    @admin.display(description='Выслать чекаут')
-    def send_checkout(self, request, clients):
-        for client in clients:
-            data = {
-                'chat_id': client.tg_id,
-                'text': 'https://paynet.uz/checkout_test'
-            }
-            resp = Telegram.send_single_message(data=data)
-            resp['ok'] and models.Student.objects.filter(pk=client.id).update(checkout_date=datetime.datetime.now())
-        return HttpResponseRedirect(request.get_full_path())
+    @admin.display(description='Рассылка чекаута')
+    def send_checkout(self, request, client):
+        contact_ids = [client.contact.id for client in client]
+        form = BroadcastForm(initial={'_selected_action': contact_ids})
+        form.fields['text'].initial = 'https://paynet.uz/checkout_test'
+        context = {
+            'entities': client,
+            'form': form,
+            'referer': request.META['HTTP_REFERER'],
+        }
+        return render(request, "broadcast/send.html", context=context)
 
     @admin.display(description='Курсы')
     def get_courses(self, client):
