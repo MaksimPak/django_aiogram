@@ -29,7 +29,6 @@ class Student(BaseModel):
     first_name = models.CharField(max_length=50, verbose_name='Имя')
     last_name = models.CharField(max_length=50, verbose_name='Фамилия', null=True, blank=True)
     city = models.CharField(max_length=50, verbose_name='Город проживания')
-    tg_id = models.BigIntegerField(verbose_name='Telegram ID', blank=True, null=True, unique=True)
     language_type = models.CharField(max_length=20, verbose_name='Язык ученика', choices=LanguageType.choices, default=LanguageType.ru)
     phone = models.CharField(max_length=20, verbose_name='Контактный телефон', unique=True)
     learning_centre = models.ForeignKey('companies.LearningCentre', on_delete=models.PROTECT, verbose_name='Учебный центр', null=True, blank=True)
@@ -40,7 +39,6 @@ class Student(BaseModel):
     invite_link = models.CharField(max_length=255, editable=False, null=True, blank=True, verbose_name='Инвайт ссылка')
     courses = models.ManyToManyField('courses.Course', through='courses.StudentCourse')
     lessons = models.ManyToManyField('courses.Lesson', through='courses.StudentLesson')
-    blocked_bot = models.BooleanField(verbose_name='Заблокировал бота', default=False)
     comment = models.TextField(verbose_name='Комментарий к пользователю', blank=True, null=True)
     contact = models.OneToOneField('contacts.Contact', on_delete=models.SET_NULL, verbose_name='ТГ Профиль', null=True, blank=True)
 

@@ -29,6 +29,14 @@ class LeadAdmin(admin.ModelAdmin):
     form = forms.StudentAdmin
     change_form_template = 'users/admin/change_form.html'
 
+    @admin.display(description='Блокнул бота', boolean=True)
+    def blocked_bot(self, lead):
+        return lead.contact.blocked_bot
+
+    @admin.display(description='TG ID')
+    def tg_id(self, lead):
+        return lead.contact.tg_id
+
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, leads):
         if 'send' in request.POST:
@@ -112,6 +120,10 @@ class ClientAdmin(admin.ModelAdmin):
     date_hierarchy = 'created_at'
     form = forms.StudentAdmin
     change_form_template = 'users/admin/change_form.html'
+
+    @admin.display(description='Блокнул бота', boolean=True)
+    def blocked_bot(self, lead):
+        return lead.contact.blocked_bot
 
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, clients):
