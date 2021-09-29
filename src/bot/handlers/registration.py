@@ -29,16 +29,13 @@ class RegistrationState(StatesGroup):
     location = State()
 
 
-@dp.callback_query_handler(short_data.filter(property='lang'), state=RegistrationState.lang)
 async def set_lang(
         cb: types.CallbackQuery,
-        state: FSMContext,
-        callback_data: dict,
+        state: FSMContext
 ):
-    lang = callback_data['value']
-
+    await bot.answer_callback_query(cb.id)
     async with state.proxy() as data:
-        data['lang'] = lang
+        data['lang'] = int(cb.data.split('|')[-1])
 
     await bot.send_message(cb.from_user.id, _('Как тебя зовут?'))
     await RegistrationState.first_name.set()
@@ -55,11 +52,36 @@ async def set_first_name(
     await RegistrationState.city.set()
 
 
+async def set_city(
+        message: types.Message,
+        state: FSMContext
+):
+    async with state.proxy() as data:
+        data['city'] = message.text
+
+    games_list = ['PUBG', 'MineCraft', 'GTA', 'FIFA', 'CS:GO', 'ClashRoyale',
+                  'Fortnite', 'Apex Legends', 'Valorant', 'Battlefield', 'Call Of Duty',
+                  'Assassin\'s Creed', 'Need For Speed']
+
+    data = [(game, ('game', game))
+            for game in games_list]
+    kb = KeyboardGenerator(data, row_width=3).add(('Svoi otvet', ('custom_answer',))).keyboard
+    await message.reply(_('Хорошо, выбирай игры'), reply_markup=kb)
+    await RegistrationState.games.set()
+
+
+async def set_games(
+        response: Union[types.CallbackQuery, types.Message],
+        state: FSMContext
+):
+    pass
+
+
 QUESTION_MAP = {
     'RegistrationState:invite_link': (...,),
-    'RegistrationState:lang': (set_lang, set_first_name),
-    'RegistrationState:first_name': (...,),
-    'RegistrationState:city': (...,),
+    'RegistrationState:lang': set_lang,
+    'RegistrationState:first_name': set_first_name,
+    'RegistrationState:city': set_city,
     'RegistrationState:games': (...,),
     'RegistrationState:phone': (...,),
     'RegistrationState:location': (...,),
@@ -93,24 +115,110 @@ async def entry_point(
     await RegistrationState.lang.set()
 
 
+@dp.throttled(throttled, rate=.7)
 @dp.message_handler(state=RegistrationState.states)
 @dp.callback_query_handler(state=RegistrationState.states)
 async def process_handler(
     response: Union[types.CallbackQuery, types.Message],
-    state: FSMContext,
+    state: FSMContext
 ):
+    data = await state.get_data()
     current_state = await state.get_state()
 
-    answer_handler, next_question = QUESTION_MAP[current_state]
-    answer_handler(response, state)
-
-    return next_question()
+    answer_handler = QUESTION_MAP[current_state]
+    await answer_handler(response, state)
 
 
 
 
 
-
+# async def mark_selected(
+#         game: str,
+#         keyboard: dict
+# ):
+#     # todo REFACTOR
+#     for row in keyboard['inline_keyboard']:
+#         for key in row:
+#             game_name = key['callback_data'].split('|')[-1]
+#             if key['text'][0] != '✅' and game == game_name:
+#                 key['text'] = '✅ ' + key['text']
+#             elif key['text'][0] == '✅' and game == game_name:
+#                 key['text'] = key['text'][1:]
+#     keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard['inline_keyboard'])
+#     if keyboard.inline_keyboard[-1][-1].text != 'Следующий вопрос ➡️':
+#         keyboard.add(InlineKeyboardButton(text='Следующий вопрос ➡️', callback_data='data|continue'))
+#
+#     return keyboard
+#
+#
+# async def process_multianswer(
+#         cb,
+#         game,
+#         keyboard: InlineKeyboardMarkup
+# ):
+#     kb = await mark_selected(
+#         game,
+#         keyboard.to_python()
+#     )
+#
+#     await cb.message.edit_reply_markup(kb)
+#
+#
+# @dp.callback_query_handler(short_data.filter(property='game'), state=RegistrationState.games)
+# @dp.throttled(throttled, rate=.7)
+# async def get_inline_answer(
+#         cb: types.CallbackQuery,
+#         state: FSMContext,
+#         callback_data: dict = None
+# ):
+#     await cb.answer()
+#     game = callback_data['value']
+#     async with state.proxy() as data:
+#         if data.get('games') and game not in data.get('games'):
+#             data['games'].append(game)
+#         else:
+#             data['games'] = [game]
+#
+#     await process_multianswer(cb, game, cb.message.reply_markup)
+#
+#
+# @dp.callback_query_handler(simple_data.filter(value='custom_answer'), state=RegistrationState.games)
+# @dp.throttled(throttled, rate=.7)
+# async def get_inline_answer(
+#         cb: types.CallbackQuery,
+# ):
+#
+#     await cb.answer()
+#     await cb.message.reply('отправьте игру')
+#
+#
+# @dp.message_handler(state=RegistrationState.games)
+# async def get_text_answer(
+#         message: types.Message,
+#         state: FSMContext
+# ):
+#     await state.reset_state(False)
+#     async with state.proxy() as data:
+#         if data.get('games') and message.text not in data.get('games'):
+#             data['games'].append(message.text)
+#         else:
+#             data['games'] = [message.text]
+#
+#     await message.reply('отправьте номер')
+#
+#     await RegistrationState.phone.set()
+#
+# @dp.callback_query_handler(simple_data.filter(value='continue'), state=RegistrationState.games)
+# @dp.throttled(throttled, rate=.7)
+# async def next_question(
+#         cb: types.CallbackQuery
+# ):
+#     await cb.answer()
+#     await cb.message.edit_reply_markup(None)
+#
+#     await cb.message.reply('отправьте номер')
+#
+#     await RegistrationState.phone.set()
 
 
 
