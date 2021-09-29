@@ -17,7 +17,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 
-from app import settings
+from django.conf import settings
 from users.views import signup
 
 urlpatterns = [

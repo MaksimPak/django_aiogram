@@ -28,4 +28,4 @@ def signup(request):
             return HttpResponse('Invalid phone number. Number is already used')
     else:
         form = LeadForm()
-        return render(request, 'dashboard/signup.html', {'form': form})
+        return render(request, 'users/signup.html', {'form': form})

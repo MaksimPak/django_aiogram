@@ -14,7 +14,7 @@ async def get_student_lang(tg_id, session=None):
     redis = await user_redis.redis()
     data = await redis.get(f'user_{tg_id}', encoding='utf8')
     contact = await repo.ContactRepository.get('tg_id', int(tg_id), session)
-    if not data and contact:
+    if not data and contact.student:
         await redis.set(f'user_{tg_id}', contact.student.language_type.name, expire=15*60)
         data = contact.student.language_type.name
     else:
