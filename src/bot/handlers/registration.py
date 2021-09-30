@@ -1,3 +1,4 @@
+import re
 from typing import Union
 
 from aiogram import types
@@ -27,6 +28,92 @@ class RegistrationState(StatesGroup):
     games = State()
     phone = State()
     location = State()
+
+
+async def games_continue(
+        cb: types.CallbackQuery,
+):
+    await cb.answer()
+    await cb.message.edit_reply_markup(None)
+    await cb.message.reply('Отправьте номер')
+
+    await RegistrationState.phone.set()
+
+
+async def games_custom_answer(
+        cb: types.CallbackQuery,
+):
+    await cb.answer()
+    await cb.message.reply('Отправьте игру')
+
+
+async def games_get_text(
+        message: types.Message,
+        state: FSMContext
+):
+    await state.reset_state(False)
+    async with state.proxy() as data:
+        if data.get('games') and message.text not in data.get('games'):
+            data['games'].append(message.text)
+        else:
+            data['games'] = [message.text]
+    await message.reply('Отправьте номер')
+    await RegistrationState.phone.set()
+
+
+async def mark_selected(
+        game: str,
+        keyboard: dict
+):
+    # todo REFACTOR
+    for row in keyboard['inline_keyboard']:
+        for key in row:
+            game_name = key['callback_data'].split('|')[-1]
+            if key['text'][0] != '✅' and game == game_name:
+                key['text'] = '✅ ' + key['text']
+            elif key['text'][0] == '✅' and game == game_name:
+                key['text'] = key['text'][1:]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard['inline_keyboard'])
+    if keyboard.inline_keyboard[-1][-1].text != 'Следующий вопрос ➡️':
+        keyboard.add(InlineKeyboardButton(text='Следующий вопрос ➡️', callback_data='data|continue'))
+
+    return keyboard
+
+
+async def process_multianswer(
+        cb: types.CallbackQuery,
+        game,
+        keyboard: InlineKeyboardMarkup
+):
+    kb = await mark_selected(
+        game,
+        keyboard.to_python()
+    )
+
+    await cb.message.edit_reply_markup(kb)
+
+
+async def games_get_inline(
+        cb: types.CallbackQuery,
+        state: FSMContext
+):
+    await cb.answer()
+
+    game = cb.data.split('|')[-1]
+    async with state.proxy() as data:
+        if data.get('games') and game not in data.get('games'):
+            data['games'].append(game)
+        else:
+            data['games'] = [game]
+
+    await process_multianswer(cb, game, cb.message.reply_markup)
+
+GAMES_HELPER = {
+    'get_text': games_get_text,
+    'game': games_get_inline,
+    'continue': games_continue,
+    'custom_answer': games_custom_answer,
+}
 
 
 async def set_lang(
@@ -70,11 +157,33 @@ async def set_city(
     await RegistrationState.games.set()
 
 
+async def fsm_resolver(
+        cb: types.CallbackQuery,
+        match: str,
+        state: FSMContext
+):
+    if match == 'get_text' or match == 'game':
+        await GAMES_HELPER[match](cb, state)
+    else:
+        await GAMES_HELPER[match](cb)
+
+
+async def games_cb_handler(
+        cb: types.CallbackQuery,
+        state: FSMContext
+):
+    match = re.match(r'^data\|(\w+)(?:\|[\w ]*)?', cb.data)
+    await fsm_resolver(cb, match.group(1), state)
+
+
 async def set_games(
         response: Union[types.CallbackQuery, types.Message],
         state: FSMContext
 ):
-    pass
+    if type(response) is types.CallbackQuery:
+        await games_cb_handler(response, state)
+    else:
+        await GAMES_HELPER['get_text'](response, state)
 
 
 QUESTION_MAP = {
@@ -82,7 +191,7 @@ QUESTION_MAP = {
     'RegistrationState:lang': set_lang,
     'RegistrationState:first_name': set_first_name,
     'RegistrationState:city': set_city,
-    'RegistrationState:games': (...,),
+    'RegistrationState:games': set_games,
     'RegistrationState:phone': (...,),
     'RegistrationState:location': (...,),
 }
@@ -130,38 +239,6 @@ async def process_handler(
 
 
 
-
-
-# async def mark_selected(
-#         game: str,
-#         keyboard: dict
-# ):
-#     # todo REFACTOR
-#     for row in keyboard['inline_keyboard']:
-#         for key in row:
-#             game_name = key['callback_data'].split('|')[-1]
-#             if key['text'][0] != '✅' and game == game_name:
-#                 key['text'] = '✅ ' + key['text']
-#             elif key['text'][0] == '✅' and game == game_name:
-#                 key['text'] = key['text'][1:]
-#     keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard['inline_keyboard'])
-#     if keyboard.inline_keyboard[-1][-1].text != 'Следующий вопрос ➡️':
-#         keyboard.add(InlineKeyboardButton(text='Следующий вопрос ➡️', callback_data='data|continue'))
-#
-#     return keyboard
-#
-#
-# async def process_multianswer(
-#         cb,
-#         game,
-#         keyboard: InlineKeyboardMarkup
-# ):
-#     kb = await mark_selected(
-#         game,
-#         keyboard.to_python()
-#     )
-#
-#     await cb.message.edit_reply_markup(kb)
 #
 #
 # @dp.callback_query_handler(short_data.filter(property='game'), state=RegistrationState.games)
@@ -180,45 +257,7 @@ async def process_handler(
 #             data['games'] = [game]
 #
 #     await process_multianswer(cb, game, cb.message.reply_markup)
-#
-#
-# @dp.callback_query_handler(simple_data.filter(value='custom_answer'), state=RegistrationState.games)
-# @dp.throttled(throttled, rate=.7)
-# async def get_inline_answer(
-#         cb: types.CallbackQuery,
-# ):
-#
-#     await cb.answer()
-#     await cb.message.reply('отправьте игру')
-#
-#
-# @dp.message_handler(state=RegistrationState.games)
-# async def get_text_answer(
-#         message: types.Message,
-#         state: FSMContext
-# ):
-#     await state.reset_state(False)
-#     async with state.proxy() as data:
-#         if data.get('games') and message.text not in data.get('games'):
-#             data['games'].append(message.text)
-#         else:
-#             data['games'] = [message.text]
-#
-#     await message.reply('отправьте номер')
-#
-#     await RegistrationState.phone.set()
-#
-# @dp.callback_query_handler(simple_data.filter(value='continue'), state=RegistrationState.games)
-# @dp.throttled(throttled, rate=.7)
-# async def next_question(
-#         cb: types.CallbackQuery
-# ):
-#     await cb.answer()
-#     await cb.message.edit_reply_markup(None)
-#
-#     await cb.message.reply('отправьте номер')
-#
-#     await RegistrationState.phone.set()
+
 
 
 
