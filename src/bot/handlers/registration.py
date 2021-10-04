@@ -71,7 +71,7 @@ async def save_phone(response, state, session):
 
 
 async def save_location(response, state):
-    if response.location:
+    if type(response) is types.Message and response.location:
         async with state.proxy() as data:
             data['location'] = {
                 'longitude': response.location.longitude,
@@ -104,20 +104,21 @@ async def create_record(
         state: FSMContext,
         session: SessionLocal
 ):
+    prefix = 'RegistrationState:'
     contact = await repo.ContactRepository.get('tg_id', user_id, session)
     data = await state.get_data()
     location = None
     if data.get('location'):
         location = WKTElement(F'POINT({data["location"]["longitude"]} {data["location"]["latitude"]})')
     lead_data = {
-        'first_name': data['first_name'],
-        'city': data['city'],
-        'language_type': data['lang'],
-        'phone': data['phone'],
+        'first_name': data[f'{prefix}first_name'],
+        'city':  data[f'{prefix}city'],
+        'language_type': data[f'{prefix}lang'],
+        'phone': data[f'{prefix}phone'],
         'application_type': StudentTable.ApplicationType.telegram,
         'is_client': False,
         'contact_id': contact.id,
-        'games': data['games'],
+        'games': data[f'{prefix}games'],
         'location': location,
     }
 
@@ -134,15 +135,15 @@ async def create_record(
                            reply_markup=reply_kb)
 
 
-async def ask_first_name(response):
+async def ask_first_name(response, state):
     await bot.send_message(response.from_user.id, _('Как тебя зовут?'))
 
 
-async def ask_city(response):
+async def ask_city(response, state):
     await bot.send_message(response.from_user.id, _('Отлично, теперь напиши из какого ты города'))
 
 
-async def ask_games(response):
+async def ask_games(response, state):
     games_list = ['PUBG', 'MineCraft', 'GTA', 'FIFA', 'CS:GO', 'ClashRoyale',
                   'Fortnite', 'Apex Legends', 'Valorant', 'Battlefield', 'Call Of Duty',
                   'Assassin\'s Creed', 'Need For Speed']
@@ -153,11 +154,11 @@ async def ask_games(response):
     await bot.send_message(response.from_user.id, _('Хорошо, выбирай игры'), reply_markup=kb)
 
 
-async def ask_phone(response):
+async def ask_phone(response, state):
     await bot.send_message(response.from_user.id, _('Отправьте номер'))
 
 
-async def ask_location(response):
+async def ask_location(response, state):
     data = [('Пропустить', ('skip_loc',)), ('Отправить', ('send_loc',))]  # naming
 
     kb = KeyboardGenerator(data).keyboard
@@ -165,16 +166,17 @@ async def ask_location(response):
 
 
 async def game_handler(
-        response: Union[types.Message, types.CallbackQuery]
+        response: Union[types.Message, types.CallbackQuery],
+        state
 ):
     async def custom_answer():
         await response.message.reply('Отправьте игру')
 
     async def next_question():
         await bot.send_message(response.from_user.id, 'Send phone')
+        await RegistrationState.next()
 
     if type(response) is types.Message:
-        await RegistrationState.next()
         return await next_question()
 
     games_mapper = {
@@ -194,12 +196,13 @@ async def game_handler(
         await response.message.edit_reply_markup(kb)
 
 
-async def location_handler(response: Union[types.Message, types.CallbackQuery]):
+async def location_handler(response: Union[types.Message, types.CallbackQuery], state):
     async def accept_loc():
         await response.message.reply('Вышлите вашу геопозицию')
 
     async def proceed():
-        await create_record()
+        await create_record(response.from_user.id, state)
+        await state.finish()
 
     location_mapper = {
         'send_loc': accept_loc,
@@ -207,10 +210,11 @@ async def location_handler(response: Union[types.Message, types.CallbackQuery]):
     }
 
     if type(response) is types.Message:
-        return proceed()
+        return await proceed()
 
-    cb_value = response.data.split('|')[-1]
-    await location_mapper[cb_value]()
+    if type(response) is types.CallbackQuery:
+        cb_value = response.data.split('|')[-1]
+        await location_mapper[cb_value]()
 
 
 async def next_state(state: FSMContext):
@@ -220,10 +224,6 @@ async def next_state(state: FSMContext):
         await RegistrationState.next()
 
 
-async def finish_state(state: FSMContext):
-    await state.finish()
-
-
 QUESTION_MAP = {
     'invite_link': (...,),
     'lang': (save_answer, ask_first_name, next_state),
@@ -231,7 +231,7 @@ QUESTION_MAP = {
     'city': (save_answer, ask_games, next_state),
     'games': (save_games, game_handler, None),
     'phone': (save_phone, ask_location, next_state),
-    'location': (save_location, location_handler, finish_state),
+    'location': (save_location, location_handler, None),
 }
 
 
@@ -277,9 +277,6 @@ async def process_handler(
 
     set_answer, next_question, set_state = QUESTION_MAP[current_state]
     await set_answer(response, state)
-    await next_question(response)
+    await next_question(response, state)
     if set_state:
         await set_state(state)
-
-    data = await state.get_data()
-    print(data)
