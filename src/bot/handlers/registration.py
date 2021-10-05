@@ -1,20 +1,19 @@
 import re
+from collections import deque
 from typing import Union
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters import ChatTypeFilter
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.types import ContentType, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from geoalchemy2 import WKTElement
 
 from bot import repository as repo
+from bot.db.config import SessionLocal
+from bot.db.schemas import StudentTable
 from bot.decorators import create_session
 from bot.misc import dp, bot, i18n
-from bot.db.schemas import StudentTable
-from bot.db.config import SessionLocal
 from bot.serializers import KeyboardGenerator
-from bot.utils.callback_settings import short_data, simple_data
 from bot.utils.throttling import throttled
 
 _ = i18n.gettext
@@ -44,11 +43,14 @@ async def save_answer(
         data[key] = answer
 
 
-async def save_games(response: Union[types.Message, types.CallbackQuery], state: FSMContext):
+async def save_games(
+        response: Union[types.Message, types.CallbackQuery],
+        state: FSMContext
+):
     game = None
-    if type(response) is types.CallbackQuery and re.match(r'^data\|game\|[\w ]+', response.data):
+    if isinstance(response, types.CallbackQuery) and re.match(r'^data\|game\|[\w ]+', response.data):
         game = response.data.split('|')[-1]
-    elif type(response) is types.Message:
+    elif isinstance(response, types.Message):
         game = response.text
 
     if game:
@@ -63,15 +65,19 @@ async def save_games(response: Union[types.Message, types.CallbackQuery], state:
 
 
 @create_session
-async def save_phone(response, state, session):
+async def save_phone(
+        response: types.Message,
+        state: FSMContext,
+        session: SessionLocal
+):
     is_phone_exists = await repo.StudentRepository.is_exist('phone', response.text, session)
     if is_phone_exists:
         return await response.reply('Данный номер уже используется')
     await save_answer(response, state)
 
 
-async def save_location(response, state):
-    if type(response) is types.Message and response.location:
+async def save_location(response, state: FSMContext):
+    if isinstance(response, types.Message) and response.location:
         async with state.proxy() as data:
             data['location'] = {
                 'longitude': response.location.longitude,
@@ -100,7 +106,7 @@ async def mark_selected(
 
 @create_session
 async def create_record(
-        user_id,
+        user_id: int,
         state: FSMContext,
         session: SessionLocal
 ):
@@ -135,59 +141,82 @@ async def create_record(
                            reply_markup=reply_kb)
 
 
-async def ask_first_name(response, state):
-    await bot.send_message(response.from_user.id, _('Как тебя зовут?'))
+async def ask_first_name(
+        cb: types.CallbackQuery,
+        state: FSMContext
+):
+    msg = await cb.message.edit_text(_('Как тебя зовут?'))
+    await state.update_data({'msg_id': msg.message_id})
 
 
-async def ask_city(response, state):
-    await bot.send_message(response.from_user.id, _('Отлично, теперь напиши из какого ты города'))
+async def ask_city(msg: types.Message, state: FSMContext):
+
+    async with state.proxy() as data:
+        msg = await bot.edit_message_text(_('Отлично, теперь напиши из какого ты города'),
+                                          msg.from_user.id, data['msg_id'])
+        data['msg_id'] = msg.message_id
 
 
-async def ask_games(response, state):
+async def ask_games(
+        response: types.Message,
+        state: FSMContext
+):
     games_list = ['PUBG', 'MineCraft', 'GTA', 'FIFA', 'CS:GO', 'ClashRoyale',
                   'Fortnite', 'Apex Legends', 'Valorant', 'Battlefield', 'Call Of Duty',
                   'Assassin\'s Creed', 'Need For Speed']
 
     data = [(game, ('game', game))
             for game in games_list]
-    kb = KeyboardGenerator(data, row_width=3).add(('Svoi otvet', ('custom_answer',))).keyboard
-    await bot.send_message(response.from_user.id, _('Хорошо, выбирай игры'), reply_markup=kb)
+    kb = KeyboardGenerator(data, row_width=3).keyboard
+    async with state.proxy() as data:
+        msg = await bot.edit_message_text(_('Выберите игры или впишите ответ вручную'),
+                                          response.from_user.id,
+                                          data['msg_id'],
+                                          reply_markup=kb)
+        data['msg_id'] = msg.message_id
 
 
-async def ask_phone(response, state):
-    await bot.send_message(response.from_user.id, _('Отправьте номер'))
+async def ask_phone(
+        response: types.CallbackQuery,
+        state: FSMContext
+):
+    async with state.proxy() as data:
+        msg = await bot.edit_message_text(_('Отправьте номер'),
+                                          response.from_user.id,
+                                          data['msg_id'],)
+        data['msg_id'] = msg.message_id
 
 
-async def ask_location(response, state):
+async def ask_location(response: types.Message, state: FSMContext):
     data = [('Пропустить', ('skip_loc',)), ('Отправить', ('send_loc',))]  # naming
 
     kb = KeyboardGenerator(data).keyboard
-    await bot.send_message(response.from_user.id, _('отправить не отправить'), reply_markup=kb)
+
+    async with state.proxy() as data:
+        msg = await bot.edit_message_text(_('отправить не отправить'),
+                                          response.from_user.id,
+                                          data['msg_id'],
+                                          reply_markup=kb)
+        data['msg_id'] = msg.message_id
 
 
 async def game_handler(
         response: Union[types.Message, types.CallbackQuery],
-        state
+        state: FSMContext
 ):
-    async def custom_answer():
-        await response.message.reply('Отправьте игру')
-
     async def next_question():
-        await bot.send_message(response.from_user.id, 'Send phone')
+        user_data = await state.get_data()
+        await bot.edit_message_reply_markup(response.from_user.id, user_data['msg_id'])
         await RegistrationState.next()
+        await ask_phone(response, state)
 
-    if type(response) is types.Message:
+    if isinstance(response, types.Message):
         return await next_question()
-
-    games_mapper = {
-        'custom_answer': custom_answer,
-        'continue': next_question
-    }
 
     cb_value = response.data.split('|')[-1]
 
-    if cb_value in games_mapper:
-        await games_mapper[cb_value]()
+    if cb_value == 'continue':
+        await next_question()
     else:
         kb = await mark_selected(
                 cb_value,
@@ -196,11 +225,16 @@ async def game_handler(
         await response.message.edit_reply_markup(kb)
 
 
-async def location_handler(response: Union[types.Message, types.CallbackQuery], state):
+async def location_handler(
+        response: Union[types.Message, types.CallbackQuery],
+        state: FSMContext
+):
     async def accept_loc():
         await response.message.reply('Вышлите вашу геопозицию')
 
     async def proceed():
+        data = await state.get_data()
+        await bot.delete_message(response.from_user.id, data['msg_id'])
         await create_record(response.from_user.id, state)
         await state.finish()
 
@@ -208,13 +242,10 @@ async def location_handler(response: Union[types.Message, types.CallbackQuery], 
         'send_loc': accept_loc,
         'skip_loc': proceed
     }
-
-    if type(response) is types.Message:
-        return await proceed()
-
-    if type(response) is types.CallbackQuery:
+    if isinstance(response, types.CallbackQuery):
         cb_value = response.data.split('|')[-1]
         await location_mapper[cb_value]()
+        await state.update_data({'msg_id': response.message.message_id})
 
 
 async def next_state(state: FSMContext):
@@ -224,14 +255,28 @@ async def next_state(state: FSMContext):
         await RegistrationState.next()
 
 
+async def get_message_id(msg):
+    if isinstance(msg, types.Message):
+        return msg.message_id
+    elif isinstance(msg, types.CallbackQuery):
+        return msg.message.message_id
+
+
+async def delete_msg(msg):
+    if isinstance(msg, types.Message):
+        await msg.delete()
+    elif isinstance(msg, types.CallbackQuery):
+        await msg.message.delete()
+
+
 QUESTION_MAP = {
     'invite_link': (...,),
-    'lang': (save_answer, ask_first_name, next_state),
-    'first_name': (save_answer, ask_city, next_state),
-    'city': (save_answer, ask_games, next_state),
-    'games': (save_games, game_handler, None),
-    'phone': (save_phone, ask_location, next_state),
-    'location': (save_location, location_handler, None),
+    'lang': (save_answer, ask_first_name, next_state, [types.CallbackQuery]),
+    'first_name': (save_answer, ask_city, next_state, [types.Message]),
+    'city': (save_answer, ask_games, next_state, [types.Message]),
+    'games': (save_games, game_handler, None, [types.CallbackQuery, types.Message]),
+    'phone': (save_phone, ask_location, next_state, [types.Message]),
+    'location': (save_location, location_handler, None, [types.CallbackQuery, types.Message]),
 }
 
 
@@ -247,10 +292,8 @@ async def entry_point(
             message.from_user.id,
             'Вы уже зарегистрированы'
         )
-
     data = [(name.capitalize(), ('lang', member.value))
             for name, member in StudentTable.LanguageType.__members__.items()]
-
     kb = KeyboardGenerator(data).keyboard
 
     await bot.send_message(
@@ -267,16 +310,23 @@ async def entry_point(
                     content_types=[types.ContentType.TEXT, types.ContentType.LOCATION])
 @dp.callback_query_handler(state=RegistrationState.states)
 async def process_handler(
-    response: Union[types.CallbackQuery, types.Message],
+    user_response: Union[types.CallbackQuery, types.Message],
     state: FSMContext
 ):
-    if type(response) is types.CallbackQuery:
-        await bot.answer_callback_query(response.id)
+    if isinstance(user_response, types.CallbackQuery):
+        await bot.answer_callback_query(user_response.id)
 
     current_state = (await state.get_state()).split(':')[-1]
+    set_answer, next_question, set_state, available_types = QUESTION_MAP[current_state]
 
-    set_answer, next_question, set_state = QUESTION_MAP[current_state]
-    await set_answer(response, state)
-    await next_question(response, state)
-    if set_state:
-        await set_state(state)
+    # Pycharm triggers error when accessing elements through [],
+    # assuming incorrect comparison with typing module
+    # https://youtrack.jetbrains.com/issue/PY-36317
+    if type(user_response) in available_types:
+        await set_answer(user_response, state)
+        await next_question(user_response, state)
+        if set_state:
+            await set_state(state)
+
+    if isinstance(user_response, types.Message):
+        await delete_msg(user_response)
