@@ -230,18 +230,27 @@ async def location_handler(
         state: FSMContext
 ):
     async def accept_loc():
-        await response.message.reply('Вышлите вашу геопозицию')
+        async with state.proxy() as data:
+            msg = await bot.edit_message_text(_('Вышлите вашу геопозицию'),
+                                              response.from_user.id,
+                                              data['msg_id'],
+                                              )
+            data['msg_id'] = msg.message_id
 
     async def proceed():
         data = await state.get_data()
-        await bot.delete_message(response.from_user.id, data['msg_id'])
         await create_record(response.from_user.id, state)
+        await bot.delete_message(response.from_user.id, data['msg_id'])
         await state.finish()
 
     location_mapper = {
         'send_loc': accept_loc,
         'skip_loc': proceed
     }
+
+    if isinstance(response, types.Message) and response.location:
+        await proceed()
+
     if isinstance(response, types.CallbackQuery):
         cb_value = response.data.split('|')[-1]
         await location_mapper[cb_value]()
