@@ -1,4 +1,5 @@
 {% load bootstrap4 %}
+{% load static %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -12,7 +13,7 @@
     {% bootstrap_javascript jquery='full' %}
     {% bootstrap_messages %}
     {% block extra_links %}{% endblock %}
-    <link href="/static/base/css/app.css?v=1" rel="stylesheet">
+    <link href="{% static 'base/css/app.css' %}" rel="stylesheet">
 </head>
 <body>
 <div class="container mt-4">
@@ -37,6 +38,6 @@
     </div>
 </div>
 {% block extra_scripts %} {% endblock %}
-<script src="/static/base/js/app.js?v=1"></script>
+<script src="{% static 'base/js/app.js' %}"></script>
 </body>
 </html>

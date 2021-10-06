@@ -18,14 +18,22 @@ from django.contrib import admin
 from django.urls import path, include
 
 from django.conf import settings
+from django.views.generic import RedirectView
+
 from users.views import signup
+
+favicon_view = RedirectView.as_view(url='/static/base/favicon.ico', permanent=True)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('start/', signup, name='web_signup'),
     path('broadcast/', include('broadcast.urls')),
     path('forms/', include('forms.urls')),
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
-  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    path('favicon.ico', favicon_view),
+]
+
+if not settings.DEBUG:
+    urlpatterns + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
+        + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 admin.site.site_header = 'Parcel админка'

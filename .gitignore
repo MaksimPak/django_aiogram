@@ -145,6 +145,6 @@ media/
 !/media/tmp/.gitkeep
 !*/*/media/
 
-static/
+*/static/
 !/static/.gitkeep
 !*/*/static/
