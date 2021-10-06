@@ -71,7 +71,7 @@ async def save_games(
             # User selected same game. Remove from list
             data.get(current_state).remove(game)
         else:
-            # No list created. Put game to list
+            # No list created. Put selected game to list
             data[current_state] = [game]
 
 
@@ -184,7 +184,7 @@ async def ask_location(msg: types.Message, state: FSMContext):
     data = [('Пропустить', ('skip_loc',)), ('Отправить', ('send_loc',))]
     kb = KeyboardGenerator(data).keyboard
     msg = await bot.send_message(msg.from_user.id,
-                                 _('отправить не отправить'),
+                                 _('Отправьте локацию'),
                                  reply_markup=kb)
 
     await state.update_data({'msg_id': msg.message_id})
@@ -273,17 +273,12 @@ async def is_text(user_response):
         raise ValueError('Не могу найти текстовое сообщение')
 
 
-async def type_checker(user_response, required_types: list):
-    if len(required_types) == 1:
-        is_correct = isinstance(user_response, required_types.__getitem__(0))
-        if type(user_response) == types.Message and not is_correct:
-            raise ValueError('Нужно кликнуть на кнопку')
-        elif type(user_response) == types.CallbackQuery and not is_correct:
-            raise ValueError('Нужно отправить текстовое сообщение')
-    else:
-        is_correct = any([isinstance(user_response, x) for x in required_types])
-        if not is_correct:
-            raise ValueError('Отправьте сообщение в нужном формате')
+async def type_checker(user_response, required_type):
+    is_correct = isinstance(user_response, required_type)
+    if type(user_response) == types.Message and not is_correct:
+        raise ValueError('Нужно кликнуть на кнопку')
+    elif type(user_response) == types.CallbackQuery and not is_correct:
+        raise ValueError('Нужно отправить текстовое сообщение')
 
 
 @create_session
@@ -297,16 +292,14 @@ QUESTION_MAP = {
     # State: Answer saver, Next Question Sender, State Resolution, Validators
     'invite_link': (...,),
     'lang': (save_answer, ask_first_name, next_state,
-             [partial(type_checker, required_types=[types.CallbackQuery])]),
+             [partial(type_checker, required_type=types.CallbackQuery)]),
     'first_name': (save_answer, ask_city, next_state,
-                   [partial(type_checker, required_types=[types.Message]), is_text]),
+                   [partial(type_checker, required_type=types.Message), is_text]),
     'city': (save_answer, ask_games, next_state,
-             [partial(type_checker, required_types=[types.Message]), is_text]),
-    'games': (save_games, game_handler, None,
-              [partial(type_checker, required_types=[types.CallbackQuery, types.Message])]),
-    'phone': (save_answer, ask_location, next_state, [phone_checker]),
-    'location': (save_location, location_handler, None,
-                 [partial(type_checker, required_types=[types.CallbackQuery, types.Message])]),
+             [partial(type_checker, required_type=types.Message), is_text]),
+    'games': (save_games, game_handler, None, []),
+    'phone': (save_answer, ask_location, next_state, [phone_checker, is_text]),
+    'location': (save_location, location_handler, None, []),
 }
 
 
