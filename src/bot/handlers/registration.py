@@ -1,5 +1,4 @@
 import re
-from collections import deque
 from typing import Union
 
 from aiogram import types
@@ -33,6 +32,9 @@ async def save_answer(
     response: Union[types.Message, types.CallbackQuery],
     state: FSMContext
 ):
+    """
+    Default answer saver
+    """
     if type(response) is types.CallbackQuery:
         answer = response.data.split('|')[-1]
     else:
@@ -47,6 +49,9 @@ async def save_games(
         response: Union[types.Message, types.CallbackQuery],
         state: FSMContext
 ):
+    """
+    Game specific answer saver.
+    """
     game = None
     if isinstance(response, types.CallbackQuery) and re.match(r'^data\|game\|[\w ]+', response.data):
         game = response.data.split('|')[-1]
@@ -89,7 +94,10 @@ async def mark_selected(
         game: str,
         keyboard: dict
 ):
-    # todo REFACTOR
+    """
+    Prepends emoji symbol for selected button
+    """
+    # todo should be used as class serializer method
     for row in keyboard['inline_keyboard']:
         for key in row:
             game_name = key['callback_data'].split('|')[-1]
@@ -110,6 +118,9 @@ async def create_record(
         state: FSMContext,
         session: SessionLocal
 ):
+    """
+    Gathers collected data and inserts record into database
+    """
     prefix = 'RegistrationState:'
     contact = await repo.ContactRepository.get('tg_id', user_id, session)
     data = await state.get_data()
@@ -137,7 +148,8 @@ async def create_record(
         await repo.StudentCourseRepository.bunch_create(student.id, contact.data['courses'], session)
 
     reply_kb = await KeyboardGenerator.main_kb()
-    await bot.send_message(user_id, _('Вы зарегистрированы! В ближайшее время с вами свяжется наш оператор'),
+    await bot.send_message(user_id, _('Вы зарегистрированы! В ближайшее время'
+                                      ' с вами свяжется наш оператор'),
                            reply_markup=reply_kb)
 
 
@@ -189,9 +201,7 @@ async def ask_phone(
 
 async def ask_location(response: types.Message, state: FSMContext):
     data = [('Пропустить', ('skip_loc',)), ('Отправить', ('send_loc',))]  # naming
-
     kb = KeyboardGenerator(data).keyboard
-
     async with state.proxy() as data:
         msg = await bot.edit_message_text(_('отправить не отправить'),
                                           response.from_user.id,
@@ -204,7 +214,13 @@ async def game_handler(
         response: Union[types.Message, types.CallbackQuery],
         state: FSMContext
 ):
+    """
+    Resolves further instructions for game question.
+    """
     async def next_question():
+        """
+        Proceed to the next question if user sent game by text, or selected games and clicked continue
+        """
         user_data = await state.get_data()
         await bot.edit_message_reply_markup(response.from_user.id, user_data['msg_id'])
         await RegistrationState.next()
@@ -229,7 +245,13 @@ async def location_handler(
         response: Union[types.Message, types.CallbackQuery],
         state: FSMContext
 ):
+    """
+    Resolves further instructions for location question
+    """
     async def accept_loc():
+        """
+        If user agreed to send location, ask him to send it
+        """
         async with state.proxy() as data:
             msg = await bot.edit_message_text(_('Вышлите вашу геопозицию'),
                                               response.from_user.id,
@@ -238,10 +260,13 @@ async def location_handler(
             data['msg_id'] = msg.message_id
 
     async def proceed():
+        """
+        Finishes the state and creates record
+        """
         data = await state.get_data()
         await create_record(response.from_user.id, state)
-        await bot.delete_message(response.from_user.id, data['msg_id'])
         await state.finish()
+        await bot.delete_message(response.from_user.id, data['msg_id'])
 
     location_mapper = {
         'send_loc': accept_loc,
@@ -258,27 +283,17 @@ async def location_handler(
 
 
 async def next_state(state: FSMContext):
+    """
+    Switches to the next state if current state data is not MT
+    """
     data = await state.get_data()
     state = await state.get_state()
     if data.get(state):
         await RegistrationState.next()
 
 
-async def get_message_id(msg):
-    if isinstance(msg, types.Message):
-        return msg.message_id
-    elif isinstance(msg, types.CallbackQuery):
-        return msg.message.message_id
-
-
-async def delete_msg(msg):
-    if isinstance(msg, types.Message):
-        await msg.delete()
-    elif isinstance(msg, types.CallbackQuery):
-        await msg.message.delete()
-
-
 QUESTION_MAP = {
+    # State: Answer saver, Next Question Sender, State Resolution, Accepted Message Type
     'invite_link': (...,),
     'lang': (save_answer, ask_first_name, next_state, [types.CallbackQuery]),
     'first_name': (save_answer, ask_city, next_state, [types.Message]),
@@ -295,6 +310,9 @@ async def entry_point(
         message: types.Message,
         session: SessionLocal
 ):
+    """
+    Entry handler to initiate registration process.
+    """
     contact = await repo.ContactRepository.get('tg_id', message.from_user.id, session)
     if contact.student:
         return await bot.send_message(
@@ -322,20 +340,19 @@ async def process_handler(
     user_response: Union[types.CallbackQuery, types.Message],
     state: FSMContext
 ):
+    """
+    Intermediate handler that calls needed functions to create registration flow
+    """
     if isinstance(user_response, types.CallbackQuery):
         await bot.answer_callback_query(user_response.id)
+    else:
+        await user_response.delete()
 
     current_state = (await state.get_state()).split(':')[-1]
     set_answer, next_question, set_state, available_types = QUESTION_MAP[current_state]
 
-    # Pycharm triggers error when accessing elements through [],
-    # assuming incorrect comparison with typing module
-    # https://youtrack.jetbrains.com/issue/PY-36317
     if type(user_response) in available_types:
         await set_answer(user_response, state)
         await next_question(user_response, state)
         if set_state:
             await set_state(state)
-
-    if isinstance(user_response, types.Message):
-        await delete_msg(user_response)
