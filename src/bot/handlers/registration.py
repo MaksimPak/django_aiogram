@@ -183,7 +183,11 @@ async def ask_phone(
 async def ask_location(msg: types.Message, state: FSMContext):
     data = [('Пропустить', ('skip_loc',)), ('Отправить', ('send_loc',))]
     kb = KeyboardGenerator(data).keyboard
-    await bot.send_message(msg.from_user.id, _('отправить не отправить'), reply_markup=kb)
+    msg = await bot.send_message(msg.from_user.id,
+                                 _('отправить не отправить'),
+                                 reply_markup=kb)
+
+    await state.update_data({'msg_id': msg.message_id})
 
 
 async def game_handler(
@@ -229,16 +233,16 @@ async def location_handler(
         """
         If user agreed to send location, ask him to send it
         """
+        data = await state.get_data()
+        await bot.edit_message_reply_markup(response.from_user.id, data['msg_id'])
         await response.message.reply(_('Вышлите вашу геопозицию'))
 
     async def proceed():
         """
         Finishes the state and creates record
         """
-        data = await state.get_data()
         await create_lead(response.from_user.id, state)
         await state.finish()
-        await bot.delete_message(response.from_user.id, data['msg_id'])
 
     location_mapper = {
         'send_loc': accept_loc,
@@ -270,10 +274,16 @@ async def is_text(user_response):
 
 
 async def type_checker(user_response, required_types: list):
-    is_correct = any([isinstance(user_response, x) for x in required_types])
-
-    if not is_correct:
-        raise ValueError('Отправьте сообщение в нужном формате')
+    if len(required_types) == 1:
+        is_correct = isinstance(user_response, required_types.__getitem__(0))
+        if type(user_response) == types.Message and not is_correct:
+            raise ValueError('Нужно кликнуть на кнопку')
+        elif type(user_response) == types.CallbackQuery and not is_correct:
+            raise ValueError('Нужно отправить текстовое сообщение')
+    else:
+        is_correct = any([isinstance(user_response, x) for x in required_types])
+        if not is_correct:
+            raise ValueError('Отправьте сообщение в нужном формате')
 
 
 @create_session
