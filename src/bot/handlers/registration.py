@@ -1,4 +1,4 @@
-import re
+from functools import partial
 from typing import Union
 
 from aiogram import types
@@ -28,6 +28,11 @@ class RegistrationState(StatesGroup):
     location = State()
 
 
+GAMES_LIST = ['PUBG', 'MineCraft', 'GTA', 'FIFA', 'CS:GO', 'ClashRoyale',
+              'Fortnite', 'Apex Legends', 'Valorant', 'Battlefield', 'Call Of Duty',
+              'Assassin\'s Creed', 'Need For Speed']
+
+
 async def save_answer(
     response: Union[types.Message, types.CallbackQuery],
     state: FSMContext
@@ -52,33 +57,22 @@ async def save_games(
     """
     Game specific answer saver.
     """
-    game = None
-    if isinstance(response, types.CallbackQuery) and re.match(r'^data\|game\|[\w ]+', response.data):
-        game = response.data.split('|')[-1]
-    elif isinstance(response, types.Message):
+    if hasattr(response, 'text'):
         game = response.text
+    else:
+        game = response.data.split('|')[-1]
 
-    if game:
-        current_state = await state.get_state()
-        async with state.proxy() as data:
-            if data.get(current_state) and game not in data.get(current_state):
-                data[current_state].append(game)
-            elif data.get(current_state) and game in data.get(current_state):
-                data.get(current_state).remove(game)
-            else:
-                data[current_state] = [game]
-
-
-@create_session
-async def save_phone(
-        response: types.Message,
-        state: FSMContext,
-        session: SessionLocal
-):
-    is_phone_exists = await repo.StudentRepository.is_exist('phone', response.text, session)
-    if is_phone_exists:
-        return await response.reply('Данный номер уже используется')
-    await save_answer(response, state)
+    current_state = await state.get_state()
+    async with state.proxy() as data:
+        if data.get(current_state) and game not in data.get(current_state):
+            # User already selected some games, append new
+            data[current_state].append(game)
+        elif data.get(current_state) and game in data.get(current_state):
+            # User selected same game. Remove from list
+            data.get(current_state).remove(game)
+        else:
+            # No list created. Put game to list
+            data[current_state] = [game]
 
 
 async def save_location(response, state: FSMContext):
@@ -113,7 +107,7 @@ async def mark_selected(
 
 
 @create_session
-async def create_record(
+async def create_lead(
         user_id: int,
         state: FSMContext,
         session: SessionLocal
@@ -154,60 +148,42 @@ async def create_record(
 
 
 async def ask_first_name(
-        cb: types.CallbackQuery,
+        user_response: types.CallbackQuery,
         state: FSMContext
 ):
-    msg = await cb.message.edit_text(_('Как тебя зовут?'))
-    await state.update_data({'msg_id': msg.message_id})
+    await bot.send_message(user_response.from_user.id, _('Как тебя зовут?'))
 
 
-async def ask_city(msg: types.Message, state: FSMContext):
-
-    async with state.proxy() as data:
-        msg = await bot.edit_message_text(_('Отлично, теперь напиши из какого ты города'),
-                                          msg.from_user.id, data['msg_id'])
-        data['msg_id'] = msg.message_id
+async def ask_city(user_response: types.Message, state: FSMContext):
+    await bot.send_message(user_response.from_user.id,
+                           _('Отлично, теперь напиши из какого ты города'))
 
 
 async def ask_games(
-        response: types.Message,
+        user_response: types.Message,
         state: FSMContext
 ):
-    games_list = ['PUBG', 'MineCraft', 'GTA', 'FIFA', 'CS:GO', 'ClashRoyale',
-                  'Fortnite', 'Apex Legends', 'Valorant', 'Battlefield', 'Call Of Duty',
-                  'Assassin\'s Creed', 'Need For Speed']
-
     data = [(game, ('game', game))
-            for game in games_list]
+            for game in GAMES_LIST]
     kb = KeyboardGenerator(data, row_width=3).keyboard
-    async with state.proxy() as data:
-        msg = await bot.edit_message_text(_('Выберите игры или впишите ответ вручную'),
-                                          response.from_user.id,
-                                          data['msg_id'],
-                                          reply_markup=kb)
-        data['msg_id'] = msg.message_id
+    msg = await bot.send_message(user_response.from_user.id,
+                           _('Выберите игры или впишите ответ вручную'),
+                           reply_markup=kb)
+
+    await state.update_data({'msg_id': msg.message_id})
 
 
 async def ask_phone(
-        response: types.CallbackQuery,
+        msg: types.Message,
         state: FSMContext
 ):
-    async with state.proxy() as data:
-        msg = await bot.edit_message_text(_('Отправьте номер'),
-                                          response.from_user.id,
-                                          data['msg_id'],)
-        data['msg_id'] = msg.message_id
+    await bot.send_message(msg.from_user.id, _('Отправьте номер'))
 
 
-async def ask_location(response: types.Message, state: FSMContext):
-    data = [('Пропустить', ('skip_loc',)), ('Отправить', ('send_loc',))]  # naming
+async def ask_location(msg: types.Message, state: FSMContext):
+    data = [('Пропустить', ('skip_loc',)), ('Отправить', ('send_loc',))]
     kb = KeyboardGenerator(data).keyboard
-    async with state.proxy() as data:
-        msg = await bot.edit_message_text(_('отправить не отправить'),
-                                          response.from_user.id,
-                                          data['msg_id'],
-                                          reply_markup=kb)
-        data['msg_id'] = msg.message_id
+    await bot.send_message(msg.from_user.id, _('отправить не отправить'), reply_markup=kb)
 
 
 async def game_handler(
@@ -227,6 +203,7 @@ async def game_handler(
         await ask_phone(response, state)
 
     if isinstance(response, types.Message):
+        # User decided to send game by text manually
         return await next_question()
 
     cb_value = response.data.split('|')[-1]
@@ -252,19 +229,14 @@ async def location_handler(
         """
         If user agreed to send location, ask him to send it
         """
-        async with state.proxy() as data:
-            msg = await bot.edit_message_text(_('Вышлите вашу геопозицию'),
-                                              response.from_user.id,
-                                              data['msg_id'],
-                                              )
-            data['msg_id'] = msg.message_id
+        await response.message.reply(_('Вышлите вашу геопозицию'))
 
     async def proceed():
         """
         Finishes the state and creates record
         """
         data = await state.get_data()
-        await create_record(response.from_user.id, state)
+        await create_lead(response.from_user.id, state)
         await state.finish()
         await bot.delete_message(response.from_user.id, data['msg_id'])
 
@@ -292,15 +264,39 @@ async def next_state(state: FSMContext):
         await RegistrationState.next()
 
 
+async def is_text(user_response):
+    if not isinstance(user_response, types.Message) or not user_response.text:
+        raise ValueError('Не могу найти текстовое сообщение')
+
+
+async def type_checker(user_response, required_types: list):
+    is_correct = any([isinstance(user_response, x) for x in required_types])
+
+    if not is_correct:
+        raise ValueError('Отправьте сообщение в нужном формате')
+
+
+@create_session
+async def phone_checker(user_response, session):
+    is_phone_exists = await repo.StudentRepository.is_exist('phone', user_response.text, session)
+    if is_phone_exists:
+        raise ValueError('Данный номер уже используется')
+
+
 QUESTION_MAP = {
-    # State: Answer saver, Next Question Sender, State Resolution, Accepted Message Type
+    # State: Answer saver, Next Question Sender, State Resolution, Validators
     'invite_link': (...,),
-    'lang': (save_answer, ask_first_name, next_state, [types.CallbackQuery]),
-    'first_name': (save_answer, ask_city, next_state, [types.Message]),
-    'city': (save_answer, ask_games, next_state, [types.Message]),
-    'games': (save_games, game_handler, None, [types.CallbackQuery, types.Message]),
-    'phone': (save_phone, ask_location, next_state, [types.Message]),
-    'location': (save_location, location_handler, None, [types.CallbackQuery, types.Message]),
+    'lang': (save_answer, ask_first_name, next_state,
+             [partial(type_checker, required_types=[types.CallbackQuery])]),
+    'first_name': (save_answer, ask_city, next_state,
+                   [partial(type_checker, required_types=[types.Message]), is_text]),
+    'city': (save_answer, ask_games, next_state,
+             [partial(type_checker, required_types=[types.Message]), is_text]),
+    'games': (save_games, game_handler, None,
+              [partial(type_checker, required_types=[types.CallbackQuery, types.Message])]),
+    'phone': (save_answer, ask_location, next_state, [phone_checker]),
+    'location': (save_location, location_handler, None,
+                 [partial(type_checker, required_types=[types.CallbackQuery, types.Message])]),
 }
 
 
@@ -345,14 +341,17 @@ async def process_handler(
     """
     if isinstance(user_response, types.CallbackQuery):
         await bot.answer_callback_query(user_response.id)
-    else:
-        await user_response.delete()
 
     current_state = (await state.get_state()).split(':')[-1]
-    set_answer, next_question, set_state, available_types = QUESTION_MAP[current_state]
+    set_answer, next_question, set_state, validators = QUESTION_MAP[current_state]
 
-    if type(user_response) in available_types:
-        await set_answer(user_response, state)
-        await next_question(user_response, state)
-        if set_state:
-            await set_state(state)
+    for validator in validators:
+        try:
+            await validator(user_response)
+        except ValueError as e:
+            return await bot.send_message(user_response.from_user.id, e)
+
+    await set_answer(user_response, state)
+    await next_question(user_response, state)
+    if set_state:
+        await set_state(state)
