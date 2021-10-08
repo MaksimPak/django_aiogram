@@ -1,3 +1,4 @@
+import re
 from functools import partial
 from typing import Union
 
@@ -19,14 +20,14 @@ _ = i18n.gettext
 
 
 class RegistrationState(StatesGroup):
-    invite_link = State()
-    lang = State()
     first_name = State()
     city = State()
     games = State()
     phone = State()
     location = State()
 
+
+PHONE_PATTERN = re.compile(r'\+998[0-9]{9}')
 
 GAMES_LIST = ['PUBG', 'MineCraft', 'GTA', 'FIFA', 'CS:GO', 'ClashRoyale',
               'Fortnite', 'Apex Legends', 'Valorant', 'Battlefield', 'Call Of Duty',
@@ -124,7 +125,7 @@ async def create_lead(
     lead_data = {
         'first_name': data[f'{prefix}first_name'],
         'city':  data[f'{prefix}city'],
-        'language_type': data[f'{prefix}lang'],
+        'language_type': contact.data['lang'],
         'phone': data[f'{prefix}phone'],
         'application_type': StudentTable.ApplicationType.telegram,
         'is_client': False,
@@ -250,6 +251,7 @@ async def location_handler(
     }
 
     if isinstance(response, types.Message) and response.location:
+        # User sent message with location.
         await proceed()
 
     if isinstance(response, types.CallbackQuery):
@@ -283,6 +285,11 @@ async def type_checker(user_response, required_type):
 
 @create_session
 async def phone_checker(user_response, session):
+    is_correct_format = re.match(PHONE_PATTERN, user_response.text)
+
+    if not is_correct_format:
+        raise ValueError('Неправильный формат телефона. Пример: +998000000000')
+
     is_phone_exists = await repo.StudentRepository.is_exist('phone', user_response.text, session)
     if is_phone_exists:
         raise ValueError('Данный номер уже используется')
@@ -290,9 +297,6 @@ async def phone_checker(user_response, session):
 
 QUESTION_MAP = {
     # State: Answer saver, Next Question Sender, State Resolution, Validators
-    'invite_link': (...,),
-    'lang': (save_answer, ask_first_name, next_state,
-             [partial(type_checker, required_type=types.CallbackQuery)]),
     'first_name': (save_answer, ask_city, next_state,
                    [partial(type_checker, required_type=types.Message), is_text]),
     'city': (save_answer, ask_games, next_state,
@@ -303,7 +307,7 @@ QUESTION_MAP = {
 }
 
 
-@dp.message_handler(commands=['register'])
+@dp.message_handler(commands=['register'], state='*')
 @create_session
 async def entry_point(
         message: types.Message,
@@ -318,17 +322,13 @@ async def entry_point(
             message.from_user.id,
             'Вы уже зарегистрированы'
         )
-    data = [(name.capitalize(), ('lang', member.value))
-            for name, member in StudentTable.LanguageType.__members__.items()]
-    kb = KeyboardGenerator(data).keyboard
 
     await bot.send_message(
         message.from_user.id,
         _('Регистрация в боте MegaSkill.\n'
-          'Выберите язык:'),
-        reply_markup=kb
+          'Как тебя зовут?'),
     )
-    await RegistrationState.lang.set()
+    await RegistrationState.first_name.set()
 
 
 @dp.throttled(throttled, rate=.7)

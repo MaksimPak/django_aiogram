@@ -1,25 +1,11 @@
 from typing import Any, Tuple
 
 from aiogram import types
-from aiogram.contrib.fsm_storage.redis import RedisStorage2
 from aiogram.contrib.middlewares.i18n import I18nMiddleware as BaseI18nMiddleware
 
-from bot import repository as repo, config
+from bot import repository as repo
+from bot.db.schemas import StudentTable
 from bot.decorators import create_session
-
-user_redis = RedisStorage2(host=config.REDIS_HOST, port=config.REDIS_PORT, db=3, prefix='user')
-
-
-async def get_student_lang(tg_id, session=None):
-    redis = await user_redis.redis()
-    data = await redis.get(f'user_{tg_id}', encoding='utf8')
-    contact = await repo.ContactRepository.get('tg_id', int(tg_id), session)
-    if not data and contact.student:
-        await redis.set(f'user_{tg_id}', contact.student.language_type.name, expire=15*60)
-        data = contact.student.language_type.name
-    else:
-        data = 'ru'
-    return data
 
 
 class I18nMiddleware(BaseI18nMiddleware):
@@ -31,10 +17,12 @@ class I18nMiddleware(BaseI18nMiddleware):
         """
 
         message: types.Message = args[0]
-        lang = await get_student_lang(message.from_user.id, session)
+        lang = self.default
+        contact = await repo.ContactRepository.get('tg_id', message.from_user.id, session)
+        if contact:
+            lang = StudentTable.LanguageType(contact.data['lang'])
         *_, data = args
-        data['locale'] = self.default
+        data['locale'] = lang
         if lang:
             data['locale'] = lang
-            return data['locale']
         return data['locale']

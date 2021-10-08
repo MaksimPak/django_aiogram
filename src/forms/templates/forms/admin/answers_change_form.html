@@ -2,7 +2,6 @@
 {% block object-tools-items %}
       {{block.super}}
       {% if original.id %}
-<!--todo fix url-->
-      <li><a href="'dashboard:message_contacts' ?_selected_action={{original.contact.pk}}">Отправить сообщение</a></li>
+      <li><a href="{% url 'broadcast:prepare_message' %}?_selected_action={{original.contact.pk}}">Отправить сообщение</a></li>
       {% endif %}
 {% endblock %}
