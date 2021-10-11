@@ -1,3 +1,5 @@
+import re
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
@@ -12,6 +14,20 @@ from bot.serializers import KeyboardGenerator
 from bot.utils.callback_settings import short_data
 
 _ = i18n.gettext
+
+PHONE_PATTERN = re.compile(r'\+998[0-9]{9}')
+
+
+@create_session
+async def phone_checker(user_response, session):
+    is_correct_format = re.match(PHONE_PATTERN, user_response.text)
+
+    if not is_correct_format:
+        raise ValueError('Неправильный формат телефона. Пример: +998000000000')
+
+    is_phone_exists = await repo.StudentRepository.is_exist('phone', user_response.text, session)
+    if is_phone_exists:
+        raise ValueError('Данный номер уже используется')
 
 
 class ProfileChange(StatesGroup):
@@ -292,6 +308,10 @@ async def set_phone(
     """
     data = await state.get_data()
     contact = await repo.ContactRepository.load_student_data('tg_id', message.from_user.id, session)
+    try:
+        await phone_checker(message)
+    except ValueError as e:
+        return await bot.send_message(message.from_user.id, e)
 
     await repo.StudentRepository.edit(contact.student, {'phone': message.text}, session)
 
