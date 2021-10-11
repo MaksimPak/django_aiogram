@@ -149,6 +149,16 @@ class StudentRepository(BaseRepository):
         return student
 
     @staticmethod
+    async def load_with_contact(attr: Any, value, session):
+        async with session:
+            student = (await session.execute(
+                    select(StudentTable).where(getattr(StudentTable, attr) == value).options(
+                        selectinload(StudentTable.contact)
+                    )
+                )).scalar()
+        return student
+
+    @staticmethod
     async def get_course_inload(attribute: str, value: Any, session: SessionLocal):
         """
         Emits a second (or more) SELECT statement to load Courses at once from Student

@@ -14,6 +14,7 @@ from bot.db.schemas import StudentTable
 from bot.decorators import create_session
 from bot.misc import dp, bot, i18n
 from bot.serializers import KeyboardGenerator
+from bot.utils.callback_settings import simple_data
 from bot.utils.throttling import throttled
 
 _ = i18n.gettext
@@ -307,6 +308,7 @@ QUESTION_MAP = {
 
 
 @dp.message_handler(commands=['register'], state='*')
+@dp.callback_query_handler(simple_data.filter(value='tg_reg'))
 @create_session
 async def entry_point(
         message: types.Message,

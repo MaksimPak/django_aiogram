@@ -190,9 +190,9 @@ async def display_forms(
     )
 
 
-@dp.message_handler(CommandStart(re.compile(r'^quiz(\d+)')), ChatTypeFilter(types.ChatType.PRIVATE))
-@dp.message_handler(Regexp(re.compile(r'^/quiz(\d+)')))
-@dp.callback_query_handler(short_data.filter(property='form'))
+@dp.message_handler(CommandStart(re.compile(r'^quiz(\d+)')), ChatTypeFilter(types.ChatType.PRIVATE), state='*')
+@dp.message_handler(Regexp(re.compile(r'^/quiz(\d+)')), state='*')
+@dp.callback_query_handler(short_data.filter(property='form'), state='*')
 @dp.throttled(throttled, rate=.7)
 @create_session
 async def form_initial(
