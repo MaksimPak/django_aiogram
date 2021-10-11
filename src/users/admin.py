@@ -14,8 +14,8 @@ from users import models, forms
 @admin.register(models.Lead)
 class LeadAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__', 'tg_id', 'application_type',
-                    'blocked_bot', 'phone', 'language_type',
-                    'learning_centre', 'checkout_date', 'get_courses',)
+                    'blocked_bot', 'phone', 'learning_centre',
+                    'checkout_date', 'get_courses',)
     list_per_page = 20
     list_filter = ('learning_centre', 'application_type',)
     list_display_links = ('__str__',)
@@ -101,7 +101,7 @@ class LeadAdmin(admin.ModelAdmin):
 
 @admin.register(models.Client)
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ('id', '__str__', 'blocked_bot', 'phone', 'language_type', 'get_courses',)
+    list_display = ('id', '__str__', 'blocked_bot', 'phone', 'get_courses',)
     list_per_page = 20
     list_filter = ('studentcourse__course__name', 'learning_centre',)
     list_display_links = ('__str__',)

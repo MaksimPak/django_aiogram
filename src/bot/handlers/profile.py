@@ -4,10 +4,10 @@ from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import StatesGroup, State
 
 from bot import repository as repo
+from bot.db.config import SessionLocal
+from bot.db.schemas import StudentTable
 from bot.decorators import create_session
 from bot.misc import dp, bot, i18n
-from bot.db.schemas import StudentTable
-from bot.db.config import SessionLocal
 from bot.serializers import KeyboardGenerator
 from bot.utils.callback_settings import short_data
 
@@ -20,7 +20,6 @@ class ProfileChange(StatesGroup):
     lang = State()
     phone = State()
     city = State()
-    field = State()
 
 
 async def default_renderer(client, key):
@@ -28,7 +27,7 @@ async def default_renderer(client, key):
 
 
 async def enum_renderer(client, key):
-    return getattr(client, key).name
+    return StudentTable.LanguageType(client.contact.data[key]).name
 
 
 async def model_renderer(client, key, model_key):
@@ -44,7 +43,7 @@ async def lc_renderer(client, key):
 PROFILE_FIELDS = (
     (_('Имя'), 'first_name', default_renderer),
     (_('Фамилия'), 'last_name', default_renderer),
-    (_('Язык'), 'language_type', enum_renderer),
+    (_('Язык'), 'lang', enum_renderer),
     (_('Телефон'), 'phone', default_renderer),
     (_('Город'), 'city', default_renderer),
 )
@@ -64,8 +63,7 @@ async def profile_kb(
     message = ''
     fields = (*PROFILE_FIELDS, *ro_fields)
     for title, key, renderer in fields:
-        message += '✅' if getattr(client, key) else '✍️'
-        message += ' ' + title + ':' + ' ' + await renderer(client, key) + '\n'
+        message += title + ':' + ' ' + await renderer(client, key) + '\n'
 
     return message, kb
 
@@ -81,9 +79,9 @@ async def my_profile(
     Starting point for profile view/edit
     """
     await state.reset_state()
-    client = await repo.StudentRepository.load_with_lc('tg_id', int(message.from_user.id), session)
+    contact = await repo.ContactRepository.load_student_data('tg_id', message.from_user.id, session)
     kb = KeyboardGenerator([(_('Регистрация'), ('tg_reg',))]).keyboard
-    if not client:
+    if not contact.student:
         return await message.reply(
             _('<i>Ваш статус: Незагрегистированный пользователь.\n</i>' 
               '<i>Зарегистрируйтесь и получите больше возможностей.</i>'),
@@ -92,10 +90,9 @@ async def my_profile(
             )
 
     async with session:
-        session.add(client)
-        await session.refresh(client)
-
-    info, kb = await profile_kb(client)
+        session.add(contact)
+        await session.refresh(contact)
+        info, kb = await profile_kb(contact.student)
 
     await message.reply(info, reply_markup=kb)
 
@@ -134,10 +131,13 @@ async def set_name(
     """
     data = await state.get_data()
 
-    client = await repo.StudentRepository.load_with_lc('tg_id', int(message.from_user.id), session)
-    await repo.StudentRepository.edit(client, {'first_name': message.text}, session)
+    contact = await repo.ContactRepository.load_student_data('tg_id', message.from_user.id, session)
+    await repo.StudentRepository.edit(contact.student, {'first_name': message.text}, session)
 
-    info, kb = await profile_kb(client)
+    async with session:
+        session.add(contact)
+        await session.refresh(contact)
+        info, kb = await profile_kb(contact.student)
 
     await bot.delete_message(message.from_user.id, message.message_id)
     await bot.edit_message_text(
@@ -182,10 +182,13 @@ async def set_last_name(
     Saves last_name into db
     """
     data = await state.get_data()
-    client = await repo.StudentRepository.load_with_lc('tg_id', int(message.from_user.id), session)
-    await repo.StudentRepository.edit(client, {'last_name': message.text}, session)
+    contact = await repo.ContactRepository.load_student_data('tg_id', message.from_user.id, session)
+    await repo.StudentRepository.edit(contact.student, {'last_name': message.text}, session)
 
-    info, kb = await profile_kb(client)
+    async with session:
+        session.add(contact)
+        await session.refresh(contact)
+        info, kb = await profile_kb(contact.student)
 
     await bot.delete_message(message.from_user.id, message.message_id)
     await bot.edit_message_text(
@@ -197,7 +200,7 @@ async def set_last_name(
     await state.finish()
 
 
-@dp.callback_query_handler(short_data.filter(property='language_type'))
+@dp.callback_query_handler(short_data.filter(property='lang'))
 async def change_lang(
         cb: types.callback_query,
         state: FSMContext
@@ -238,17 +241,14 @@ async def set_lang(
 
     data = await state.get_data()
 
-    client = await repo.StudentRepository.load_with_lc('tg_id', int(cb.from_user.id), session)
+    contact = await repo.ContactRepository.load_student_data('tg_id', cb.from_user.id, session)
+    contact.data['lang'] = lang
 
-    await repo.StudentRepository.edit(client, {'language_type': lang}, session)
-
-    # Adding object back to session since it is in detached state after edit
-    # and enum type value returns VARCHAR
     async with session:
-        session.add(client)
-        await session.refresh(client)
+        session.add(contact)
+        await session.commit()
+        info, kb = await profile_kb(contact.student)
 
-    info, kb = await profile_kb(client)
     await bot.edit_message_text(
         info,
         cb.from_user.id,
@@ -269,7 +269,6 @@ async def change_phone(
     await bot.answer_callback_query(cb.id)
 
     async with state.proxy() as data:
-
         data['message_id'] = cb.message.message_id
 
     await bot.edit_message_text(
@@ -292,11 +291,14 @@ async def set_phone(
     Saves phone into db
     """
     data = await state.get_data()
+    contact = await repo.ContactRepository.load_student_data('tg_id', message.from_user.id, session)
 
-    client = await repo.StudentRepository.load_with_lc('tg_id', int(message.from_user.id), session)
-    await repo.StudentRepository.edit(client, {'phone': message.text}, session)
+    await repo.StudentRepository.edit(contact.student, {'phone': message.text}, session)
 
-    info, kb = await profile_kb(client)
+    async with session:
+        session.add(contact)
+        await session.refresh(contact)
+        info, kb = await profile_kb(contact.student)
 
     await bot.delete_message(message.from_user.id, message.message_id)
     await bot.edit_message_text(
@@ -342,10 +344,14 @@ async def set_city(
     """
     data = await state.get_data()
 
-    client = await repo.StudentRepository.load_with_lc('tg_id', int(message.from_user.id), session)
-    await repo.StudentRepository.edit(client, {'city': message.text}, session)
+    contact = await repo.ContactRepository.load_student_data('tg_id', message.from_user.id, session)
 
-    info, kb = await profile_kb(client)
+    await repo.StudentRepository.edit(contact.student, {'city': message.text}, session)
+
+    async with session:
+        session.add(contact)
+        await session.refresh(contact)
+        info, kb = await profile_kb(contact.student)
 
     await bot.delete_message(message.from_user.id, message.message_id)
     await bot.edit_message_text(

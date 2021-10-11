@@ -16,7 +16,7 @@ from bot.views import main
 _ = i18n.gettext
 
 
-class TestState(StatesGroup):
+class ExtraData(StatesGroup):
     lang = State()
 
 
@@ -32,10 +32,10 @@ async def lang(msg: types.Message, state: FSMContext):
     kb = KeyboardGenerator(data).keyboard
     await msg.reply(' язык', reply_markup=kb)
     await state.update_data({'processed_update': update.to_python()})
-    await TestState.lang.set()
+    await ExtraData.lang.set()
 
 
-@dp.callback_query_handler(short_data.filter(property='lang'), state=TestState.lang)
+@dp.callback_query_handler(short_data.filter(property='lang'), state=ExtraData.lang)
 @create_session
 async def save_lang(cb: types.CallbackQuery, state: FSMContext, callback_data: dict, session):
     await cb.answer()
@@ -50,7 +50,7 @@ async def save_lang(cb: types.CallbackQuery, state: FSMContext, callback_data: d
         }, session)
     await state.finish()
     update = types.Update.to_object(data['processed_update'])
-    res = await dp.process_update(update)
+    await dp.process_update(update)
 
 
 @dp.message_handler(ChatTypeFilter(types.ChatType.PRIVATE), state='*', commands='cancel')

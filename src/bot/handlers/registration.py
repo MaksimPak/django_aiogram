@@ -125,7 +125,6 @@ async def create_lead(
     lead_data = {
         'first_name': data[f'{prefix}first_name'],
         'city':  data[f'{prefix}city'],
-        'language_type': contact.data['lang'],
         'phone': data[f'{prefix}phone'],
         'application_type': StudentTable.ApplicationType.telegram,
         'is_client': False,

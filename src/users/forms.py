@@ -7,7 +7,7 @@ from courses import models as course_models
 class LeadForm(forms.ModelForm):
     class Meta:
         model = models.Lead
-        fields = ['first_name', 'last_name', 'language_type', 'phone', 'city', 'learning_centre']
+        fields = ['first_name', 'last_name', 'phone', 'city', 'learning_centre']
 
 
 class StudentAdmin(forms.ModelForm):

@@ -121,14 +121,15 @@ class ContactRepository(BaseRepository):
         return contact
 
     @staticmethod
-    async def load_student(contact_id: int, session: SessionLocal):
+    async def load_student_data(attr: Any, value, session: SessionLocal):
         """
         load contact with student relationship
         """
         async with session:
             contact = (await session.execute(
                 select(ContactTable).where(
-                    ContactTable.id == contact_id).options(selectinload(ContactTable.student))
+                    getattr(ContactTable, attr) == value).options(selectinload(ContactTable.student)
+                                                                  .selectinload(StudentTable.learning_centre))
             )).scalar()
 
         return contact

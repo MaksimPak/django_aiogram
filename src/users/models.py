@@ -17,10 +17,6 @@ class User(AbstractUser):
 
 
 class Student(BaseModel):
-    class LanguageType(models.TextChoices):
-        ru = '1', 'Russian'
-        uz = '2', 'Uzbek'
-
     class ApplicationType(models.TextChoices):
         admin = '1', 'Admin',
         telegram = '2', 'Telegram'
@@ -29,8 +25,6 @@ class Student(BaseModel):
     first_name = models.CharField(max_length=50, verbose_name='Имя')
     last_name = models.CharField(max_length=50, verbose_name='Фамилия', null=True, blank=True)
     city = models.CharField(max_length=50, verbose_name='Город проживания')
-    language_type = models.CharField(max_length=20, verbose_name='Язык ученика',
-                                     choices=LanguageType.choices, default=LanguageType.ru)
     phone = models.CharField(max_length=20, verbose_name='Контактный телефон', unique=True)
     learning_centre = models.ForeignKey('companies.LearningCentre', on_delete=models.PROTECT,
                                         verbose_name='Учебный центр', null=True, blank=True)

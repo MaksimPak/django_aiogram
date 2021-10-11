@@ -15,17 +15,11 @@ async def main(
         message: types.Message,
         session: SessionLocal = None
 ):
-    student = await repo.StudentRepository.get('tg_id', int(message.from_user.id), session)
-    contact = await repo.ContactRepository.get_or_create(
-        message.from_user.id,
-        message.from_user.first_name,
-        message.from_user.last_name,
-        session
-    )
+    contact = await repo.ContactRepository.get('tg_id', message.from_user.id, session)
     if contact.blocked_bot:
         await repo.ContactRepository.edit(contact, {'blocked_bot': False}, session)
 
-    if not student:
+    if not contact.student:
         kb = await KeyboardGenerator.main_kb(contact)
         await bot.send_message(
             message.from_user.id,
@@ -34,8 +28,6 @@ async def main(
         )
     else:
         kb = await KeyboardGenerator.main_kb()
-        if student.blocked_bot:
-            await repo.StudentRepository.edit(student, {'blocked_bot': False}, session)
         await bot.send_message(
             message.from_user.id,
             _('Выбери опцию'),

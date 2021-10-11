@@ -99,27 +99,28 @@ async def my_courses(
     Displays free and enrolled courses of the student
     """
     await state.reset_state()
-    client = await repo.StudentRepository.get_course_inload('tg_id', int(message.from_user.id), session)
-    if not client:
-        await message.reply(_('Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться'))
-        return
-
-    course_btns = []
-
-    courses = client.courses    # todo rewrite
-    for studentcourse in courses:
-        watch_count = await repo.StudentLessonRepository.finished_lesson_count(
-            studentcourse.courses.id, client.id, session
-        )
-        lesson_count = len(studentcourse.courses.lessons)
-        txt = studentcourse.courses.name + ' ✅' if watch_count == lesson_count else studentcourse.courses.name
-        course_btns.append((txt, ('get_course', studentcourse.courses.id)))
-
-    kb = KeyboardGenerator(course_btns)
-
-    msg = _('Ваши курсы') if course_btns else _('Вы не записаны ни на один курс')
-
-    await message.reply(msg, reply_markup=kb.keyboard)
+    await message.reply('Раздел перерабатывается')
+    # client = await repo.StudentRepository.get_course_inload('tg_id', int(message.from_user.id), session)
+    # if not client:
+    #     await message.reply(_('Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться'))
+    #     return
+    #
+    # course_btns = []
+    #
+    # courses = client.courses    # todo rewrite
+    # for studentcourse in courses:
+    #     watch_count = await repo.StudentLessonRepository.finished_lesson_count(
+    #         studentcourse.courses.id, client.id, session
+    #     )
+    #     lesson_count = len(studentcourse.courses.lessons)
+    #     txt = studentcourse.courses.name + ' ✅' if watch_count == lesson_count else studentcourse.courses.name
+    #     course_btns.append((txt, ('get_course', studentcourse.courses.id)))
+    #
+    # kb = KeyboardGenerator(course_btns)
+    #
+    # msg = _('Ваши курсы') if course_btns else _('Вы не записаны ни на один курс')
+    #
+    # await message.reply(msg, reply_markup=kb.keyboard)
 
 
 @dp.callback_query_handler(short_data.filter(property='get_course'))

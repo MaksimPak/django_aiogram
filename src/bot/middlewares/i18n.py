@@ -9,20 +9,14 @@ from bot.decorators import create_session
 
 
 class I18nMiddleware(BaseI18nMiddleware):
-
     @create_session
     async def get_user_locale(self, action: str, args: Tuple[Any], session) -> str:
         """
         Middleware function to return locale to handlers
         """
-
         message: types.Message = args[0]
-        lang = self.default
         contact = await repo.ContactRepository.get('tg_id', message.from_user.id, session)
-        if contact:
-            lang = StudentTable.LanguageType(contact.data['lang'])
+        lang = StudentTable.LanguageType(contact.data['lang'])
         *_, data = args
         data['locale'] = lang
-        if lang:
-            data['locale'] = lang
         return data['locale']
