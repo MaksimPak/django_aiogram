@@ -1,14 +1,17 @@
 import datetime
+from contextlib import suppress
 from typing import Any
 
 from sqlalchemy import select, func, or_, and_
+from sqlalchemy import exc
 from sqlalchemy.orm import selectinload, with_parent
 
 from bot.models.dashboard import (
     StudentTable, CourseTable, StudentCourse,
     LessonTable, LessonUrlTable, StudentLesson,
     PromotionTable, ContactTable,
-    FormTable, FormQuestionTable, FormAnswerTable, ContactFormTable, LearningCentreTable
+    FormTable, FormQuestionTable, FormAnswerTable, ContactFormTable,
+    LearningCentreTable, AssetTable, ContactAssetTable
 )
 from bot.models.db import SessionLocal
 
@@ -295,16 +298,16 @@ class StudentLessonRepository(BaseRepository):
         return record
 
 
-class CategoryRepository(BaseRepository):
+class LearningCentreRepository(BaseRepository):
     table = LearningCentreTable
 
     @staticmethod
     async def get_lcs(session):
         async with session:
-            categories = (await session.execute(
+            lcs = (await session.execute(
                 select(LearningCentreTable)
             )).scalars()
-        return categories
+        return lcs
 
 
 class PromotionRepository(BaseRepository):
@@ -471,3 +474,31 @@ class ContactFormRepository(BaseRepository):
             student_form = await ContactFormRepository.edit(student_form, payload, session)
 
         return student_form
+
+
+class AssetRepository(BaseRepository):
+    table = AssetTable
+
+
+class ContactAssetRepository(BaseRepository):
+    table = ContactAssetTable
+
+    @staticmethod
+    async def unique_create(contact_id, asset_id, session):
+        with suppress(exc.IntegrityError):
+            contact_asset = await ContactAssetRepository.create({
+                'contact_id': contact_id,
+                'asset_id': asset_id
+            }, session)
+
+            return contact_asset
+
+    @staticmethod
+    async def contact_assets(contact_id, session):
+        async with session:
+            assets = (await session.execute(
+                select(ContactAssetTable).where(ContactAssetTable.contact_id == contact_id)
+                .options(selectinload(ContactAssetTable.asset))
+            )).scalars()
+
+        return assets

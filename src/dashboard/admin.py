@@ -4,23 +4,23 @@ import os
 from functools import partial
 
 from celery.result import GroupResult
+from django.conf import settings
 from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.contenttypes.models import ContentType
-from django.db.models.expressions import RawSQL, OrderBy
+from django.contrib.gis.db.models import PointField
+from django.db.models.expressions import RawSQL
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
+from mapwidgets.widgets import GooglePointFieldWidget
 
 from dashboard import models, forms
+from dashboard.admin_filters import StatusFilter
 from dashboard.forms import Form
-from dashboard.models import Contact
-from dashboard.utils.helpers import random_int
 from dashboard.utils.telegram import Telegram
-from flat_json_widget.widgets import FlatJsonWidget
 
 
 class StudentCourseList(admin.TabularInline):
@@ -79,7 +79,7 @@ class FormAnswerList(admin.StackedInline):
 class FormQuestionList(admin.StackedInline):
     model = models.FormQuestion
     fields = ('text', 'multi_answer', 'image', 'custom_answer', 'custom_answer_text',
-              'position', 'one_row_btns', 'changeform_link')
+              'position', 'chat_id', 'accept_file','one_row_btns', 'changeform_link')
     readonly_fields = ('changeform_link', )
 
     @admin.display(description='Дополнительно')
@@ -190,19 +190,13 @@ class PromoAdmin(admin.ModelAdmin):
 
 @admin.register(models.Contact)
 class ContactAdmin(admin.ModelAdmin):
-    list_display = ('id', 'first_name', 'tg_id', 'created_at', 'updated_at')
-    list_display_links = ('first_name',)
+    list_display = ('id', 'profile_link', 'tg_id', 'created_at', 'updated_at')
+    list_display_links = ('profile_link',)
     list_per_page = 20
-    actions = ('send_message',)
-    readonly_fields = ('data', 'is_registered', 'blocked_bot',)
-    search_fields = ('id', 'first_name', 'last_name',)
-
-    def get_queryset(self, request):
-        qs = Contact.objects.all().filter(is_registered=False)
-        ordering = self.get_ordering(request)
-        if ordering:
-            qs = qs.order_by(*ordering)
-        return qs
+    list_filter = (StatusFilter, 'blocked_bot')
+    actions = ('send_message', 'send_promo',)
+    readonly_fields = ('data', 'is_registered', 'blocked_bot', 'profile_link',)
+    search_fields = ('id', 'first_name', 'student__first_name',)
 
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, contacts):
@@ -226,14 +220,31 @@ class ContactAdmin(admin.ModelAdmin):
 
     @admin.display(description='Ссылка на профиль')
     def profile_link(self, instance):
-        try:
+        if hasattr(instance, 'student'):
+            obj = instance.student
             model = 'client' if instance.student.is_client else 'lead'
-            changeform_url = reverse(
-                f'admin:dashboard_{model}_change', args=(instance.student.id,)
-            )
-            return mark_safe(f'<a href="{changeform_url}" target="_blank">Ссылка на профиль</a>')
-        except models.Student.DoesNotExist:
-            return 'Не зарегистрирован'
+        else:
+            obj = instance
+            model = instance._meta.model_name
+        changeform_url = reverse(
+            f'admin:dashboard_{model}_change', args=(obj.id,)
+        )
+
+        return mark_safe(f'<a href="{changeform_url}" target="_blank">{self.get_name(instance)}</a>')
+
+    @admin.display(description='Отправить промо')
+    def send_promo(self, request, contacts):
+        ids = [contact.id for contact in contacts]
+        params = f'?_selected_action={"&_selected_action=".join(str(id) for id in ids)}'
+        return HttpResponseRedirect(reverse(
+            'dashboard:send_promo_v2') + f'{params}')
+
+    @staticmethod
+    def get_name(instance):
+        return instance.student.first_name if hasattr(instance, 'student') else instance.first_name
+
+    class Media:
+        js = ('dashboard/js/contact_admin.js',)
 
 
 @admin.register(models.Lead)
@@ -315,12 +326,16 @@ class LeadAdmin(admin.ModelAdmin):
             }
         )
 
+    formfield_overrides = {
+            PointField: {"widget": GooglePointFieldWidget(settings=settings.MAP_WIDGETS)}
+        }
+
 
 @admin.register(models.Client)
 class ClientAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__', 'blocked_bot', 'phone', 'language_type', 'get_courses',)
     list_per_page = 20
-    list_filter = ('studentcourse__course__name',)
+    list_filter = ('studentcourse__course__name', 'learning_centre',)
     list_display_links = ('__str__',)
     actions = ('send_message', 'send_checkout', 'assign_courses', 'assign_free_courses')
     readonly_fields = ('unique_code', 'checkout_date', 'invite_link', 'created_at', 'blocked_bot')
@@ -395,6 +410,10 @@ class ClientAdmin(admin.ModelAdmin):
         courses = models.Course.objects.filter(is_free=True, is_started=False, is_finished=False)
         return render(request, 'dashboard/assign_courses.html',
                       context={'entities': clients, 'courses': courses, 'action': 'assign_free_courses'})
+
+    formfield_overrides = {
+        PointField: {"widget": GooglePointFieldWidget(settings=settings.MAP_WIDGETS)}
+    }
 
 
 @admin.register(models.Course)
@@ -626,6 +645,22 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
         js = (
             'dashboard/js/contactformanswers_admin.js',
         )
+
+
+@admin.register(models.Asset)
+class AssetAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'desc', 'access_level',)
+    list_display_links = ('title',)
+    readonly_fields = ('link', 'count')
+    list_per_page = 20
+
+    @admin.display(description='Линк')
+    def link(self, instance):
+        return f'https://t.me/{os.getenv("BOT_NAME")}?start=asset_{instance.id}'
+
+    @admin.display(description='Подсчет')
+    def count(self, isntance):
+        return isntance.contactasset_set.count()
 
 
 admin.site.register(models.User, UserAdmin)

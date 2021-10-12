@@ -1,11 +1,14 @@
 import uuid
 
 from django.contrib.auth.models import AbstractUser
+from django.contrib.gis.db.models import PointField
+from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_image_file_extension
 from django.db import models, transaction
 from django.template.defaultfilters import truncatewords
 
+from dashboard.utils.decorators import deprecated
 from dashboard.validators import (
     validate_video_extension, validate_photo_extension,
     validate_hashtag, validate_file_size,
@@ -27,12 +30,20 @@ def promo_upload_directory(instance, filename):
         return f'promos/{filename}'
 
 
+def lc_upload_directory(instance, filename):
+    return f'learning_centres/{filename}'
+
+
 def form_question_directory(instance, filename):
     return f'form_questions/{instance.form.id}/{filename}'
 
 
 def form_directory(instance, filename):
     return f'forms/{instance.id}/{filename}'
+
+
+def asset_directory(instance, filename):
+    return f'assets/{filename}'
 
 
 def generate_uuid():
@@ -71,8 +82,12 @@ class User(AbstractUser):
 
 
 class LearningCentre(BaseModel):
-    title = models.CharField(max_length=100, verbose_name='Название категории', unique=True)
+    title = models.CharField(max_length=100, verbose_name='Название Уч центра', unique=True)
     uz_title = models.CharField(max_length=50, verbose_name='Узбекская версия', unique=True, blank=True, null=True)
+    photo = models.ImageField(blank=True, null=True, verbose_name='Картинка', upload_to=lc_upload_directory, validators=[validate_image_file_extension])
+    description = models.TextField(verbose_name='Описание')
+    link = models.CharField(max_length=255, blank=True, null=True, verbose_name='Ссылка', help_text='При добавлении в боте появится кнопка ссылка')
+    slug = models.SlugField(unique=True, verbose_name='Поисковое поле')
 
     def __str__(self):
         return self.title
@@ -86,8 +101,8 @@ class Contact(BaseModel):
     first_name = models.CharField(verbose_name='ТГ Имя', max_length=255)
     last_name = models.CharField(verbose_name='ТГ Фамилия', max_length=255, null=True, blank=True)
     tg_id = models.BigIntegerField(verbose_name='Telegram ID', blank=True, null=True, unique=True)
-    is_registered = models.BooleanField(default=False)
-    blocked_bot = models.BooleanField(default=False, editable=False)
+    is_registered = models.BooleanField(default=False, verbose_name='Зареган')
+    blocked_bot = models.BooleanField(default=False, editable=False, verbose_name='Блокнул бота')
     data = models.JSONField(null=True, blank=True, default=dict)
 
     def __str__(self):
@@ -127,6 +142,10 @@ class Student(BaseModel):
     comment = models.TextField(verbose_name='Комментарий к пользователю', blank=True, null=True)
     contact = models.OneToOneField(Contact, on_delete=models.SET_NULL, verbose_name='ТГ Профиль', null=True, blank=True)
 
+    location = PointField(null=True, blank=True, verbose_name='Локация')
+    games = ArrayField(models.CharField(max_length=50, blank=True), null=True, blank=True, verbose_name='Игры')
+
+    @deprecated
     def __str__(self):
         return f'{self.first_name} {self.last_name or ""}'
 
@@ -150,6 +169,9 @@ class Lead(Student):
 
     objects = LeadManager()
 
+    def __str__(self):
+        return f'Лид[{self.first_name} {self.last_name or ""}]'
+
     class Meta:
         proxy = True
         verbose_name = 'Лид'
@@ -159,6 +181,9 @@ class Lead(Student):
 class Client(Student):
 
     objects = ClientManager()
+
+    def __str__(self):
+        return f'Клиент[{self.first_name} {self.last_name or ""}]'
 
     class Meta:
         proxy = True
@@ -345,6 +370,8 @@ class FormQuestion(BaseModel):
     position = models.IntegerField(verbose_name='Нумерация')
     custom_answer = models.BooleanField(verbose_name='Кастомный ответ', default=False)
     custom_answer_text = models.CharField(verbose_name='Текст кастомного ответа', max_length=100, null=True, blank=True)
+    accept_file = models.BooleanField(verbose_name='Принимать файл', default=False)
+    chat_id = models.CharField(max_length=255, blank=True, null=True)
     one_row_btns = models.BooleanField(verbose_name='Однострочные ответы', default=False)
 
     def __str__(self):
@@ -382,3 +409,26 @@ class ContactFormAnswers(BaseModel):
         verbose_name_plural = 'Ответы на форму'
         unique_together = [['contact', 'form']]
 
+
+class Asset(BaseModel):
+    title = models.CharField(max_length=50, verbose_name='Название')
+    file = models.FileField(verbose_name='Файл', upload_to=asset_directory)
+    desc = models.TextField(verbose_name='Описание', blank=True, null=True)
+    access_level = models.IntegerField(verbose_name='Доступ', default=AccessType.client, choices=AccessType.choices)
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = 'Ассет'
+        verbose_name_plural = 'Ассеты'
+
+
+class ContactAsset(BaseModel):
+    contact = models.ForeignKey(Contact, on_delete=models.CASCADE, null=True, verbose_name='Студент')
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE, null=True, verbose_name='Ассет')
+
+    class Meta:
+        verbose_name = 'Ассет студента'
+        verbose_name_plural = 'Ассеты студента'
+        unique_together = [['contact', 'asset']]

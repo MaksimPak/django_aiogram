@@ -4,8 +4,9 @@ import uuid
 
 import sqlalchemy_json
 from sqlalchemy import Column, String, Enum, Boolean, ForeignKey, DateTime, Integer, types
-from sqlalchemy.dialects.postgresql import TEXT, VARCHAR, JSONB
+from sqlalchemy.dialects.postgresql import TEXT, VARCHAR, JSONB, ARRAY
 from sqlalchemy.orm import relationship
+from geoalchemy2 import Geometry
 
 from bot.models.db import Base
 
@@ -43,6 +44,10 @@ class LearningCentreTable(BaseModel):
 
     title = Column(String(50), unique=True)
     uz_title = Column(String(50), unique=True, nullable=True)
+    photo = Column(String(255), nullable=True)
+    description = Column(TEXT, nullable=False)
+    link = Column(String(255), nullable=True)
+    slug = Column(String(50), nullable=False)
 
     student = relationship('StudentTable', back_populates='learning_centre')
 
@@ -61,6 +66,7 @@ class ContactTable(BaseModel):
     blocked_bot = Column(Boolean, default=False)
 
     student = relationship('StudentTable', back_populates='contact', uselist=False)
+    contact_asset = relationship('ContactAssetTable', back_populates='contact')
 
     @property
     def access_level(self):
@@ -100,6 +106,8 @@ class StudentTable(BaseModel):
     promo_id = Column(Integer, ForeignKey('dashboard_promotion.id', ondelete='SET NULL'), nullable=True)
     blocked_bot = Column(Boolean, default=False)
     contact_id = Column(Integer, ForeignKey('dashboard_contact.id'))
+    location = Column(Geometry('POINT'), nullable=True)
+    games = Column(ARRAY(String(50)), nullable=True)
 
     courses = relationship('StudentCourse', back_populates='students')
     lessons = relationship('StudentLesson', back_populates='student')
@@ -270,6 +278,8 @@ class FormQuestionTable(BaseModel):
     position = Column(Integer, nullable=False)
     custom_answer = Column(Boolean, default=False)
     custom_answer_text = Column(String(50), nullable=True)
+    accept_file = Column(Boolean, default=False)
+    chat_id = Column(String(255), nullable=True)
 
     one_row_btns = Column(Boolean, default=False)
 
@@ -297,3 +307,24 @@ class ContactFormTable(BaseModel):
     form_id = Column(Integer, ForeignKey('dashboard_form.id', ondelete='SET NULL'), nullable=False)
     score = Column(Integer, nullable=True)
     data = Column(sqlalchemy_json.mutable_json_type(dbtype=JSONB, nested=True), nullable=True, default=dict)
+
+
+class AssetTable(BaseModel):
+    __tablename__ = 'dashboard_asset'
+
+    title = Column(String(50), nullable=False)
+    file = Column(String(255), nullable=False)
+    desc = Column(TEXT, nullable=True)
+    access_level = Column(IntEnum(AccessLevel), nullable=False, default=AccessLevel.client.value)
+
+    contact_asset = relationship('ContactAssetTable', back_populates='asset')
+
+
+class ContactAssetTable(BaseModel):
+    __tablename__ = 'dashboard_contactasset'
+
+    contact_id = Column(Integer, ForeignKey('dashboard_contact.id', ondelete='CASCADE'), nullable=False)
+    asset_id = Column(Integer, ForeignKey('dashboard_asset.id', ondelete='CASCADE'), nullable=False)
+
+    asset = relationship('AssetTable', back_populates='contact_asset')
+    contact = relationship('ContactTable', back_populates='contact_asset')

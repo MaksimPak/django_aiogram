@@ -45,11 +45,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.gis',
 
     'dashboard.apps.DashboardConfig',
 
     'bootstrap4',
     'flat_json_widget',
+    'mapwidgets',
 
 ]
 
@@ -90,11 +92,11 @@ WSGI_APPLICATION = 'app.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': os.getenv('DB_NAME', 'parcel'),
         'USER': os.getenv('DB_USER', 'parcel'),
         'PASSWORD': os.getenv('DB_PASS', 'parcel'),
-        'HOST': os.getenv('DB_HOST', 'parcel-db'),
+        'HOST': os.getenv('DB_HOST', 'db'),
         'PORT': 5432,
     }
 }
@@ -182,6 +184,15 @@ LOGGING = {
             'propagate': True,
         },
     },
+}
+
+MAP_WIDGETS = {
+    "GooglePointFieldWidget": (
+        ("zoom", 6),
+        ("markerFitZoom", 15),
+    ),
+    # todo: Achtung! API Key Exposed! (nvm, it is free anyway)
+    'GOOGLE_MAP_API_KEY': 'AIzaSyCND4L7d1wxcTyBD04hhJpJFrDT5LXm-8M'
 }
 
 if APP_ENVIRONMENT != 'development':

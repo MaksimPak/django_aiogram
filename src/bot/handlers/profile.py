@@ -39,7 +39,7 @@ async def model_renderer(client, key, model_key):
 
 async def lc_renderer(client, key):
     lc = await model_renderer(client, key, 'title')
-    return lc if lc else 'Не указано'
+    return lc if lc else _('Не указано')
 
 PROFILE_FIELDS = (
     (_('Имя'), 'first_name', default_renderer),
@@ -57,10 +57,10 @@ async def profile_kb(
     Renders Student information in message and adds keyboard for edit
     """
 
-    data = [(title, (key, client.id)) for title, key, _ in PROFILE_FIELDS]
+    data = [(title, (key, client.id)) for title, key, _tmp in PROFILE_FIELDS]
 
     kb = KeyboardGenerator(data, row_width=2).keyboard
-    ro_fields = [('Учебный центр', 'learning_centre', lc_renderer)]
+    ro_fields = [(_('Учебный центр'), 'learning_centre', lc_renderer)]
     message = ''
     fields = (*PROFILE_FIELDS, *ro_fields)
     for title, key, renderer in fields:
@@ -82,7 +82,7 @@ async def my_profile(
     """
     await state.reset_state()
     client = await repo.StudentRepository.load_with_lc('tg_id', int(message.from_user.id), session)
-    kb = KeyboardGenerator([('Регистрация', ('tg_reg',))]).keyboard
+    kb = KeyboardGenerator([(_('Регистрация'), ('tg_reg',))]).keyboard
     if not client:
         return await message.reply(
             _('<i>Ваш статус: Незагрегистированный пользователь.\n</i>' 
