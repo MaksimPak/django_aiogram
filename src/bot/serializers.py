@@ -33,9 +33,10 @@ ROOT_DIR = Path(__file__).parent.parent
 class MessageSender:
     def __init__(self, chat_id: int, text: str = None, photo: str = None,
                  video: str = None, duration: int = None, width: int = None,
-                 height: int = None, thumbnail: Union[int, str] = None,
+                 height: int = None, thumbnail: Union[int, str] = None, file: str = None,
                  markup: Union[ReplyKeyboardMarkup, InlineKeyboardMarkup] = None):
         self.chat_id = chat_id
+        self.file = file
         self.text = text
         self.photo = photo
         self.video = video
@@ -68,6 +69,14 @@ class MessageSender:
                 reply_markup=self.markup
 
             )
+        elif self.file:
+            resp = await bot.send_document(
+                self.chat_id,
+                self.file,
+                self.thumbnail,
+                self.text,
+                reply_markup=self.markup,
+            )
         else:
             resp = await bot.send_message(
                 self.chat_id,
@@ -81,12 +90,22 @@ class MessageSender:
     async def _get_file_id(response: types.Message, media_attr: str):
         if media_attr == 'video':
             return response.video.file_id
-        else:
+        elif media_attr == 'photo':
             return response.photo[-1].file_id
+        else:
+            return response.document.file_id
+
+    async def _get_media_attr(self):
+        if self.photo:
+            return 'photo'
+        elif self.video:
+            return 'video'
+        else:
+            return 'file'
 
     async def _cache_media(self):
         redis = await question_redis.redis()
-        media_attr = 'photo' if self.photo else 'video'
+        media_attr = await self._get_media_attr()
         path = ROOT_DIR / 'media' / getattr(self, media_attr)
         hashed_filepath = hashlib.md5(str(path).encode()).hexdigest()
         media_object = await redis.get(hashed_filepath, encoding='utf8')
@@ -106,7 +125,7 @@ class MessageSender:
             await redis.set(hashed_filepath, key)
 
     async def send(self):
-        if self.photo or self.video:
+        if self.photo or self.video or self.file:
             resp = await self._cache_media()
         else:
             resp = await self._send()
@@ -166,6 +185,8 @@ class KeyboardGenerator:
             KeyboardButton('🧑‍🎓 Профиль'),
             KeyboardButton('📚 Домашка'),
             KeyboardButton('🤔 Опросники'),
+            KeyboardButton('🏫 Центры'),
+            KeyboardButton('🛠️ Ассеты'),
         ]
 
         if contact:
@@ -223,4 +244,6 @@ class FormButtons(KeyboardGenerator):
         if self.question.custom_answer:
             text = self.question.custom_answer_text if self.question.custom_answer_text else 'Другое'
             kb.add((text, ('custom_answer',)))
+        elif self.question.accept_file:
+            kb.add(('Отправить файл', ('file_answer',)))
         return kb.keyboard

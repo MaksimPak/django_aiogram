@@ -1,3 +1,4 @@
+import os
 import re
 from typing import Optional, Union
 
@@ -5,9 +6,9 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text, Regexp, CommandStart, ChatTypeFilter
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.types import InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup, ContentType
 
-from bot import repository as repo
+from bot import repository as repo, config
 from bot.decorators import create_session
 from bot.misc import dp, i18n, bot
 from bot.models.dashboard import FormAnswerTable, FormQuestionTable
@@ -22,6 +23,7 @@ _ = i18n.gettext
 
 class QuestionnaireMode(StatesGroup):
     accept_text = State()
+    accept_file = State()
 
 
 async def _normalize_end_msg(msg: str):
@@ -30,7 +32,7 @@ async def _normalize_end_msg(msg: str):
 
 async def store_answer(
         question: FormQuestionTable,
-        answer: FormAnswerTable,
+        answer: str,
         state: FSMContext,
 ):
     data = await state.get_data()
@@ -127,7 +129,7 @@ async def next_question(
         ).send()
     else:
         percent_score = round((data['score'] / data['question_len']) * 100)
-        end_message = 'Спасибо за участие'
+        end_message = _('Спасибо за участие')
         for key in form.end_message.keys():
             num1, num2 = map(int, key.split('-'))
             if percent_score in range(num1, num2+1):
@@ -181,7 +183,7 @@ async def display_forms(
 
     await bot.send_message(
         response.from_user.id,
-        'Выберите опросник',
+        _('Выберите опросник'),
         reply_to_message_id=message_id,
         allow_sending_without_reply=True,
         reply_markup=markup
@@ -220,13 +222,13 @@ async def form_initial(
     if not form:
         return await bot.send_message(
             response.from_user.id,
-            'Ошибка системы. Получите опросники снова',
+            _('Ошибка системы. Получите опросники снова'),
             reply_to_message_id=message_id
         )
     elif not form.is_active:
         return await bot.send_message(
             response.from_user.id,
-            'Форма не активна. Свяжитесь с администрацией',
+            _('Форма не активна. Свяжитесь с администрацией'),
             reply_to_message_id=message_id
         )
     if contact.access_level >= form.access_level.value:
@@ -235,11 +237,11 @@ async def form_initial(
         if form.one_off and is_record:
             return await bot.send_message(
                 response.from_user.id,
-                'Данный опросник нельзя пройти дважды',
+                _('Данный опросник нельзя пройти дважды'),
                 reply_to_message_id=message_id
             )
 
-        data = [('Начать', ('start_form', form.id)), ('Назад', ('forms',))]
+        data = [(_('Начать'), ('start_form', form.id)), ('Назад', ('forms',))]
         kb = KeyboardGenerator(data, row_width=1).keyboard
 
         await MessageSender(
@@ -251,10 +253,10 @@ async def form_initial(
     else:
         delta = form.access_level.value - contact.access_level
         if delta == 2:
-            kb = KeyboardGenerator([('Регистрация', ('tg_reg',))]).keyboard
-            return await bot.send_message(contact.tg_id, 'Пожалуйста, пройдите регистрацию', reply_markup=kb)
+            kb = KeyboardGenerator([(_('Регистрация'), ('tg_reg',))]).keyboard
+            return await bot.send_message(contact.tg_id, _('Пожалуйста, пройдите регистрацию'), reply_markup=kb)
         else:
-            await bot.send_message(contact.tg_id, 'Не достаточно доступа')
+            await bot.send_message(contact.tg_id, _('Недостаточно доступа'))
 
 
 @dp.callback_query_handler(short_data.filter(property='start_form'))
@@ -337,9 +339,23 @@ async def custom_answer(
     await cb.message.edit_reply_markup(None)
     await bot.send_message(
         cb.from_user.id,
-        'Напишите свой ответ',
+        _('Напишите свой ответ'),
     )
     await QuestionnaireMode.accept_text.set()
+
+
+@dp.callback_query_handler(simple_data.filter(value='file_answer'))
+@dp.throttled(throttled, rate=.7)
+async def file_answer(
+        cb: types.CallbackQuery,
+):
+    await cb.answer()
+    await cb.message.edit_reply_markup(None)
+    await bot.send_message(
+        cb.from_user.id,
+        _('Вышлите файл'),
+    )
+    await QuestionnaireMode.accept_file.set()
 
 
 @dp.message_handler(state=QuestionnaireMode.accept_text)
@@ -358,5 +374,32 @@ async def get_text_answer(
         session
     )
     await store_answer(question, message.text, state)
+
+    await next_question(message.from_user.id, state)
+
+
+@dp.message_handler(state=QuestionnaireMode.accept_file, content_types=[ContentType.PHOTO, ContentType.VIDEO, ContentType.DOCUMENT])
+@dp.throttled(throttled, rate=.7)
+@create_session
+async def get_file_answer(
+        message: types.Message,
+        state: FSMContext,
+        session: SessionLocal
+):
+    await state.reset_state(False)
+    data = await state.get_data()
+    question = await repo.FormQuestionRepository.get(
+        'id',
+        data['current_question_id'],
+        session
+    )
+    if message.content_type is not ContentType.PHOTO:
+        filename = getattr(message, message.content_type).file_name
+    else:
+        filename = 'pic'
+
+    await store_answer(question, filename, state)
+    chat_id = question.chat_id if question.chat_id else config.CHAT_ID
+    await bot.forward_message(chat_id, message.from_user.id, message.message_id)
 
     await next_question(message.from_user.id, state)

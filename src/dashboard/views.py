@@ -326,6 +326,35 @@ def send_promo(request, promo_id, lang):
     return HttpResponseRedirect(reverse('admin:dashboard_promotion_change', args=(promo_id,)))
 
 
+def send_promo_v2(request):
+    """
+    Promo part should be refactored. Spawning new endpoint to decide how to combine
+    with other endpoints later
+    """
+    contact_ids = getattr(request, request.method).getlist('_selected_action')
+    referer = request.META['HTTP_REFERER']
+    contacts = Contact.objects.filter(pk__in=contact_ids)
+    promotions = Promotion.objects.all()
+    if request.POST:
+        promo = Promotion.objects.get(pk=request.POST['promo'])
+        message = render_to_string('dashboard/promo_text.html', {'promo': promo})
+
+        config = {
+            'promo_id': promo.id,
+            'message': message,
+            'contact_ids': contact_ids
+        }
+        initiate_promo_task.delay(config)
+        messages.add_message(request, messages.INFO, f'Отправлено {contacts.count()} студентам.')
+        return HttpResponseRedirect(request.POST.get('referer'))
+
+    return render(request, 'dashboard/select_promo.html', context={
+        'entities': promotions,
+        'referer': referer,
+        'contacts': contacts
+    })
+
+
 def send_promo_myself(request, promo_id):
     promotion = get_object_or_404(Promotion, pk=promo_id)
     message = render_to_string('dashboard/promo_text.html', {'promo': promotion})
