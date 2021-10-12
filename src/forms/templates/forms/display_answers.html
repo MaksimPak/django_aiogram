@@ -1,0 +1,6 @@
+{% load extended %}
+{% if answers %}
+    {{answers|listify|join:'<br>'}}
+{% else %}
+    -
+{% endif %}

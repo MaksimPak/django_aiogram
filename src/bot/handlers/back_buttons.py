@@ -3,7 +3,7 @@ from aiogram import types
 from bot import repository as repo
 from bot.decorators import create_session
 from bot.misc import bot, dp, i18n
-from bot.models.db import SessionLocal
+from bot.db.config import SessionLocal
 from bot.serializers import KeyboardGenerator
 from bot.utils.callback_settings import short_data
 

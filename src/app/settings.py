@@ -47,7 +47,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.gis',
 
-    'dashboard.apps.DashboardConfig',
+    'contacts.apps.ContactsConfig',
+    'assets.apps.AssetsConfig',
+    'courses.apps.CoursesConfig',
+    'companies.apps.CompaniesConfig',
+    'users.apps.UsersConfig',
+    'forms.apps.FormsConfig',
+    'broadcast.apps.BroadcastConfig',
 
     'bootstrap4',
     'flat_json_widget',
@@ -80,6 +86,9 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
+            'libraries': {
+                'extended': 'general.templatetags'
+            },
         },
     },
 ]
@@ -134,8 +143,14 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
 STATIC_URL = '/static/'
+if DEBUG:
+    STATICFILES_DIRS = [
+        os.path.join(BASE_DIR, 'static/'),
+    ]
+else:
+    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -145,13 +160,12 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-AUTH_USER_MODEL = 'dashboard.User'
+AUTH_USER_MODEL = 'users.User'
 
 # Celery config
 CELERY_BROKER_URL = f'redis://{os.getenv("REDIS_HOST", "redis")}:{os.getenv("REDIS_PORT", 6379)}/0'
 CELERY_TIMEZONE = 'Asia/Tashkent'
 CELERY_RESULT_BACKEND = f'redis://{os.getenv("REDIS_HOST", "redis")}:{os.getenv("REDIS_PORT", 6379)}/0'
-
 
 # REDIS
 REDIS_CUSTOM_DATA = 4

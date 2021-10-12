@@ -8,7 +8,11 @@ from aiogram.dispatcher.filters import CommandStart, Regexp
 from bot import repository as repo
 from bot.decorators import create_session
 from bot.misc import dp, bot, i18n
+<<<<<<< HEAD
 from bot.models.db import SessionLocal
+=======
+from bot.db.config import SessionLocal
+>>>>>>> dev
 from bot.serializers import MessageSender, KeyboardGenerator
 from bot.utils.callback_settings import short_data
 from aiogram.dispatcher.filters import Text
