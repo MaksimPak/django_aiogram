@@ -101,17 +101,10 @@ class StudentTable(BaseModel):
     is_client = Column(Boolean, default=False)
     checkout_date = Column(DateTime, nullable=True)
     unique_code = Column(String(255), nullable=True, unique=True)
-<<<<<<< HEAD:src/bot/models/dashboard.py
-    promo_id = Column(Integer, ForeignKey('dashboard_promotion.id', ondelete='SET NULL'), nullable=True)
-    blocked_bot = Column(Boolean, default=False)
-    contact_id = Column(Integer, ForeignKey('dashboard_contact.id'))
-    location = Column(Geometry('POINT'), nullable=True)
-=======
     invite_link = Column(String(255), nullable=True)
     contact_id = Column(Integer, ForeignKey('contacts_contact.id'))
     location = Column(Geometry('POINT'), nullable=True)
     comment = Column(String(255), nullable=True)
->>>>>>> dev:src/bot/db/schemas.py
     games = Column(ARRAY(String(50)), nullable=True)
 
     courses = relationship('StudentCourse', back_populates='students')
@@ -279,11 +272,7 @@ class ContactFormTable(BaseModel):
 
 
 class AssetTable(BaseModel):
-<<<<<<< HEAD:src/bot/models/dashboard.py
-    __tablename__ = 'dashboard_asset'
-=======
     __tablename__ = 'assets_asset'
->>>>>>> dev:src/bot/db/schemas.py
 
     title = Column(String(50), nullable=False)
     file = Column(String(255), nullable=False)
@@ -294,17 +283,10 @@ class AssetTable(BaseModel):
 
 
 class ContactAssetTable(BaseModel):
-<<<<<<< HEAD:src/bot/models/dashboard.py
-    __tablename__ = 'dashboard_contactasset'
-
-    contact_id = Column(Integer, ForeignKey('dashboard_contact.id', ondelete='CASCADE'), nullable=False)
-    asset_id = Column(Integer, ForeignKey('dashboard_asset.id', ondelete='CASCADE'), nullable=False)
-=======
     __tablename__ = 'assets_contactasset'
 
     contact_id = Column(Integer, ForeignKey('contacts_contact.id', ondelete='CASCADE'), nullable=False)
     asset_id = Column(Integer, ForeignKey('assets_asset.id', ondelete='CASCADE'), nullable=False)
->>>>>>> dev:src/bot/db/schemas.py
 
     asset = relationship('AssetTable', back_populates='contact_asset')
     contact = relationship('ContactTable', back_populates='contact_asset')
