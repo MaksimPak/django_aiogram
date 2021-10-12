@@ -1,0 +1,26 @@
+{% extends 'admin/change_list.html' %}
+
+{% block extrastyle %}
+{{block.super}}
+<style>
+    #result_list thead tr th:first-child {
+        position: sticky;
+        left: 0;
+        z-index:2;
+    }
+
+    #result_list tbody tr td:first-child {
+        position: sticky;
+        left: 0;
+        background: inherit;
+        z-index:2;
+    }
+</style>
+{% endblock %}
+
+
+
+{% block object-tools-items %}
+    {{block.super}}
+    <li><a href="{% url 'forms:form_report' request.GET.form__id__exact %}">Выкачать xlsx</a></li>
+{% endblock %}

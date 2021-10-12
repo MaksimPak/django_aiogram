@@ -1,0 +1,9 @@
+{% if widget.value %}
+    <div style="float: left;">
+        {% for question, answer in widget.value.items %}
+            <div style="margin-bottom: 10px;">{{question}}: {{answer}}</div>
+        {% endfor %}
+    </div>
+{% else %}
+-
+{% endif %}

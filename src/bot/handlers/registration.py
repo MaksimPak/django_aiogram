@@ -1,27 +1,26 @@
+import re
+from functools import partial
 from typing import Union
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters import ChatTypeFilter
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.types import ContentType, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from geoalchemy2 import WKTElement
 
 from bot import repository as repo
+from bot.db.config import SessionLocal
+from bot.db.schemas import StudentTable
 from bot.decorators import create_session
 from bot.misc import dp, bot, i18n
-from bot.models.dashboard import StudentTable
-from bot.models.db import SessionLocal
 from bot.serializers import KeyboardGenerator
-from bot.utils.callback_settings import short_data, simple_data
+from bot.utils.callback_settings import simple_data
 from bot.utils.throttling import throttled
 
 _ = i18n.gettext
 
 
 class RegistrationState(StatesGroup):
-    invite_link = State()
-    lang = State()
     first_name = State()
     city = State()
     games = State()
@@ -29,86 +28,72 @@ class RegistrationState(StatesGroup):
     location = State()
 
 
-@dp.message_handler(ChatTypeFilter(types.ChatType.PRIVATE), state=RegistrationState.invite_link)
-@create_session
-async def check_invite_code(
-        message: types.Message,
-        state: FSMContext,
-        session: SessionLocal
+PHONE_PATTERN = re.compile(r'\+998[0-9]{9}')
+
+GAMES_LIST = ['PUBG', 'MineCraft', 'GTA', 'FIFA', 'CS:GO', 'ClashRoyale',
+              'Fortnite', 'Apex Legends', 'Valorant', 'Battlefield', 'Call Of Duty',
+              'Assassin\'s Creed', 'Need For Speed']
+
+
+async def save_answer(
+    response: Union[types.Message, types.CallbackQuery],
+    state: FSMContext
 ):
-    student = await repo.StudentRepository.get('unique_code', message.text, session)
-    if student:
-        await repo.StudentRepository.edit(student, {'tg_id': message.from_user.id}, session)
-        await message.reply(('Спасибо {first_name},'
-                             ' вы были успешно'
-                             ' зарегистрированы в боте').format(first_name=message.from_user.first_name))
-        await state.finish()
+    """
+    Default answer saver
+    """
+    if type(response) is types.CallbackQuery:
+        answer = response.data.split('|')[-1]
     else:
-        await message.reply(_('Неверный инвайт код'))
+        answer = response.text
 
-
-@dp.message_handler(commands=['register'])
-@dp.callback_query_handler(simple_data.filter(value='tg_reg'))
-@create_session
-async def tg_reg(
-        response: Union[types.CallbackQuery, types.Message],
-        session: SessionLocal
-):
-    if type(response) == types.CallbackQuery:
-        await response.answer()
-    client = await repo.StudentRepository.get('tg_id', response.from_user.id, session)
-    if client:
-        return await bot.send_message(
-            response.from_user.id,
-            'Вы уже зарегистрированы'
-        )
-    data = [(name.capitalize(), ('lang', member.value))
-            for name, member in StudentTable.LanguageType.__members__.items()]
-
-    kb = KeyboardGenerator(data).keyboard
-
-    await bot.send_message(
-        response.from_user.id,
-        _('Регистрация в боте MegaSkill.\n'
-          'Выберите язык:'),
-        reply_markup=kb
-    )
-    await RegistrationState.lang.set()
-
-
-@dp.callback_query_handler(short_data.filter(property='lang'), state=RegistrationState.lang)
-async def set_lang(
-        cb: types.CallbackQuery,
-        state: FSMContext,
-        callback_data: dict
-):
-    await bot.answer_callback_query(cb.id)
-    lang = callback_data['value']
-
+    key = await state.get_state()
     async with state.proxy() as data:
-        data['lang'] = lang
-
-    await bot.send_message(cb.from_user.id, _('Как тебя зовут?'))
-    await RegistrationState.first_name.set()
+        data[key] = answer
 
 
-@dp.message_handler(state=RegistrationState.first_name)
-async def set_first_name(
-        message: types.Message,
+async def save_games(
+        response: Union[types.Message, types.CallbackQuery],
         state: FSMContext
 ):
-    async with state.proxy() as data:
-        data['first_name'] = message.text
+    """
+    Game specific answer saver.
+    """
+    if hasattr(response, 'text'):
+        game = response.text
+    else:
+        game = response.data.split('|')[-1]
 
-    await message.reply(_('Отлично, теперь напиши из какого ты города'))
-    await RegistrationState.city.set()
+    current_state = await state.get_state()
+    async with state.proxy() as data:
+        if data.get(current_state) and game not in data.get(current_state):
+            # User already selected some games, append new
+            data[current_state].append(game)
+        elif data.get(current_state) and game in data.get(current_state):
+            # User selected same game. Remove from list
+            data.get(current_state).remove(game)
+        else:
+            # No list created. Put selected game to list
+            data[current_state] = [game]
+
+
+async def save_location(response, state: FSMContext):
+    if isinstance(response, types.Message) and response.location:
+        async with state.proxy() as data:
+            data['location'] = {
+                'longitude': response.location.longitude,
+                'latitude': response.location.latitude
+            }
 
 
 async def mark_selected(
         game: str,
         keyboard: dict
 ):
-    # todo REFACTOR
+    """
+    Prepends emoji symbol for selected button
+    """
+    # todo should be used as class serializer method
     for row in keyboard['inline_keyboard']:
         for key in row:
             game_name = key['callback_data'].split('|')[-1]
@@ -123,172 +108,31 @@ async def mark_selected(
     return keyboard
 
 
-@dp.message_handler(state=RegistrationState.city)
-async def set_city(
-        message: types.Message,
-        state: FSMContext
-):
-    async with state.proxy() as data:
-        data['city'] = message.text
-
-    games_list = ['PUBG', 'MineCraft', 'GTA', 'FIFA', 'CS:GO', 'ClashRoyale',
-                  'Fortnite', 'Apex Legends', 'Valorant', 'Battlefield', 'Call Of Duty',
-                  'Assassin\'s Creed', 'Need For Speed']
-
-    data = [(game, ('game', game))
-            for game in games_list]
-    kb = KeyboardGenerator(data, row_width=3).add(('Svoi otvet', ('custom_answer',))).keyboard
-    await message.reply(_('Хорошо, выбирай игры'), reply_markup=kb)
-    await RegistrationState.games.set()
-
-
-async def process_multianswer(
-        cb,
-        game,
-        keyboard: InlineKeyboardMarkup
-):
-    kb = await mark_selected(
-        game,
-        keyboard.to_python()
-    )
-
-    await cb.message.edit_reply_markup(kb)
-
-
-@dp.callback_query_handler(short_data.filter(property='game'), state=RegistrationState.games)
-@dp.throttled(throttled, rate=.7)
-async def get_inline_answer(
-        cb: types.CallbackQuery,
-        state: FSMContext,
-        callback_data: dict = None
-):
-    await cb.answer()
-    game = callback_data['value']
-    async with state.proxy() as data:
-        if data.get('games') and game not in data.get('games'):
-            data['games'].append(game)
-        else:
-            data['games'] = [game]
-
-    await process_multianswer(cb, game, cb.message.reply_markup)
-
-
-@dp.callback_query_handler(simple_data.filter(value='custom_answer'), state=RegistrationState.games)
-@dp.throttled(throttled, rate=.7)
-async def get_inline_answer(
-        cb: types.CallbackQuery,
-):
-
-    await cb.answer()
-    await cb.message.reply('отправьте игру')
-
-
-@dp.message_handler(state=RegistrationState.games)
-async def get_text_answer(
-        message: types.Message,
-        state: FSMContext
-):
-    await state.reset_state(False)
-    async with state.proxy() as data:
-        if data.get('games') and message.text not in data.get('games'):
-            data['games'].append(message.text)
-        else:
-            data['games'] = [message.text]
-
-    await message.reply('отправьте номер')
-
-    await RegistrationState.phone.set()
-
-
-@dp.callback_query_handler(simple_data.filter(value='continue'), state=RegistrationState.games)
-@dp.throttled(throttled, rate=.7)
-async def next_question(
-        cb: types.CallbackQuery
-):
-    await cb.answer()
-    await cb.message.edit_reply_markup(None)
-
-    await cb.message.reply('отправьте номер')
-
-    await RegistrationState.phone.set()
-
-
-@dp.message_handler(state=RegistrationState.phone)
 @create_session
-async def set_phone(
-        message: types.Message,
+async def create_lead(
+        user_id: int,
         state: FSMContext,
         session: SessionLocal
 ):
-    is_phone_exists = await repo.StudentRepository.is_exist('phone', message.text, session)
-    if is_phone_exists:
-        return await message.reply('Данный номер уже используется')
-
-    async with state.proxy() as data:
-        print(data)
-        data['phone'] = message.text
-
-    data = [('Пропустить', ('skip_loc',)), ('Отправить', ('send_loc',))]
-
-    kb = KeyboardGenerator(data).keyboard
-    await message.reply(_('отправить не отправить'), reply_markup=kb)
-
-
-@dp.callback_query_handler(simple_data.filter(value='send_loc'), state='*')
-async def accept_loc(
-        cb: types.CallbackQuery,
-):
-    await cb.message.reply('go send it')
-    await RegistrationState.location.set()
-
-
-@dp.callback_query_handler(simple_data.filter(value='skip_loc'), state='*')
-async def dismiss_loc(
-        cb: types.CallbackQuery,
-        state: FSMContext,
-):
-    await create_record(cb.from_user.id, state)
-
-
-@dp.message_handler(state=RegistrationState.location, content_types=ContentType.LOCATION)
-async def set_loc(
-        message: types.Message,
-        state: FSMContext,
-):
-    async with state.proxy() as data:
-        data['location'] = {
-            'longitude': message.location.longitude,
-            'latitude': message.location.latitude
-        }
-
-    await create_record(message.from_user.id, state)
-
-
-@create_session
-async def create_record(
-        user_id,
-        state: FSMContext,
-        session: SessionLocal
-):
+    """
+    Gathers collected data and inserts record into database
+    """
+    prefix = 'RegistrationState:'
     contact = await repo.ContactRepository.get('tg_id', user_id, session)
     data = await state.get_data()
     location = None
     if data.get('location'):
         location = WKTElement(F'POINT({data["location"]["longitude"]} {data["location"]["latitude"]})')
     lead_data = {
-        'first_name': data['first_name'],
-        'city': data['city'],
-        'tg_id': user_id,
-        'language_type': data['lang'],
-        'phone': data['phone'],
+        'first_name': data[f'{prefix}first_name'],
+        'city':  data[f'{prefix}city'],
+        'phone': data[f'{prefix}phone'],
         'application_type': StudentTable.ApplicationType.telegram,
         'is_client': False,
         'contact_id': contact.id,
-        'games': data['games'],
+        'games': data[f'{prefix}games'],
         'location': location,
     }
-    if contact:
-        lead_data['promo_id'] = contact.data.get('promo')
 
     student = await repo.StudentRepository.create(lead_data, session)
     await repo.ContactRepository.edit(contact, {
@@ -299,6 +143,219 @@ async def create_record(
         await repo.StudentCourseRepository.bunch_create(student.id, contact.data['courses'], session)
 
     reply_kb = await KeyboardGenerator.main_kb()
-    await bot.send_message(user_id, _('Вы зарегистрированы! В ближайшее время с вами свяжется наш оператор'),
+    await bot.send_message(user_id, _('Вы зарегистрированы! В ближайшее время'
+                                      ' с вами свяжется наш оператор'),
                            reply_markup=reply_kb)
-    await state.finish()
+
+
+async def ask_first_name(
+        user_response: types.CallbackQuery,
+        state: FSMContext
+):
+    await bot.send_message(user_response.from_user.id, _('Как тебя зовут?'))
+
+
+async def ask_city(user_response: types.Message, state: FSMContext):
+    await bot.send_message(user_response.from_user.id,
+                           _('Отлично, теперь напиши из какого ты города'))
+
+
+async def ask_games(
+        user_response: types.Message,
+        state: FSMContext
+):
+    data = [(game, ('game', game))
+            for game in GAMES_LIST]
+    kb = KeyboardGenerator(data, row_width=3).keyboard
+    msg = await bot.send_message(user_response.from_user.id,
+                           _('Выберите игры или впишите ответ вручную'),
+                           reply_markup=kb)
+
+    await state.update_data({'msg_id': msg.message_id})
+
+
+async def ask_phone(
+        msg: types.Message,
+        state: FSMContext
+):
+    await bot.send_message(msg.from_user.id, _('Отправьте номер'))
+
+
+async def ask_location(msg: types.Message, state: FSMContext):
+    data = [('Пропустить', ('skip_loc',)), ('Отправить', ('send_loc',))]
+    kb = KeyboardGenerator(data).keyboard
+    msg = await bot.send_message(msg.from_user.id,
+                                 _('Отправьте локацию'),
+                                 reply_markup=kb)
+
+    await state.update_data({'msg_id': msg.message_id})
+
+
+async def game_handler(
+        response: Union[types.Message, types.CallbackQuery],
+        state: FSMContext
+):
+    """
+    Resolves further instructions for game question.
+    """
+    async def next_question():
+        """
+        Proceed to the next question if user sent game by text, or selected games and clicked continue
+        """
+        user_data = await state.get_data()
+        await bot.edit_message_reply_markup(response.from_user.id, user_data['msg_id'])
+        await RegistrationState.next()
+        await ask_phone(response, state)
+
+    if isinstance(response, types.Message):
+        # User decided to send game by text manually
+        return await next_question()
+
+    cb_value = response.data.split('|')[-1]
+
+    if cb_value == 'continue':
+        await next_question()
+    else:
+        kb = await mark_selected(
+                cb_value,
+                response.message.reply_markup.to_python()
+            )
+        await response.message.edit_reply_markup(kb)
+
+
+async def location_handler(
+        response: Union[types.Message, types.CallbackQuery],
+        state: FSMContext
+):
+    """
+    Resolves further instructions for location question
+    """
+    async def accept_loc():
+        """
+        If user agreed to send location, ask him to send it
+        """
+        data = await state.get_data()
+        await bot.edit_message_reply_markup(response.from_user.id, data['msg_id'])
+        await response.message.reply(_('Вышлите вашу геопозицию'))
+
+    async def proceed():
+        """
+        Finishes the state and creates record
+        """
+        await create_lead(response.from_user.id, state)
+        await state.finish()
+
+    location_mapper = {
+        'send_loc': accept_loc,
+        'skip_loc': proceed
+    }
+
+    if isinstance(response, types.Message) and response.location:
+        # User sent message with location.
+        await proceed()
+
+    if isinstance(response, types.CallbackQuery):
+        cb_value = response.data.split('|')[-1]
+        await location_mapper[cb_value]()
+        await state.update_data({'msg_id': response.message.message_id})
+
+
+async def next_state(state: FSMContext):
+    """
+    Switches to the next state if current state data is not MT
+    """
+    data = await state.get_data()
+    state = await state.get_state()
+    if data.get(state):
+        await RegistrationState.next()
+
+
+async def is_text(user_response):
+    if not isinstance(user_response, types.Message) or not user_response.text:
+        raise ValueError('Не могу найти текстовое сообщение')
+
+
+async def type_checker(user_response, required_type):
+    is_correct = isinstance(user_response, required_type)
+    if type(user_response) == types.Message and not is_correct:
+        raise ValueError('Нужно кликнуть на кнопку')
+    elif type(user_response) == types.CallbackQuery and not is_correct:
+        raise ValueError('Нужно отправить текстовое сообщение')
+
+
+@create_session
+async def phone_checker(user_response, session):
+    is_correct_format = re.match(PHONE_PATTERN, user_response.text)
+
+    if not is_correct_format:
+        raise ValueError('Неправильный формат телефона. Пример: +998000000000')
+
+    is_phone_exists = await repo.StudentRepository.is_exist('phone', user_response.text, session)
+    if is_phone_exists:
+        raise ValueError('Данный номер уже используется')
+
+
+QUESTION_MAP = {
+    # State: Answer saver, Next Question Sender, State Resolution, Validators
+    'first_name': (save_answer, ask_city, next_state,
+                   [partial(type_checker, required_type=types.Message), is_text]),
+    'city': (save_answer, ask_games, next_state,
+             [partial(type_checker, required_type=types.Message), is_text]),
+    'games': (save_games, game_handler, None, []),
+    'phone': (save_answer, ask_location, next_state, [phone_checker, is_text]),
+    'location': (save_location, location_handler, None, []),
+}
+
+
+@dp.message_handler(commands=['register'], state='*')
+@dp.callback_query_handler(simple_data.filter(value='tg_reg'))
+@create_session
+async def entry_point(
+        message: types.Message,
+        session: SessionLocal
+):
+    """
+    Entry handler to initiate registration process.
+    """
+    contact = await repo.ContactRepository.get('tg_id', message.from_user.id, session)
+    if contact.student:
+        return await bot.send_message(
+            message.from_user.id,
+            'Вы уже зарегистрированы'
+        )
+
+    await bot.send_message(
+        message.from_user.id,
+        _('Регистрация в боте MegaSkill.\n'
+          'Как тебя зовут?'),
+    )
+    await RegistrationState.first_name.set()
+
+
+@dp.throttled(throttled, rate=.7)
+@dp.message_handler(state=RegistrationState.states,
+                    content_types=[types.ContentType.TEXT, types.ContentType.LOCATION])
+@dp.callback_query_handler(state=RegistrationState.states)
+async def process_handler(
+    user_response: Union[types.CallbackQuery, types.Message],
+    state: FSMContext
+):
+    """
+    Intermediate handler that calls needed functions to create registration flow
+    """
+    if isinstance(user_response, types.CallbackQuery):
+        await bot.answer_callback_query(user_response.id)
+
+    current_state = (await state.get_state()).split(':')[-1]
+    set_answer, next_question, set_state, validators = QUESTION_MAP[current_state]
+
+    for validator in validators:
+        try:
+            await validator(user_response)
+        except ValueError as e:
+            return await bot.send_message(user_response.from_user.id, e)
+
+    await set_answer(user_response, state)
+    await next_question(user_response, state)
+    if set_state:
+        await set_state(state)

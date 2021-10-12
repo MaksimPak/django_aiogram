@@ -1,9 +1,0 @@
-{% extends 'admin/change_form.html' %}
-{% load i18n admin_urls %}
-
-{% block object-tools-items %}
-      {{block.super}}
-      {% if not original.blocked_bot %}
-      <li><a href="{% url 'dashboard:message_contacts' %}?_selected_action={{original.pk}}">Отправить сообщение</a></li>
-      {% endif %}
-{% endblock %}

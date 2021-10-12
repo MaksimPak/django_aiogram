@@ -6,14 +6,14 @@ from sqlalchemy import select, func, or_, and_
 from sqlalchemy import exc
 from sqlalchemy.orm import selectinload, with_parent
 
-from bot.models.dashboard import (
+from bot.db.schemas import (
     StudentTable, CourseTable, StudentCourse,
     LessonTable, LessonUrlTable, StudentLesson,
-    PromotionTable, ContactTable,
+    ContactTable,
     FormTable, FormQuestionTable, FormAnswerTable, ContactFormTable,
     LearningCentreTable, AssetTable, ContactAssetTable
 )
-from bot.models.db import SessionLocal
+from bot.db.config import SessionLocal
 
 
 class BaseRepository:
@@ -84,6 +84,17 @@ class BaseRepository:
 class ContactRepository(BaseRepository):
     table = ContactTable
 
+    @classmethod
+    async def get(cls, attribute: str, value: Any, session: SessionLocal):
+        async with session:
+            instance = (await session.execute(
+                select(cls.table).where(getattr(cls.table, attribute) == value)
+                .options(selectinload(ContactTable.student))
+            )).scalar()
+
+        return instance
+
+
     @staticmethod
     async def get_or_create(
             tg_id: int,
@@ -110,14 +121,15 @@ class ContactRepository(BaseRepository):
         return contact
 
     @staticmethod
-    async def load_student(contact_id: int, session: SessionLocal):
+    async def load_student_data(attr: Any, value, session: SessionLocal):
         """
         load contact with student relationship
         """
         async with session:
             contact = (await session.execute(
                 select(ContactTable).where(
-                    ContactTable.id == contact_id).options(selectinload(ContactTable.student))
+                    getattr(ContactTable, attr) == value).options(selectinload(ContactTable.student)
+                                                                  .selectinload(StudentTable.learning_centre))
             )).scalar()
 
         return contact
@@ -134,6 +146,16 @@ class StudentRepository(BaseRepository):
                     selectinload(StudentTable.learning_centre)
                 )
             )).scalar()
+        return student
+
+    @staticmethod
+    async def load_with_contact(attr: Any, value, session):
+        async with session:
+            student = (await session.execute(
+                    select(StudentTable).where(getattr(StudentTable, attr) == value).options(
+                        selectinload(StudentTable.contact)
+                    )
+                )).scalar()
         return student
 
     @staticmethod
@@ -308,10 +330,6 @@ class LearningCentreRepository(BaseRepository):
                 select(LearningCentreTable)
             )).scalars()
         return lcs
-
-
-class PromotionRepository(BaseRepository):
-    table = PromotionTable
 
 
 class StudentCourseRepository(BaseRepository):
