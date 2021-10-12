@@ -4,6 +4,7 @@ from typing import Union
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters import CommandStart, ChatTypeFilter
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from geoalchemy2 import WKTElement
@@ -305,6 +306,31 @@ QUESTION_MAP = {
     'phone': (save_answer, ask_location, next_state, [phone_checker, is_text]),
     'location': (save_location, location_handler, None, []),
 }
+
+
+@dp.message_handler(CommandStart(re.compile(r'\d+')), ChatTypeFilter(types.ChatType.PRIVATE), state='*')
+@create_session
+async def register_deep_link(
+        message: types.Message,
+        session: SessionLocal
+):
+    """
+    Saves user tg_id into db if start was passed w/ deep link
+    """
+    contact = await repo.ContactRepository.get('tg_id', message.from_user.id, session)
+    student = await repo.StudentRepository.load_with_contact('unique_code', message.get_args(), session)
+    kb = await KeyboardGenerator.main_kb()
+
+    if student and not student.contact:
+        await repo.StudentRepository.edit(student, {'contact': contact}, session)
+        await message.reply(
+            _('Спасибо {first_name},'
+              'вы были успешно зарегистрированы в боте').format(first_name=message.from_user.first_name),
+            reply_markup=kb)
+    elif not student:
+        await message.reply(_('Неверный инвайт код'))
+    elif student and student.contact:
+        await message.reply(_('Вы уже зарегистрированы. Выберите опцию'), reply_markup=kb)
 
 
 @dp.message_handler(commands=['register'], state='*')

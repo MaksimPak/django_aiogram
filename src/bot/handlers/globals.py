@@ -23,7 +23,7 @@ def no_deeplink(message):
 
 
 @dp.message_handler(UnknownContact(), ChatTypeFilter(types.ChatType.PRIVATE), state='*')
-async def lang(msg: types.Message, state: FSMContext):
+async def ask_extra(msg: types.Message, state: FSMContext):
     update = types.Update.get_current()
     data = [(name.capitalize(), ('lang', member.value))
             for name, member in StudentTable.LanguageType.__members__.items()]
