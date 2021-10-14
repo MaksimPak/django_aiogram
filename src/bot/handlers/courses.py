@@ -99,7 +99,7 @@ async def my_courses(
     Displays free and enrolled courses of the student
     """
     await state.reset_state()
-    await message.reply('Раздел перерабатывается')
+    await message.reply(_('Раздел перерабатывается'))
     # client = await repo.StudentRepository.get_course_inload('tg_id', int(message.from_user.id), session)
     # if not client:
     #     await message.reply(_('Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться'))

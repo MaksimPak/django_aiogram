@@ -145,7 +145,7 @@ async def create_lead(
 
     reply_kb = await KeyboardGenerator.main_kb()
     await bot.send_message(user_id, _('Вы зарегистрированы! В ближайшее время'
-                                      ' с вами свяжется наш оператор'),
+                                      ' с Вами свяжется наш оператор'),
                            reply_markup=reply_kb)
 
 
@@ -153,12 +153,12 @@ async def ask_first_name(
         user_response: types.CallbackQuery,
         state: FSMContext
 ):
-    await bot.send_message(user_response.from_user.id, _('Как тебя зовут?'))
+    await bot.send_message(user_response.from_user.id, _('Как Вас зовут?'))
 
 
 async def ask_city(user_response: types.Message, state: FSMContext):
     await bot.send_message(user_response.from_user.id,
-                           _('Отлично, теперь напиши из какого ты города'))
+                           _('Отлично, теперь напишите из какого Вы города'))
 
 
 async def ask_games(
@@ -169,8 +169,8 @@ async def ask_games(
             for game in GAMES_LIST]
     kb = KeyboardGenerator(data, row_width=3).keyboard
     msg = await bot.send_message(user_response.from_user.id,
-                           _('Выберите игры или впишите ответ вручную'),
-                           reply_markup=kb)
+                                 _('Выберите игры или впишите ответ вручную'),
+                                 reply_markup=kb)
 
     await state.update_data({'msg_id': msg.message_id})
 
@@ -179,7 +179,7 @@ async def ask_phone(
         msg: types.Message,
         state: FSMContext
 ):
-    await bot.send_message(msg.from_user.id, _('Отправьте номер'))
+    await bot.send_message(msg.from_user.id, _('Хорошо, теперь пожалуйста отправьте свой номер'))
 
 
 async def ask_location(msg: types.Message, state: FSMContext):
@@ -273,15 +273,15 @@ async def next_state(state: FSMContext):
 
 async def is_text(user_response):
     if not isinstance(user_response, types.Message) or not user_response.text:
-        raise ValueError('Не могу найти текстовое сообщение')
+        raise ValueError(_('Нужно отправить текстовое сообщение'))
 
 
 async def type_checker(user_response, required_type):
     is_correct = isinstance(user_response, required_type)
     if type(user_response) == types.Message and not is_correct:
-        raise ValueError('Нужно кликнуть на кнопку')
+        raise ValueError(_('Нужно кликнуть на кнопку'))
     elif type(user_response) == types.CallbackQuery and not is_correct:
-        raise ValueError('Нужно отправить текстовое сообщение')
+        raise ValueError(_('Нужно отправить текстовое сообщение'))
 
 
 @create_session
@@ -289,11 +289,11 @@ async def phone_checker(user_response, session):
     is_correct_format = re.match(PHONE_PATTERN, user_response.text)
 
     if not is_correct_format:
-        raise ValueError('Неправильный формат телефона. Пример: +998000000000')
+        raise ValueError(_('Неправильный формат телефона. Пример: +998000000000'))
 
     is_phone_exists = await repo.StudentRepository.is_exist('phone', user_response.text, session)
     if is_phone_exists:
-        raise ValueError('Данный номер уже используется')
+        raise ValueError(_('Данный номер уже используется'))
 
 
 QUESTION_MAP = {
@@ -325,7 +325,7 @@ async def register_deep_link(
         await repo.StudentRepository.edit(student, {'contact': contact}, session)
         await message.reply(
             _('Спасибо {first_name},'
-              'вы были успешно зарегистрированы в боте').format(first_name=message.from_user.first_name),
+              'Вы были успешно зарегистрированы в боте').format(first_name=message.from_user.first_name),
             reply_markup=kb)
     elif not student:
         await message.reply(_('Неверный инвайт код'))

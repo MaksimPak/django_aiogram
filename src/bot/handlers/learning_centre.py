@@ -29,7 +29,7 @@ async def list_all(
     markup = KeyboardGenerator(lcs_data).keyboard
 
     await message.reply(
-        _('Выберите центр'),
+        _('Выберите учебный центр'),
         reply_markup=markup
     )
 
@@ -57,7 +57,7 @@ async def display_lc(
 
     lc = await repo.LearningCentreRepository.get('slug', slug, session)
     if not lc:
-        return await response.reply(_('Такого центра не существует'))
+        return await response.reply(_('Такого учебного центра не существует'))
     msg = f'{lc.title}\n{lc.description}'
     kb = InlineKeyboardMarkup()
     if lc.link:

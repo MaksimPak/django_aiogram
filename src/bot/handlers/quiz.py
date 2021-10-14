@@ -129,7 +129,7 @@ async def next_question(
         ).send()
     else:
         percent_score = round((data['score'] / data['question_len']) * 100)
-        end_message = _('Спасибо за участие')
+        end_message = _('Спасибо за участие!')
         for key in form.end_message.keys():
             num1, num2 = map(int, key.split('-'))
             if percent_score in range(num1, num2+1):

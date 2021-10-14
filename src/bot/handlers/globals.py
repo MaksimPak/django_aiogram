@@ -28,7 +28,7 @@ async def ask_extra(msg: types.Message, state: FSMContext):
     data = [(name.capitalize(), ('lang', member.value))
             for name, member in StudentTable.LanguageType.__members__.items()]
     kb = KeyboardGenerator(data).keyboard
-    await msg.reply(' язык', reply_markup=kb)
+    await msg.reply(_('Здравствуйте! Выбери язык'), reply_markup=kb)
     await state.update_data({'processed_update': update.to_python()})
     await ExtraData.lang.set()
 

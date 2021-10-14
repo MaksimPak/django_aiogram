@@ -30,7 +30,7 @@ async def list_assets(
     markup = KeyboardGenerator(assets_data).keyboard
 
     await message.reply(
-        _('Выберите Ассет'),
+        _('Выберите Ресурс'),
         reply_markup=markup
     )
 
