@@ -99,10 +99,10 @@ async def my_courses(
     Displays free and enrolled courses of the student
     """
     await state.reset_state()
-    await message.reply(_('Раздел перерабатывается'))
+    await message.reply(_('Раздел в разработке'))
     # client = await repo.StudentRepository.get_course_inload('tg_id', int(message.from_user.id), session)
     # if not client:
-    #     await message.reply(_('Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться'))
+    #     await message.reply(_('Вы не зарегистрированы. Отправьте /register чтобы зарегистрироваться'))
     #     return
     #
     # course_btns = []
@@ -222,7 +222,7 @@ async def check_homework(
     if record.lesson.has_homework:
         await bot.answer_callback_query(cb.id)
         text = await get_lesson_text(record, session, display_hw=True, display_link=False)
-        kb = KeyboardGenerator([(_('Сдать дз'), ('submit', record.lesson.course.chat_id, record.id))]).keyboard
+        kb = KeyboardGenerator([(_('Сдать ДЗ'), ('submit', record.lesson.course.chat_id, record.id))]).keyboard
 
         if cb.message.photo:
             await bot.edit_message_caption(
@@ -268,7 +268,7 @@ async def request_homework(
 
     await bot.send_message(
         cb.from_user.id,
-        _('Отправьте вашу работу')
+        _('Отправьте Вашу работу')
        )
 
     await Homework.homework_start.set()
@@ -426,7 +426,7 @@ async def get_student_feedback(
 
     await bot.send_message(
         cb.from_user.id,
-        _('Отправьте ваше сообщение')
+        _('Отправьте Ваше сообщение')
     )
 
     await Feedback.feedback_student.set()

@@ -99,7 +99,7 @@ async def my_profile(
     kb = KeyboardGenerator([(_('Регистрация'), ('tg_reg',))]).keyboard
     if not contact.student:
         return await message.reply(
-            _('<i>Ваш статус: Незагрегистированный пользователь.\n</i>' 
+            _('<i>Ваш статус: Незарегистрированный пользователь.\n</i>' 
               '<i>Зарегистрируйтесь и получите больше возможностей.</i>'),
             parse_mode='html',
             reply_markup=kb
@@ -344,7 +344,7 @@ async def change_city(
         data['message_id'] = cb.message.message_id
 
     await bot.edit_message_text(
-        _('Укажите город'),
+        _('Укажите город проживания'),
         cb.from_user.id,
         cb.message.message_id,
         reply_markup=None

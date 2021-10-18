@@ -144,9 +144,7 @@ async def create_lead(
         await repo.StudentCourseRepository.bunch_create(student.id, contact.data['courses'], session)
 
     reply_kb = await KeyboardGenerator.main_kb()
-    await bot.send_message(user_id, _('Вы зарегистрированы! В ближайшее время'
-                                      ' с Вами свяжется наш оператор'),
-                           reply_markup=reply_kb)
+    await bot.send_message(user_id, _('Вы успешно зарегистрированы!'), reply_markup=reply_kb)
 
 
 async def ask_first_name(
@@ -186,7 +184,9 @@ async def ask_location(msg: types.Message, state: FSMContext):
     data = [('Пропустить', ('skip_loc',)), ('Отправить', ('send_loc',))]
     kb = KeyboardGenerator(data).keyboard
     msg = await bot.send_message(msg.from_user.id,
-                                 _('Отправьте локацию'),
+                                 _('Отправьте Вашу локацию. Вы можете пропустить '
+                                   'этот этап регистрации, '
+                                   'если нажмете кнопку “Пропустить'),
                                  reply_markup=kb)
 
     await state.update_data({'msg_id': msg.message_id})
@@ -237,7 +237,7 @@ async def location_handler(
         """
         data = await state.get_data()
         await bot.edit_message_reply_markup(response.from_user.id, data['msg_id'])
-        await response.message.reply(_('Вышлите вашу геопозицию'))
+        await response.message.reply(_('Вышлите Вашу геолокацию'))
 
     async def proceed():
         """
@@ -289,7 +289,7 @@ async def phone_checker(user_response, session):
     is_correct_format = re.match(PHONE_PATTERN, user_response.text)
 
     if not is_correct_format:
-        raise ValueError(_('Неправильный формат телефона. Пример: +998000000000'))
+        raise ValueError(_('Неправильный формат телефона. Пример: +998901234567'))
 
     is_phone_exists = await repo.StudentRepository.is_exist('phone', user_response.text, session)
     if is_phone_exists:
@@ -353,7 +353,7 @@ async def entry_point(
     await bot.send_message(
         message.from_user.id,
         _('Регистрация в боте MegaSkill.\n'
-          'Как тебя зовут?'),
+          'Как Вас зовут?'),
     )
     await RegistrationState.first_name.set()
 
