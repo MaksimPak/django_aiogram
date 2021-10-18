@@ -9,7 +9,7 @@ from assets import models
 class AssetAdmin(admin.ModelAdmin):
     list_display = ('id', 'title', 'desc', 'access_level',)
     list_display_links = ('title',)
-    readonly_fields = ('link', 'count')
+    readonly_fields = ('link', 'count', 'command')
     list_per_page = 20
 
     @admin.display(description='Линк')
@@ -19,3 +19,7 @@ class AssetAdmin(admin.ModelAdmin):
     @admin.display(description='Подсчет')
     def count(self, isntance):
         return isntance.contactasset_set.count()
+
+    @admin.display(description='Команда вызова')
+    def command(self, instance):
+        return f'/asset_{instance.id}'
