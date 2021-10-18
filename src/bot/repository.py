@@ -404,7 +404,7 @@ class FormQuestionRepository(BaseRepository):
     table = FormQuestionTable
 
     @staticmethod
-    async def next_question(question_id, position, form_id, session):
+    async def next_question(position, form_id, session):
         async with session:
             next_question = (
                 await session.execute(
