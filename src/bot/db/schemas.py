@@ -8,6 +8,7 @@ from sqlalchemy.dialects.postgresql import TEXT, VARCHAR, JSONB, ARRAY
 from sqlalchemy.orm import relationship
 from geoalchemy2 import Geometry
 
+from bot import config
 from bot.db.config import Base
 
 
@@ -78,6 +79,10 @@ class ContactTable(BaseModel):
             access_level = 3
 
         return access_level
+
+    @property
+    def profile_link(self):
+        return f'{config.DOMAIN}/admin/contacts/contact/{self.id}/change/'
 
 
 class StudentTable(BaseModel):
@@ -228,6 +233,10 @@ class FormTable(BaseModel):
     access_level = Column(IntEnum(AccessLevel), nullable=False, default=AccessLevel.client.value)
 
     questions = relationship('FormQuestionTable', back_populates='form', order_by='[FormQuestionTable.position, FormQuestionTable.id]')
+
+    @property
+    def form_link(self):
+        return f'{config.DOMAIN}/admin/forms/form/{self.id}/change/'
 
 
 class FormQuestionTable(BaseModel):

@@ -4,6 +4,7 @@ from typing import Union
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters import CommandStart, ChatTypeFilter
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from geoalchemy2 import WKTElement
@@ -143,21 +144,19 @@ async def create_lead(
         await repo.StudentCourseRepository.bunch_create(student.id, contact.data['courses'], session)
 
     reply_kb = await KeyboardGenerator.main_kb()
-    await bot.send_message(user_id, _('Вы зарегистрированы! В ближайшее время'
-                                      ' с вами свяжется наш оператор'),
-                           reply_markup=reply_kb)
+    await bot.send_message(user_id, _('Вы успешно зарегистрированы!'), reply_markup=reply_kb)
 
 
 async def ask_first_name(
         user_response: types.CallbackQuery,
         state: FSMContext
 ):
-    await bot.send_message(user_response.from_user.id, _('Как тебя зовут?'))
+    await bot.send_message(user_response.from_user.id, _('Как Вас зовут?'))
 
 
 async def ask_city(user_response: types.Message, state: FSMContext):
     await bot.send_message(user_response.from_user.id,
-                           _('Отлично, теперь напиши из какого ты города'))
+                           _('Отлично, теперь напишите из какого Вы города'))
 
 
 async def ask_games(
@@ -168,8 +167,8 @@ async def ask_games(
             for game in GAMES_LIST]
     kb = KeyboardGenerator(data, row_width=3).keyboard
     msg = await bot.send_message(user_response.from_user.id,
-                           _('Выберите игры или впишите ответ вручную'),
-                           reply_markup=kb)
+                                 _('Выберите игры или впишите ответ вручную'),
+                                 reply_markup=kb)
 
     await state.update_data({'msg_id': msg.message_id})
 
@@ -178,14 +177,16 @@ async def ask_phone(
         msg: types.Message,
         state: FSMContext
 ):
-    await bot.send_message(msg.from_user.id, _('Отправьте номер'))
+    await bot.send_message(msg.from_user.id, _('Хорошо, теперь пожалуйста отправьте свой номер'))
 
 
 async def ask_location(msg: types.Message, state: FSMContext):
     data = [('Пропустить', ('skip_loc',)), ('Отправить', ('send_loc',))]
     kb = KeyboardGenerator(data).keyboard
     msg = await bot.send_message(msg.from_user.id,
-                                 _('Отправьте локацию'),
+                                 _('Отправьте Вашу локацию. Вы можете пропустить '
+                                   'этот этап регистрации, '
+                                   'если нажмете кнопку “Пропустить'),
                                  reply_markup=kb)
 
     await state.update_data({'msg_id': msg.message_id})
@@ -236,7 +237,7 @@ async def location_handler(
         """
         data = await state.get_data()
         await bot.edit_message_reply_markup(response.from_user.id, data['msg_id'])
-        await response.message.reply(_('Вышлите вашу геопозицию'))
+        await response.message.reply(_('Вышлите Вашу геолокацию'))
 
     async def proceed():
         """
@@ -272,15 +273,15 @@ async def next_state(state: FSMContext):
 
 async def is_text(user_response):
     if not isinstance(user_response, types.Message) or not user_response.text:
-        raise ValueError('Не могу найти текстовое сообщение')
+        raise ValueError(_('Нужно отправить текстовое сообщение'))
 
 
 async def type_checker(user_response, required_type):
     is_correct = isinstance(user_response, required_type)
     if type(user_response) == types.Message and not is_correct:
-        raise ValueError('Нужно кликнуть на кнопку')
+        raise ValueError(_('Нужно кликнуть на кнопку'))
     elif type(user_response) == types.CallbackQuery and not is_correct:
-        raise ValueError('Нужно отправить текстовое сообщение')
+        raise ValueError(_('Нужно отправить текстовое сообщение'))
 
 
 @create_session
@@ -288,11 +289,11 @@ async def phone_checker(user_response, session):
     is_correct_format = re.match(PHONE_PATTERN, user_response.text)
 
     if not is_correct_format:
-        raise ValueError('Неправильный формат телефона. Пример: +998000000000')
+        raise ValueError(_('Неправильный формат телефона. Пример: +998901234567'))
 
     is_phone_exists = await repo.StudentRepository.is_exist('phone', user_response.text, session)
     if is_phone_exists:
-        raise ValueError('Данный номер уже используется')
+        raise ValueError(_('Данный номер уже используется'))
 
 
 QUESTION_MAP = {
@@ -305,6 +306,31 @@ QUESTION_MAP = {
     'phone': (save_answer, ask_location, next_state, [phone_checker, is_text]),
     'location': (save_location, location_handler, None, []),
 }
+
+
+@dp.message_handler(CommandStart(re.compile(r'\d+')), ChatTypeFilter(types.ChatType.PRIVATE), state='*')
+@create_session
+async def register_deep_link(
+        message: types.Message,
+        session: SessionLocal
+):
+    """
+    Saves user tg_id into db if start was passed w/ deep link
+    """
+    contact = await repo.ContactRepository.get('tg_id', message.from_user.id, session)
+    student = await repo.StudentRepository.load_with_contact('unique_code', message.get_args(), session)
+    kb = await KeyboardGenerator.main_kb()
+
+    if student and not student.contact:
+        await repo.StudentRepository.edit(student, {'contact': contact}, session)
+        await message.reply(
+            _('Спасибо {first_name},'
+              'Вы были успешно зарегистрированы в боте').format(first_name=message.from_user.first_name),
+            reply_markup=kb)
+    elif not student:
+        await message.reply(_('Неверный инвайт код'))
+    elif student and student.contact:
+        await message.reply(_('Вы уже зарегистрированы. Выберите опцию'), reply_markup=kb)
 
 
 @dp.message_handler(commands=['register'], state='*')
@@ -327,7 +353,7 @@ async def entry_point(
     await bot.send_message(
         message.from_user.id,
         _('Регистрация в боте MegaSkill.\n'
-          'Как тебя зовут?'),
+          'Как Вас зовут?'),
     )
     await RegistrationState.first_name.set()
 

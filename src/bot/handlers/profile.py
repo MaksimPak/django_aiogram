@@ -23,11 +23,11 @@ async def phone_checker(user_response, session):
     is_correct_format = re.match(PHONE_PATTERN, user_response.text)
 
     if not is_correct_format:
-        raise ValueError('Неправильный формат телефона. Пример: +998000000000')
+        raise ValueError(_('Неправильный формат телефона. Пример: +998000000000'))
 
     is_phone_exists = await repo.StudentRepository.is_exist('phone', user_response.text, session)
     if is_phone_exists:
-        raise ValueError('Данный номер уже используется')
+        raise ValueError(_('Данный номер уже используется'))
 
 
 class ProfileChange(StatesGroup):
@@ -99,7 +99,7 @@ async def my_profile(
     kb = KeyboardGenerator([(_('Регистрация'), ('tg_reg',))]).keyboard
     if not contact.student:
         return await message.reply(
-            _('<i>Ваш статус: Незагрегистированный пользователь.\n</i>' 
+            _('<i>Ваш статус: Незарегистрированный пользователь.\n</i>' 
               '<i>Зарегистрируйтесь и получите больше возможностей.</i>'),
             parse_mode='html',
             reply_markup=kb
@@ -127,7 +127,7 @@ async def change_first_name(
         data['message_id'] = cb.message.message_id
 
     await bot.edit_message_text(
-        _('Укажите новое имя'),
+        _('Укажите имя'),
         cb.from_user.id,
         cb.message.message_id,
         reply_markup=None
@@ -344,7 +344,7 @@ async def change_city(
         data['message_id'] = cb.message.message_id
 
     await bot.edit_message_text(
-        _('Укажите новый город'),
+        _('Укажите город проживания'),
         cb.from_user.id,
         cb.message.message_id,
         reply_markup=None

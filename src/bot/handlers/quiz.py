@@ -10,7 +10,7 @@ from aiogram.types import InlineKeyboardMarkup, ContentType
 
 from bot import repository as repo, config
 from bot.decorators import create_session
-from bot.misc import dp, i18n, bot
+from bot.misc import dp, i18n, bot, jinja_env
 from bot.db.schemas import FormAnswerTable, FormQuestionTable
 from bot.db.config import SessionLocal
 from bot.serializers import KeyboardGenerator, FormButtons, MessageSender
@@ -129,7 +129,7 @@ async def next_question(
         ).send()
     else:
         percent_score = round((data['score'] / data['question_len']) * 100)
-        end_message = _('Спасибо за участие')
+        end_message = _('Спасибо за участие!')
         for key in form.end_message.keys():
             num1, num2 = map(int, key.split('-'))
             if percent_score in range(num1, num2+1):
@@ -210,12 +210,7 @@ async def form_initial(
 
     message_id = response.message.message_id if type(response) == types.CallbackQuery else response.message_id
     search_field = 'id' if type(response) == types.CallbackQuery else 'unique_code'
-    contact = await repo.ContactRepository.get_or_create(
-        response.from_user.id,
-        response.from_user.first_name,
-        response.from_user.last_name,
-        session
-    )
+    contact = await repo.ContactRepository.get('tg_id', response.from_user.id, session)
 
     form = await repo.FormRepository.get(search_field, int(form_id), session)
 
@@ -387,6 +382,7 @@ async def get_file_answer(
         session: SessionLocal
 ):
     await state.reset_state(False)
+    contact = await repo.ContactRepository.load_student_data('tg_id', message.from_user.id, session)
     data = await state.get_data()
     question = await repo.FormQuestionRepository.get(
         'id',
@@ -400,6 +396,9 @@ async def get_file_answer(
 
     await store_answer(question, filename, state)
     chat_id = question.chat_id if question.chat_id else config.CHAT_ID
+
+    text = jinja_env.get_template('quiz_file.html')
+    await bot.send_message(chat_id, text.render(question=question, form=question.form, contact=contact))
     await bot.forward_message(chat_id, message.from_user.id, message.message_id)
 
     await next_question(message.from_user.id, state)
