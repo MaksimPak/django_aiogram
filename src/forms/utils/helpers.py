@@ -44,7 +44,7 @@ def adjust_width(ws: Worksheet, rows: list) -> None:
         for i, cell in enumerate(row):
             if len(column_widths) > i:
                 if len(str(cell)) > column_widths[i]:
-                    if os.linesep not in cell:
+                    if os.linesep not in str(cell):
                         column_widths[i] = len(str(cell))
                     else:
                         column_widths[i] = _separated_line_width(cell)
