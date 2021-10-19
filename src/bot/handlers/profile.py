@@ -43,7 +43,7 @@ async def default_renderer(client, key):
 
 
 async def enum_renderer(client, key):
-    return StudentTable.LanguageType(client.contact.data[key]).name
+    return StudentTable.LanguageType(client.contact.data.get(key, StudentTable.LanguageType.ru)).name
 
 
 async def model_renderer(client, key, model_key):
