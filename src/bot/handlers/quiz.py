@@ -1,4 +1,3 @@
-import os
 import re
 from typing import Optional, Union
 
@@ -9,10 +8,10 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import InlineKeyboardMarkup, ContentType
 
 from bot import repository as repo, config
+from bot.db.config import SessionLocal
+from bot.db.schemas import FormAnswerTable, FormQuestionTable
 from bot.decorators import create_session
 from bot.misc import dp, i18n, bot, jinja_env
-from bot.db.schemas import FormAnswerTable, FormQuestionTable
-from bot.db.config import SessionLocal
 from bot.serializers import KeyboardGenerator, FormButtons, MessageSender
 from bot.utils.callback_settings import short_data, simple_data, two_valued_data
 from bot.utils.throttling import throttled
@@ -101,7 +100,6 @@ async def next_question(
         question = await repo.FormQuestionRepository.get('id', jump_to_id, session)
     else:
         question = await repo.FormQuestionRepository.next_question(
-            data['current_question_id'],
             data['position'],
             data['form_id'],
             session
@@ -373,7 +371,8 @@ async def get_text_answer(
     await next_question(message.from_user.id, state)
 
 
-@dp.message_handler(state=QuestionnaireMode.accept_file, content_types=[ContentType.PHOTO, ContentType.VIDEO, ContentType.DOCUMENT])
+@dp.message_handler(state=QuestionnaireMode.accept_file,
+                    content_types=[ContentType.PHOTO, ContentType.VIDEO, ContentType.DOCUMENT])
 @dp.throttled(throttled, rate=.7)
 @create_session
 async def get_file_answer(
