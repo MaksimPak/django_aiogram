@@ -72,7 +72,7 @@ async def profile_kb(
     Renders Student information in message and adds keyboard for edit
     """
 
-    data = [(title, (key, client.id)) for title, key, _tmp in PROFILE_FIELDS]
+    data = [(_(title), (key, client.id)) for title, key, _tmp in PROFILE_FIELDS]
 
     kb = KeyboardGenerator(data, row_width=2).keyboard
     ro_fields = [(_('Учебный центр'), 'learning_centre', lc_renderer)]
