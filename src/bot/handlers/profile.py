@@ -23,7 +23,7 @@ async def phone_checker(user_response, session):
     is_correct_format = re.match(PHONE_PATTERN, user_response.text)
 
     if not is_correct_format:
-        raise ValueError(_('Неправильный формат телефона. Пример: +998000000000'))
+        raise ValueError(_('Неправильный формат телефона. Пример: +998901234567'))
 
     is_phone_exists = await repo.StudentRepository.is_exist('phone', user_response.text, session)
     if is_phone_exists:
@@ -79,7 +79,7 @@ async def profile_kb(
     message = ''
     fields = (*PROFILE_FIELDS, *ro_fields)
     for title, key, renderer in fields:
-        message += title + ':' + ' ' + await renderer(client, key) + '\n'
+        message += _(title) + ':' + ' ' + await renderer(client, key) + '\n'
 
     return message, kb
 

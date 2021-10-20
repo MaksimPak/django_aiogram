@@ -18,7 +18,7 @@ class I18nMiddleware(BaseI18nMiddleware):
         contact = await repo.ContactRepository.get('tg_id', message.from_user.id, session)
         lang = self.default
         if contact:
-            lang = StudentTable.LanguageType(contact.data.get('lang', StudentTable.LanguageType.ru))
+            lang = StudentTable.LanguageType(contact.data.get('lang', StudentTable.LanguageType.ru)).name
         *_, data = args
         data['locale'] = lang
         return data['locale']

@@ -183,7 +183,6 @@ class KeyboardGenerator:
         btns = [
             KeyboardButton('📝 Курсы'),
             KeyboardButton('🧑‍🎓 Профиль'),
-            KeyboardButton('📚 Домашка'),
             KeyboardButton('🤔 Опросники'),
             KeyboardButton('🏫 Центры'),
             KeyboardButton('🛠️ Ассеты'),

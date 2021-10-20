@@ -6,6 +6,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import CommandStart, Regexp
 
 from bot import repository as repo
+from bot.db.schemas import AccessLevel
 from bot.decorators import create_session
 from bot.misc import dp, bot, i18n
 from bot.db.config import SessionLocal
@@ -60,6 +61,7 @@ async def send_asset(
     )
 
     asset = await repo.AssetRepository.get('id', int(asset_id), session)
+    contact_status = AccessLevel(contact.access_level).name
 
     if contact.access_level >= asset.access_level.value:
         await repo.ContactAssetRepository.unique_create(contact.id, asset.id, session)
@@ -70,4 +72,6 @@ async def send_asset(
             kb = KeyboardGenerator([(_('Регистрация'), ('tg_reg',))]).keyboard
             return await bot.send_message(contact.tg_id, _('Пожалуйста, пройдите регистрацию'), reply_markup=kb)
         else:
-            await bot.send_message(contact.tg_id, _('Недостаточно доступа'))
+            await bot.send_message(contact.tg_id,
+                                   _('Ваш уровень пользователя {contact_status} не достаточен для'
+                                     ' получения доступа к данному контенту'.format(contact_status=contact_status)))

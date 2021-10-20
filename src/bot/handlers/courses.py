@@ -222,7 +222,7 @@ async def check_homework(
     if record.lesson.has_homework:
         await bot.answer_callback_query(cb.id)
         text = await get_lesson_text(record, session, display_hw=True, display_link=False)
-        kb = KeyboardGenerator([(_('Сдать ДЗ'), ('submit', record.lesson.course.chat_id, record.id))]).keyboard
+        kb = KeyboardGenerator([(_('Отправить работу'), ('submit', record.lesson.course.chat_id, record.id))]).keyboard
 
         if cb.message.photo:
             await bot.edit_message_caption(
@@ -352,7 +352,7 @@ async def get_course_feedback(
 
     await bot.send_message(
         cb.from_user.id,
-        _('Отправьте ваше сообщение')
+        _('Отправьте Ваше сообщение')
        )
     await Feedback.feedback.set()
 

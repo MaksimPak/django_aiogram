@@ -1,14 +1,14 @@
-# Russian translations for Supersonic.
+# Russian translations for Megaskill.
 # Copyright (C) 2021 ORGANIZATION
-# This file is distributed under the same license as the Supersonic project.
+# This file is distributed under the same license as the Megaskill project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Supersonic 1.0\n"
+"Project-Id-Version: Megaskill VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-10-14 11:48+0000\n"
-"PO-Revision-Date: 2021-06-14 11:59+0000\n"
+"POT-Creation-Date: 2021-10-20 06:27+0000\n"
+"PO-Revision-Date: 2021-10-20 06:28+0000\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru\n"
 "Language-Team: ru <LL@li.org>\n"
@@ -19,387 +19,251 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.9.1\n"
 
-#: handlers/asset.py:33
+#: bot/handlers/asset.py:34
 msgid "Выберите Ресурс"
 msgstr ""
 
-#: handlers/asset.py:70 handlers/profile.py:99 handlers/quiz.py:256
+#: bot/handlers/asset.py:72 bot/handlers/profile.py:99 bot/handlers/quiz.py:250
 msgid "Регистрация"
 msgstr ""
 
-#: handlers/asset.py:71 handlers/quiz.py:257
+#: bot/handlers/asset.py:73 bot/handlers/quiz.py:251
 msgid "Пожалуйста, пройдите регистрацию"
 msgstr ""
 
-#: handlers/asset.py:73 handlers/quiz.py:259
-msgid "Недостаточно доступа"
+#: bot/handlers/asset.py:77 bot/handlers/quiz.py:255
+msgid ""
+"Ваш уровень пользователя {contact_status} не достаточен для получения "
+"доступа к данному контенту"
 msgstr ""
 
-#: handlers/courses.py:41
+#: bot/handlers/courses.py:41
 msgid "Идет обработка, пожалуйста, подождите ⌛"
 msgstr ""
 
-#: handlers/courses.py:74 handlers/courses.py:177
+#: bot/handlers/courses.py:74 bot/handlers/courses.py:177
 msgid "Отметить как просмотренное"
 msgstr ""
 
-#: handlers/courses.py:102
+#: bot/handlers/courses.py:102
 msgid "Раздел в разработке"
 msgstr ""
 
-#: handlers/courses.py:147
+#: bot/handlers/courses.py:147
 msgid "Назад"
 msgstr ""
 
-#: handlers/courses.py:148
+#: bot/handlers/courses.py:148
 msgid "Уроки курса"
 msgstr ""
 
-#: handlers/courses.py:148
+#: bot/handlers/courses.py:148
 msgid "Курс ещё не начат"
 msgstr ""
 
-#: handlers/courses.py:225
-msgid "Сдать ДЗ"
+#: bot/handlers/courses.py:225
+msgid "Отправить работу"
 msgstr ""
 
-#: handlers/courses.py:244
+#: bot/handlers/courses.py:244
 msgid "Отмечено"
 msgstr ""
 
-#: handlers/courses.py:271
+#: bot/handlers/courses.py:271
 msgid "Отправьте Вашу работу"
 msgstr ""
 
-#: handlers/courses.py:308 handlers/courses.py:390
+#: bot/handlers/courses.py:308 bot/handlers/courses.py:390
 msgid "Неверный Chat id у курса {course_name}. Пожалуйста исправьте"
 msgstr ""
 
-#: handlers/courses.py:321
+#: bot/handlers/courses.py:321
 msgid "Спасибо"
 msgstr ""
 
-#: handlers/courses.py:355
-msgid "Отправьте ваше сообщение"
-msgstr ""
-
-#: handlers/courses.py:404 handlers/courses.py:460
-msgid "Отправлено"
-msgstr ""
-
-#: handlers/courses.py:429
+#: bot/handlers/courses.py:355 bot/handlers/courses.py:429
 msgid "Отправьте Ваше сообщение"
 msgstr ""
 
-#: handlers/globals.py:31
+#: bot/handlers/courses.py:404 bot/handlers/courses.py:460
+msgid "Отправлено"
+msgstr ""
+
+#: bot/handlers/globals.py:31
 msgid "Здравствуйте! Выберите язык"
 msgstr ""
 
-#: handlers/globals.py:70
+#: bot/handlers/globals.py:70
 msgid "Отменено."
 msgstr ""
 
-#: handlers/globals.py:92
+#: bot/handlers/globals.py:92
 msgid "Добро пожаловать в бот Megaskill! Пожалуйста, выберите опцию"
 msgstr ""
 
-#: handlers/globals.py:99
+#: bot/handlers/globals.py:99
 msgid "Выберите опцию"
 msgstr ""
 
-#: handlers/learning_centre.py:32
+#: bot/handlers/learning_centre.py:33
 msgid "Выберите учебный центр"
 msgstr ""
 
-#: handlers/learning_centre.py:60
+#: bot/handlers/learning_centre.py:61
 msgid "Такого учебного центра не существует"
 msgstr ""
 
-#: handlers/learning_centre.py:64
+#: bot/handlers/learning_centre.py:65
 msgid "Геолокация"
 msgstr ""
 
-#: handlers/profile.py:26
-msgid "Неправильный формат телефона. Пример: +998000000000"
+#: bot/handlers/profile.py:26 bot/handlers/registration.py:292
+msgid "Неправильный формат телефона. Пример: +998901234567"
 msgstr ""
 
-#: handlers/profile.py:30 handlers/registration.py:296
+#: bot/handlers/profile.py:30 bot/handlers/registration.py:296
 msgid "Данный номер уже используется"
 msgstr ""
 
-#: handlers/profile.py:57
+#: bot/handlers/profile.py:57
 msgid "Не указано"
 msgstr ""
 
-#: handlers/profile.py:60
+#: bot/handlers/profile.py:60
 msgid "Имя"
 msgstr ""
 
-#: handlers/profile.py:61
+#: bot/handlers/profile.py:61
 msgid "Фамилия"
 msgstr ""
 
-#: handlers/profile.py:62
+#: bot/handlers/profile.py:62
 msgid "Язык"
 msgstr ""
 
-#: handlers/profile.py:63
+#: bot/handlers/profile.py:63
 msgid "Телефон"
 msgstr ""
 
-#: handlers/profile.py:64
+#: bot/handlers/profile.py:64
 msgid "Город"
 msgstr ""
 
-#: handlers/profile.py:78
+#: bot/handlers/profile.py:78
 msgid "Учебный центр"
 msgstr ""
 
-#: handlers/profile.py:102
+#: bot/handlers/profile.py:102
 msgid ""
 "<i>Ваш статус: Незарегистрированный пользователь.\n"
 "</i><i>Зарегистрируйтесь и получите больше возможностей.</i>"
 msgstr ""
 
-#: handlers/profile.py:130
+#: bot/handlers/profile.py:130
 msgid "Укажите имя"
 msgstr ""
 
-#: handlers/profile.py:182
+#: bot/handlers/profile.py:182
 msgid "Укажите фамилию"
 msgstr ""
 
-#: handlers/profile.py:236
+#: bot/handlers/profile.py:236
 msgid "Выберите язык"
 msgstr ""
 
-#: handlers/profile.py:291
+#: bot/handlers/profile.py:291
 msgid "Укажите телефон"
 msgstr ""
 
-#: handlers/profile.py:347
+#: bot/handlers/profile.py:347
 msgid "Укажите город проживания"
 msgstr ""
 
-#: handlers/quiz.py:132
+#: bot/handlers/quiz.py:130
 msgid "Спасибо за участие!"
 msgstr ""
 
-#: handlers/quiz.py:186
+#: bot/handlers/quiz.py:184
 msgid "Выберите опросник"
 msgstr ""
 
-#: handlers/quiz.py:225
+#: bot/handlers/quiz.py:218
 msgid "Ошибка системы. Получите опросники снова"
 msgstr ""
 
-#: handlers/quiz.py:231
+#: bot/handlers/quiz.py:224
 msgid "Форма не активна. Свяжитесь с администрацией"
 msgstr ""
 
-#: handlers/quiz.py:240
+#: bot/handlers/quiz.py:233
 msgid "Данный опросник нельзя пройти дважды"
 msgstr ""
 
-#: handlers/quiz.py:244
+#: bot/handlers/quiz.py:237
 msgid "Начать"
 msgstr ""
 
-#: handlers/quiz.py:341
+#: bot/handlers/quiz.py:338
 msgid "Напишите свой ответ"
 msgstr ""
 
-#: handlers/quiz.py:355
+#: bot/handlers/quiz.py:352
 msgid "Вышлите файл"
 msgstr ""
 
-#: handlers/registration.py:147
+#: bot/handlers/registration.py:147
 msgid "Вы успешно зарегистрированы!"
 msgstr ""
 
-#: handlers/registration.py:154
+#: bot/handlers/registration.py:154
 msgid "Как Вас зовут?"
 msgstr ""
 
-#: handlers/registration.py:159
-msgid "Отлично, теперь напишите из какого Вы города"
+#: bot/handlers/registration.py:159
+msgid "Ваш город проживания?"
 msgstr ""
 
-#: handlers/registration.py:170
-msgid "Выберите игры или впишите ответ вручную"
+#: bot/handlers/registration.py:170
+msgid "Выберите ваши любимые игры. Если они отсутствуют, напишите их ниже"
 msgstr ""
 
-#: handlers/registration.py:180
+#: bot/handlers/registration.py:180
 msgid "Хорошо, теперь пожалуйста отправьте свой номер"
 msgstr ""
 
-#: handlers/registration.py:187
+#: bot/handlers/registration.py:187
 msgid ""
 "Отправьте Вашу локацию. Вы можете пропустить этот этап регистрации, если "
 "нажмете кнопку “Пропустить"
 msgstr ""
 
-#: handlers/registration.py:240
+#: bot/handlers/registration.py:240
 msgid "Вышлите Вашу геолокацию"
 msgstr ""
 
-#: handlers/registration.py:276 handlers/registration.py:284
+#: bot/handlers/registration.py:276 bot/handlers/registration.py:284
 msgid "Нужно отправить текстовое сообщение"
 msgstr ""
 
-#: handlers/registration.py:282
-msgid "Нужно кликнуть на кнопку"
+#: bot/handlers/registration.py:282
+msgid "Вам необходимо нажать на кнопку"
 msgstr ""
 
-#: handlers/registration.py:292
-msgid "Неправильный формат телефона. Пример: +998901234567"
-msgstr ""
-
-#: handlers/registration.py:327
+#: bot/handlers/registration.py:327
 msgid "Спасибо {first_name},Вы были успешно зарегистрированы в боте"
 msgstr ""
 
-#: handlers/registration.py:331
+#: bot/handlers/registration.py:331
 msgid "Неверный инвайт код"
 msgstr ""
 
-#: handlers/registration.py:333
+#: bot/handlers/registration.py:333
 msgid "Вы уже зарегистрированы. Выберите опцию"
 msgstr ""
 
-#: handlers/registration.py:355
+#: bot/handlers/registration.py:355
 msgid ""
 "Регистрация в боте MegaSkill.\n"
 "Как Вас зовут?"
 msgstr ""
-
-#~ msgid "Отрасль"
-#~ msgstr ""
-
-#~ msgid "Выберите направление"
-#~ msgstr ""
-
-#~ msgid "У курса нет уроков"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "Привет, спасибо что перешел по промо!"
-#~ " Давай теперь тебя зарегаем. Укажи "
-#~ "язык"
-#~ msgstr ""
-
-#~ msgid "Спасибо что перешли по промо"
-#~ msgstr ""
-
-#~ msgid "Через бот"
-#~ msgstr ""
-
-#~ msgid "Через инвайт"
-#~ msgstr ""
-
-#~ msgid "Выберите способ регистрации"
-#~ msgstr ""
-
-#~ msgid "Введите инвайт код"
-#~ msgstr ""
-
-#~ msgid "Привет! Выбери язык"
-#~ msgstr ""
-
-#~ msgid "В каком направлении вы хотите учиться?"
-#~ msgstr ""
-
-#~ msgid "Выберите Ассет"
-#~ msgstr ""
-
-#~ msgid "Ваши курсы"
-#~ msgstr ""
-
-#~ msgid "Вы не записаны ни на один курс"
-#~ msgstr ""
-
-#~ msgid "Вы не зарегистрированы. Отправьте /start чтобы зарегистрироваться"
-#~ msgstr ""
-
-#~ msgid "Спасибо {first_name},вы были успешно зарегистрированы в боте"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "Спасибо за ваш интерес! Пройдите "
-#~ "регистрацию нажав /start и получите "
-#~ "мгновенный доступ к бесплатным курсам "
-#~ "Megaskill"
-#~ msgstr ""
-
-#~ msgid "Раздел в разработке"
-#~ msgstr ""
-
-#~ msgid "Выберите центр"
-#~ msgstr ""
-
-#~ msgid "Такого центра не существует"
-#~ msgstr ""
-
-#~ msgid "Укажите новое имя"
-#~ msgstr ""
-
-#~ msgid "Укажите новый город"
-#~ msgstr ""
-
-#~ msgid "Спасибо за участие"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "Регистрация в боте MegaSkill.\n"
-#~ "Выберите язык:"
-#~ msgstr ""
-
-#~ msgid "Как тебя зовут?"
-#~ msgstr ""
-
-#~ msgid "Отлично, теперь напиши из какого ты города"
-#~ msgstr ""
-
-#~ msgid "Хорошо, теперь пожалуйста отправь свой номер"
-#~ msgstr ""
-
-#~ msgid "Вы зарегистрированы! В ближайшее время с вами свяжется наш оператор"
-#~ msgstr ""
-
-#~ msgid "Раздел перерабатывается"
-#~ msgstr ""
-
-#~ msgid "Сдать дз"
-#~ msgstr ""
-
-#~ msgid "Отправьте вашу работу"
-#~ msgstr ""
-
-#~ msgid "Здравствуйте! Выбери язык"
-#~ msgstr ""
-
-#~ msgid "Выбери опцию"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "<i>Ваш статус: Незагрегистированный пользователь.\n"
-#~ "</i><i>Зарегистрируйтесь и получите больше возможностей.</i>"
-#~ msgstr ""
-
-#~ msgid "Укажите город"
-#~ msgstr ""
-
-#~ msgid "Вы зарегистрированы! В ближайшее время с Вами свяжется наш оператор"
-#~ msgstr ""
-
-#~ msgid "Отправьте локацию"
-#~ msgstr ""
-
-#~ msgid "Вышлите вашу геопозицию"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "Регистрация в боте MegaSkill.\n"
-#~ "Как тебя зовут?"
-#~ msgstr ""
 

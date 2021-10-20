@@ -9,7 +9,7 @@ from aiogram.types import InlineKeyboardMarkup, ContentType
 
 from bot import repository as repo, config
 from bot.db.config import SessionLocal
-from bot.db.schemas import FormAnswerTable, FormQuestionTable
+from bot.db.schemas import FormAnswerTable, FormQuestionTable, AccessLevel
 from bot.decorators import create_session
 from bot.misc import dp, i18n, bot, jinja_env
 from bot.serializers import KeyboardGenerator, FormButtons, MessageSender
@@ -244,12 +244,15 @@ async def form_initial(
             markup=kb
         ).send()
     else:
+        contact_status = AccessLevel(contact.access_level).name
         delta = form.access_level.value - contact.access_level
         if delta == 2:
             kb = KeyboardGenerator([(_('Регистрация'), ('tg_reg',))]).keyboard
             return await bot.send_message(contact.tg_id, _('Пожалуйста, пройдите регистрацию'), reply_markup=kb)
         else:
-            await bot.send_message(contact.tg_id, _('Недостаточно доступа'))
+            await bot.send_message(contact.tg_id,
+                                   _('Ваш уровень пользователя {contact_status} не достаточен для'
+                                     ' получения доступа к данному контенту'.format(contact_status=contact_status)))
 
 
 @dp.callback_query_handler(short_data.filter(property='start_form'))

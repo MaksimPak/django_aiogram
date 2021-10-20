@@ -156,7 +156,7 @@ async def ask_first_name(
 
 async def ask_city(user_response: types.Message, state: FSMContext):
     await bot.send_message(user_response.from_user.id,
-                           _('Отлично, теперь напишите из какого Вы города'))
+                           _('Ваш город проживания?'))
 
 
 async def ask_games(
@@ -167,7 +167,7 @@ async def ask_games(
             for game in GAMES_LIST]
     kb = KeyboardGenerator(data, row_width=3).keyboard
     msg = await bot.send_message(user_response.from_user.id,
-                                 _('Выберите игры или впишите ответ вручную'),
+                                 _('Выберите ваши любимые игры. Если они отсутствуют, напишите их ниже'),
                                  reply_markup=kb)
 
     await state.update_data({'msg_id': msg.message_id})
@@ -279,7 +279,7 @@ async def is_text(user_response):
 async def type_checker(user_response, required_type):
     is_correct = isinstance(user_response, required_type)
     if type(user_response) == types.Message and not is_correct:
-        raise ValueError(_('Нужно кликнуть на кнопку'))
+        raise ValueError(_('Вам необходимо нажать на кнопку'))
     elif type(user_response) == types.CallbackQuery and not is_correct:
         raise ValueError(_('Нужно отправить текстовое сообщение'))
 
