@@ -19,7 +19,7 @@ class LeadAdmin(admin.ModelAdmin):
     list_per_page = 20
     list_filter = ('learning_centre', 'application_type',)
     list_display_links = ('__str__',)
-    readonly_fields = ('checkout_date', 'invite_link', 'created_at', 'blocked_bot')
+    readonly_fields = ('checkout_date', 'tg_id', 'invite_link', 'created_at', 'blocked_bot')
     exclude = ('unique_code', 'contact')
     actions = ('send_message', 'send_checkout', 'assign_courses', 'assign_free_courses')
     search_fields = ('id', 'first_name', 'last_name')
@@ -106,7 +106,7 @@ class ClientAdmin(admin.ModelAdmin):
     list_filter = ('studentcourse__course__name', 'learning_centre',)
     list_display_links = ('__str__',)
     actions = ('send_message', 'send_checkout', 'assign_courses', 'assign_free_courses')
-    readonly_fields = ('unique_code', 'checkout_date', 'invite_link', 'created_at', 'blocked_bot')
+    readonly_fields = ('unique_code', 'tg_id', 'checkout_date', 'invite_link', 'created_at', 'blocked_bot')
     exclude = ('contact',)
     search_fields = ('id', 'first_name', 'last_name')
     ordering = ('id',)
@@ -129,6 +129,11 @@ class ClientAdmin(admin.ModelAdmin):
             'referer': request.META['HTTP_REFERER'],
         }
         return render(request, "broadcast/send.html", context=context)
+
+    @admin.display(description='TG ID')
+    def tg_id(self, contact):
+        if contact.contact:
+            return contact.contact.tg_id
 
     @admin.display(description='Рассылка чекаута')
     def send_checkout(self, request, client):
