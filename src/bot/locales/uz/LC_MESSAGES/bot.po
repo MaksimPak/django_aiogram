@@ -7,8 +7,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Megaskill VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-10-20 06:27+0000\n"
-"PO-Revision-Date: 2021-10-20 11:40+0500\n"
+"POT-Creation-Date: 2021-10-25 05:09+0000\n"
+"PO-Revision-Date: 2021-10-25 10:13+0500\n"
+"Last-Translator: \n"
 "Language: uz\n"
 "Language-Team: uz <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -16,7 +17,6 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.9.1\n"
-"Last-Translator: \n"
 "X-Generator: Poedit 3.0\n"
 
 #: bot/handlers/asset.py:34
@@ -33,11 +33,10 @@ msgstr "Iltimos ro’yhatdan o’ting"
 
 #: bot/handlers/asset.py:77 bot/handlers/quiz.py:255
 msgid ""
-"Ваш уровень пользователя {contact_status} не достаточен для получения "
-"доступа к данному контенту"
+"Ваш уровень пользователя {contact_status} не достаточен для получения доступа "
+"к данному контенту"
 msgstr ""
-"Foydalanuvchi profilingiz {contact_status} bu kontentni olish uchun etarli "
-"emas"
+"Foydalanuvchi profilingiz {contact_status} bu kontentni olish uchun etarli emas"
 
 #: bot/handlers/courses.py:41
 msgid "Идет обработка, пожалуйста, подождите ⌛"
@@ -237,6 +236,14 @@ msgstr ""
 msgid "Хорошо, теперь пожалуйста отправьте свой номер"
 msgstr "Zo’r, endi raqamingizni yuboring"
 
+#: bot/handlers/registration.py:184
+msgid "Пропустить"
+msgstr "O’tkazib"
+
+#: bot/handlers/registration.py:184
+msgid "Отправить"
+msgstr "Yubormoq"
+
 #: bot/handlers/registration.py:187
 msgid ""
 "Отправьте Вашу локацию. Вы можете пропустить этот этап регистрации, если "
@@ -259,8 +266,7 @@ msgstr "Siz tugmani bosishingiz kerak"
 
 #: bot/handlers/registration.py:327
 msgid "Спасибо {first_name},Вы были успешно зарегистрированы в боте"
-msgstr ""
-"{first_name} uchun rahmat, siz botda muvaffaqiyatli ro’yxatdan o’tdingiz"
+msgstr "{first_name} uchun rahmat, siz botda muvaffaqiyatli ro’yxatdan o’tdingiz"
 
 #: bot/handlers/registration.py:331
 msgid "Неверный инвайт код"

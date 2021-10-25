@@ -181,7 +181,7 @@ async def ask_phone(
 
 
 async def ask_location(msg: types.Message, state: FSMContext):
-    data = [('Пропустить', ('skip_loc',)), ('Отправить', ('send_loc',))]
+    data = [(_('Пропустить'), ('skip_loc',)), (_('Отправить'), ('send_loc',))]
     kb = KeyboardGenerator(data).keyboard
     msg = await bot.send_message(msg.from_user.id,
                                  _('Отправьте Вашу локацию. Вы можете пропустить '

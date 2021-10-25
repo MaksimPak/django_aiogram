@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Megaskill VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-10-20 06:27+0000\n"
+"POT-Creation-Date: 2021-10-25 05:09+0000\n"
 "PO-Revision-Date: 2021-10-20 06:28+0000\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru\n"
@@ -229,6 +229,14 @@ msgstr ""
 
 #: bot/handlers/registration.py:180
 msgid "Хорошо, теперь пожалуйста отправьте свой номер"
+msgstr ""
+
+#: bot/handlers/registration.py:184
+msgid "Пропустить"
+msgstr ""
+
+#: bot/handlers/registration.py:184
+msgid "Отправить"
 msgstr ""
 
 #: bot/handlers/registration.py:187
