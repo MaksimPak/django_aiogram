@@ -1,11 +1,35 @@
+from django.shortcuts import render
+
 from forms import models
 from forms.utils.helpers import normalize_answer, stringify_bool, generate_report
 
 
+def form_statistics(request, form_id: int):
+    """
+    Generate HTML page for displaying statistics
+    """
+    form = models.Form.objects.get(pk=form_id)
+    answers = models.ContactFormAnswers.objects.filter(form__pk=form_id)
+    questions = form.formquestion_set.all()
+    # for question in questions:
+    #     attr_name = f'question_{question.id}'
+    #     list_display += (attr_name,)
+    #     func = partial(self._get_answer, field=attr_name)
+    #     func.short_description = question.text
+    #     func.admin_order_field = RawSQL("data->>'%s'", (question.id,))
+    #     setattr(self, attr_name, func)
+    context = {
+        'form': form,
+        'questions': questions,
+        'answers': answers
+    }
+    return render(request, 'forms/statistics.html', context=context)
+
+
 def form_report(request, form_id: int):
     """
-       Generate xlsx file for form
-       """
+    Generate xlsx file for form
+    """
     form = models.Form.objects.get(pk=form_id)
     questions = form.formquestion_set.all()
     answers = form.contactformanswers_set.all()

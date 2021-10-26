@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load bootstrap4 %}
+{% load static %}
+
+{% block content %}
+
+<div class="card my-2">
+    <div class="card-body border-card">
+        <div class="card-title mb-3">{{form}}</div>
+        Код опросника: /quiz{{form.unique_code}}
+    </div>
+</div>
+
+<table class="table table-dark">
+  <thead>
+    <tr>
+      <th>Имя</th>
+      <th>Всего отвечено</th>
+      <th>Бал</th>
+      <th>Дата и время</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for answer in answers %}
+    <tr>
+      <td>{{answer.contact}}</td>
+      <td>{{answer.data|length}}</td>
+      <td>{{answer.score}}</td>
+      <td>{{answer.created_at}}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+
+{% comment %}
+{% for question in questions %}
+<div>{{question.text}}</div>
+<ul>
+  {% for ans in question.answers.all %}
+  <li>{{ans.text}}</li>
+  {%endfor%}
+</ul>
+{% endfor %}
+{% endcomment %}
+{% endblock %}

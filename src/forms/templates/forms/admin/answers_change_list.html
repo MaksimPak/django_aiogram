@@ -22,5 +22,6 @@
 
 {% block object-tools-items %}
     {{block.super}}
+    <li><a href="{% url 'forms:form_statistics' request.GET.form__id__exact %}">Статистика</a></li>
     <li><a href="{% url 'forms:form_report' request.GET.form__id__exact %}">Выкачать xlsx</a></li>
 {% endblock %}
