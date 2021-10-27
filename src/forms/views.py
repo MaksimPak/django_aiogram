@@ -4,6 +4,26 @@ from forms import models
 from forms.utils.helpers import normalize_answer, stringify_bool, generate_report
 
 
+def get_answers_percentage(form_id, questions):
+    resp = dict()
+    for question in questions:
+        # num of ppl who ans question at all
+        ppl_answered = len(models.ContactFormAnswers.objects.raw(
+            """SELECT * FROM forms_contactformanswers 
+            WHERE form_id='%s' AND data?'%s'
+            """, [form_id, question.id]))
+        for static_ans in question.answers.all():
+            # num of ppl who answered with specific ans
+
+            count = len(models.ContactFormAnswers.objects.raw("""
+            SELECT * FROM forms_contactformanswers WHERE
+            form_id='%s' AND data->>'%s' = %s
+            """, [form_id, question.id, static_ans.text]))
+            resp[static_ans.id] = (count // ppl_answered)*100 if ppl_answered != 0 else 0
+
+    return resp
+
+
 def form_statistics(request, form_id: int):
     """
     Generate HTML page for displaying statistics
@@ -11,17 +31,13 @@ def form_statistics(request, form_id: int):
     form = models.Form.objects.get(pk=form_id)
     answers = models.ContactFormAnswers.objects.filter(form__pk=form_id)
     questions = form.formquestion_set.all()
-    # for question in questions:
-    #     attr_name = f'question_{question.id}'
-    #     list_display += (attr_name,)
-    #     func = partial(self._get_answer, field=attr_name)
-    #     func.short_description = question.text
-    #     func.admin_order_field = RawSQL("data->>'%s'", (question.id,))
-    #     setattr(self, attr_name, func)
+    percentage = get_answers_percentage(form_id, questions)
+    print(percentage)
     context = {
         'form': form,
         'questions': questions,
-        'answers': answers
+        'answers': answers,
+        'percentage': percentage
     }
     return render(request, 'forms/statistics.html', context=context)
 
