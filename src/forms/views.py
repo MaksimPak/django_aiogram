@@ -20,7 +20,7 @@ def get_answers_percentage(form_id, questions):
             resp[static_ans.id] = count
         for k, v in counts:
             print(v)
-            resp[k] = round((v/total_count)*100)
+            resp[k] = round((v/total_count)*100) if v else 0
 
     return resp
 
