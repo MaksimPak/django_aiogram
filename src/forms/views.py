@@ -7,19 +7,20 @@ from forms.utils.helpers import normalize_answer, stringify_bool, generate_repor
 def get_answers_percentage(form_id, questions):
     resp = dict()
     for question in questions:
-        # num of ppl who ans question at all
-        ppl_answered = len(models.ContactFormAnswers.objects.raw(
-            """SELECT * FROM forms_contactformanswers 
-            WHERE form_id='%s' AND data?'%s'
-            """, [form_id, question.id]))
+        total_count = 0
+        counts = []
         for static_ans in question.answers.all():
             # num of ppl who answered with specific ans
-
             count = len(models.ContactFormAnswers.objects.raw("""
             SELECT * FROM forms_contactformanswers WHERE
-            form_id='%s' AND data->>'%s' = %s
+            form_id='%s' AND (data->'%s')::jsonb ? %s
             """, [form_id, question.id, static_ans.text]))
-            resp[static_ans.id] = (count // ppl_answered)*100 if ppl_answered != 0 else 0
+            total_count += count
+            counts.append((static_ans.id, count))
+            resp[static_ans.id] = count
+        for k, v in counts:
+            print(v)
+            resp[k] = round((v/total_count)*100)
 
     return resp
 
@@ -32,7 +33,7 @@ def form_statistics(request, form_id: int):
     answers = models.ContactFormAnswers.objects.filter(form__pk=form_id)
     questions = form.formquestion_set.all()
     percentage = get_answers_percentage(form_id, questions)
-    print(percentage)
+    # print(percentage)
     context = {
         'form': form,
         'questions': questions,
