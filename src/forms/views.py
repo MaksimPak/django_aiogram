@@ -1,26 +1,28 @@
 from django.shortcuts import render
+from django.db import connection
 
 from forms import models
 from forms.utils.helpers import normalize_answer, stringify_bool, generate_report
 
 
 def get_answers_percentage(form_id, questions):
-    resp = dict()
+    resp = {}
     for question in questions:
         total_count = 0
         counts = []
         for static_ans in question.answers.all():
-            # num of ppl who answered with specific ans
-            count = len(models.ContactFormAnswers.objects.raw("""
-            SELECT * FROM forms_contactformanswers WHERE
-            form_id='%s' AND (data->'%s')::jsonb ? %s
-            """, [form_id, question.id, static_ans.text]))
+            # Retrieve count of times answer was selected and close session
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT COUNT(*) FROM forms_contactformanswers WHERE
+                    form_id=%s AND (data->'%s')::jsonb ? %s
+                    """, [form_id, question.id, static_ans.text])
+                count, = cursor.fetchone()
             total_count += count
             counts.append((static_ans.id, count))
             resp[static_ans.id] = count
-        for k, v in counts:
-            print(v)
-            resp[k] = round((v/total_count)*100) if v else 0
+        for answer_id, answer_count in counts:
+            resp[answer_id] = round((answer_count/total_count)*100) if answer_count else 0
 
     return resp
 
@@ -33,7 +35,6 @@ def form_statistics(request, form_id: int):
     answers = models.ContactFormAnswers.objects.filter(form__pk=form_id)
     questions = form.formquestion_set.all()
     percentage = get_answers_percentage(form_id, questions)
-    # print(percentage)
     context = {
         'form': form,
         'questions': questions,
