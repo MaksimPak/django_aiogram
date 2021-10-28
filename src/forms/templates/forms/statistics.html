@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load extended %}
+{% load helpers %}
 {% load bootstrap4 %}
 {% load static %}
 
@@ -41,6 +42,13 @@
   <li>{{ans.text}}: {{percentage|dict_key:ans.id}}%</li>
   {%endfor%}
 </ul>
-
+{% if form.mode != 'quiz'%}
+<small><b>additional</b>:</small>
+{% for x in answers %}:
+ {% if question.id in x.data|int_json_key and x.data|int_json_key|dict_key:question.id not in question.answers.all|answer_texts %}
+    {{x.data|int_json_key|dict_key:question.id}}
+ {%endif%}
+{% endfor %}
+{%endif%}
 {% endfor %}
 {% endblock %}
