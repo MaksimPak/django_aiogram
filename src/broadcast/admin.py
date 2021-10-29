@@ -17,9 +17,11 @@ class Recipients(admin.TabularInline):
 
     @staticmethod
     def strfdelta(delta):
+        days = delta.days
         hours, rem = divmod(delta.seconds, 3600)
-        mins, _ = divmod(rem, 60)
-        return f'{delta.days} дней, {hours} часов, {mins} мин, {delta.seconds} сек'
+        mins, seconds = divmod(rem, 60)
+
+        return f'{days} дней, {hours} часов, {mins} мин, {delta.seconds} сек'
 
 
 @admin.register(models.Message)
