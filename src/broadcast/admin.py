@@ -1,3 +1,5 @@
+import datetime
+
 from django.contrib import admin
 
 from broadcast import models
@@ -11,7 +13,7 @@ class Recipients(admin.TabularInline):
     @admin.display(description='Время ответа')
     def delta(self, instance):
         delta = instance.updated_at - instance.message.delivery_end_time
-        return self.strfdelta(delta)
+        return self.strfdelta(delta) if delta > datetime.timedelta(0) else '-'
 
     @staticmethod
     def strfdelta(delta):
