@@ -21,7 +21,7 @@ class Recipients(admin.TabularInline):
         hours, rem = divmod(delta.seconds, 3600)
         mins, seconds = divmod(rem, 60)
 
-        return f'{days} дней, {hours} часов, {mins} мин, {delta.seconds} сек'
+        return f'{days} дней, {hours} часов, {mins} мин, {seconds} сек'
 
 
 @admin.register(models.Message)
