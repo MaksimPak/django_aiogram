@@ -299,3 +299,24 @@ class ContactAssetTable(BaseModel):
 
     asset = relationship('AssetTable', back_populates='contact_asset')
     contact = relationship('ContactTable', back_populates='contact_asset')
+
+
+class Message(BaseModel):
+    __tablename__ = 'broadcast_message'
+
+    text = Column(TEXT, nullable=False)
+    video = Column(String(100), nullable=True)
+    image = Column(String(100), nullable=True)
+    link = Column(String(255), nullable=True)
+    delivery_start_time = Column(DateTime, nullable=False)
+    delivery_end_time = Column(DateTime, nullable=True)
+
+
+class MessageHistory(BaseModel):
+    __tablename__ = 'broadcast_messagehistory'
+
+    contact_id = Column(Integer, ForeignKey('contacts_contact.id', ondelete='CASCADE'), nullable=False)
+    message_id = Column(Integer, ForeignKey('broadcast_message.id', ondelete='CASCADE'), nullable=False)
+    delivered = Column(Boolean, default=False)
+    response = Column(TEXT, nullable=True)
+

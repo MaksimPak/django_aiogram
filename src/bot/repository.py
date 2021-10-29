@@ -10,7 +10,8 @@ from bot.db.schemas import (
     StudentTable, CourseTable, StudentCourse,
     LessonTable, LessonUrlTable, StudentLesson,
     ContactTable, FormTable, FormQuestionTable, FormAnswerTable,
-    ContactFormTable, LearningCentreTable, AssetTable, ContactAssetTable
+    ContactFormTable, LearningCentreTable, AssetTable, ContactAssetTable,
+    MessageHistory
 )
 from bot.db.config import SessionLocal
 
@@ -519,3 +520,7 @@ class ContactAssetRepository(BaseRepository):
             )).scalars()
 
         return assets
+
+
+class MessageHistoryRepository(BaseRepository):
+    table = MessageHistory

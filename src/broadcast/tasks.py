@@ -9,7 +9,6 @@ from broadcast import models
 from broadcast.models import MessageHistory
 from broadcast.utils.telegram import Telegram, TelegramSender
 from contacts import models as contact_models
-from general.utils.decorators import deprecated
 from general.utils.ffmpeg import get_duration, get_resolution
 from users.models import Student
 
@@ -21,7 +20,7 @@ def set_blocked(chat_id):
     contact_models.Contact.objects.filter(tg_id=chat_id).update(blocked_bot=True)
 
 
-def feedback_keyboard(is_keyboard, cb_identifier):
+def feedback_keyboard(is_keyboard, cb_identifier, history_id):
     """
     Markup generator
     """
@@ -30,7 +29,7 @@ def feedback_keyboard(is_keyboard, cb_identifier):
         kb = json.dumps({'inline_keyboard': [
                 [{
                     'text': 'Ответить',
-                    'callback_data': f'data|feedback_student|{cb_identifier}'
+                    'callback_data': f'data|feedback_student|{cb_identifier}|{history_id}'
                 }]
             ]
         })
@@ -47,11 +46,11 @@ def _listify(target):
     return resp
 
 
-def generate_config(message, data):
+def get_config(message, data):
     """
     Get config to pass further to Telegram sender
     """
-    kb = feedback_keyboard(data['is_feedback'], data['contact_id'])
+    kb = feedback_keyboard(data['is_feedback'], data['contact_id'], data['history_id'])
     image = None
     video = None
     thumb = None
@@ -70,8 +69,6 @@ def generate_config(message, data):
         image = None
 
     return {
-        'message_id': data['message_id'],
-        'contact_id': data['contact_id'],
         'chat_id': data['tg_id'],
         'text': message.text,
         'photo': image,
@@ -95,20 +92,20 @@ def save_msg(msg_id):
 
 
 @shared_task
-def send_message(data):
+def send_message(message_id, contact_id, ctx):
     """
     Send message and save status sending
     """
+    message = models.Message.objects.get(pk=message_id)
     message_history = MessageHistory(
-        message_id=data['message_id'],
-        contact_id=data['contact_id'],
+        message_id=message_id,
+        contact_id=contact_id,
         delivered=False
     )
-    resp = TelegramSender(chat_id=data.get('chat_id'), text=data.get('text'),
-                          photo=data.get('photo'), video=data.get('video'),
-                          duration=data.get('duration'), width=data.get('width'),
-                          height=data.get('height'), thumbnail=data.get('thumbnail'),
-                          markup=data.get('markup')).send()
+    message_history.save()  # Only to retrieve id of created object
+    ctx['history_id'] = message_history.pk
+    data = get_config(message, ctx)
+    resp = TelegramSender(**data).send()
 
     if resp.get('ok'):
         message_history.delivered = True
@@ -135,14 +132,16 @@ def send_to_queue(data):
             time.sleep(1)
 
         if not contact.blocked_bot:
-            config = generate_config(message, {
-                'is_feedback': data['is_feedback'],
+            tasks.append(send_message.s(message.id, contact.id, {
                 'contact_id': contact.id,
+                'is_feedback': data['is_feedback'],
                 'tg_id': contact.tg_id,
-                'message_id': message.id,
-            })
-            tasks.append(send_message.s(config))
+            }))
     chord(tasks)(save_msg.si(message.id))
+
+
+# BELOW CODE IS FOR COURSE MESSAGING. MUST BE DELETED ONCE COURSES
+# ARE REMADE
 
 
 @shared_task

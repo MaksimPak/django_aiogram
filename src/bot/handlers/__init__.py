@@ -1,4 +1,5 @@
 from . import globals
+from . import feedback
 from . import registration
 from . import courses
 from . import profile

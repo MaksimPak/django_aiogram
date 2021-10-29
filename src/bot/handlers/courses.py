@@ -23,9 +23,7 @@ class Homework(StatesGroup):
     homework_start = State()
 
 
-class Feedback(StatesGroup):
-    feedback = State()
-    feedback_student = State()
+
 
 
 async def send_photo(lesson, user_id, kb, text):
@@ -325,138 +323,84 @@ async def forward_homework(
 
     await state.finish()
 
-
-@dp.callback_query_handler(three_valued_data.filter(property='feedback'))
-async def get_course_feedback(
-        cb: types.CallbackQuery,
-        state: FSMContext,
-        callback_data: dict
-):
-    """
-    Sets the state for feedback processing handler and requests course feedback
-    """
-
-    course_id = callback_data['first_value']
-    student_id = callback_data['second_value']
-    lesson_id = callback_data['third_value']
-
-    await bot.answer_callback_query(cb.id)
-
-    async with state.proxy() as data:
-        data['course_id'] = int(course_id) if course_id != 'None' else None
-        data['student_id'] = int(student_id) if student_id != 'None' else None
-        data['lesson_id'] = int(lesson_id) if lesson_id != 'None' else None
-        data['msg'] = cb.message.text
-
-    await cb.message.edit_reply_markup(reply_markup=None)
-
-    await bot.send_message(
-        cb.from_user.id,
-        _('Отправьте Ваше сообщение')
-       )
-    await Feedback.feedback.set()
-
-
-@dp.message_handler(state=Feedback.feedback)
-@create_session
-async def forward_course_feedback(
-        message: types.Message,
-        state: FSMContext,
-        session: SessionLocal
-):
-    """
-    Processes feedback from student and forwards it to course chat id
-    """
-    data = await state.get_data()
-    course = await repo.CourseRepository.get('id', data['course_id'], session)
-    student = await repo.StudentRepository.get('id', data['student_id'], session)
-    lesson = await repo.LessonRepository.get('id', data['lesson_id'], session)
-
-    chat_id = course.chat_id if course else config.CHAT_ID
-
-    template = jinja_env.get_template('feedback.html')
-
-    try:
-        await bot.send_message(
-            chat_id,
-            template.render(student=student, course=course, lesson=lesson, msg=data.get('msg'))
-        )
-        await bot.forward_message(
-            chat_id,
-            message.chat.id,
-            message.message_id
-        )
-    except ChatNotFound:
-        error = _('Неверный Chat id у курса {course_name}. '
-                  'Пожалуйста исправьте').format(course_name=course.name) if course else None
-        await bot.send_message(
-            chat_id,
-            template.render(student=student, course=course,
-                            lesson=lesson, msg=data.get('msg'), error=error),
-            parse_mode='html'
-        )
-        await bot.forward_message(
-            chat_id,
-            message.chat.id,
-            message.message_id
-        )
-
-    await message.reply(_('Отправлено'))
-    await state.finish()
-
-
-@dp.callback_query_handler(short_data.filter(property='feedback_student'))
-async def get_student_feedback(
-        cb: types.callback_query,
-        state: FSMContext,
-        callback_data: dict
-):
-    """
-    Sets the state for feedback processing handler and requests student feedback
-    """
-    contact_id = callback_data['value']
-
-    await bot.answer_callback_query(cb.id)
-
-    async with state.proxy() as data:
-        data['contact_id'] = contact_id
-        data['msg'] = cb.message.text
-
-    await cb.message.edit_reply_markup(reply_markup=None)
-
-    await bot.send_message(
-        cb.from_user.id,
-        _('Отправьте Ваше сообщение')
-    )
-
-    await Feedback.feedback_student.set()
+#
+# @dp.callback_query_handler(three_valued_data.filter(property='feedback'))
+# async def get_course_feedback(
+#         cb: types.CallbackQuery,
+#         state: FSMContext,
+#         callback_data: dict
+# ):
+#     """
+#     Sets the state for feedback processing handler and requests course feedback
+#     """
+#
+#     course_id = callback_data['first_value']
+#     student_id = callback_data['second_value']
+#     lesson_id = callback_data['third_value']
+#
+#     await bot.answer_callback_query(cb.id)
+#
+#     async with state.proxy() as data:
+#         data['course_id'] = int(course_id) if course_id != 'None' else None
+#         data['student_id'] = int(student_id) if student_id != 'None' else None
+#         data['lesson_id'] = int(lesson_id) if lesson_id != 'None' else None
+#         data['msg'] = cb.message.text
+#
+#     await cb.message.edit_reply_markup(reply_markup=None)
+#
+#     await bot.send_message(
+#         cb.from_user.id,
+#         _('Отправьте Ваше сообщение')
+#        )
+#     await Feedback.feedback.set()
+#
+#
+# @dp.message_handler(state=Feedback.feedback)
+# @create_session
+# async def forward_course_feedback(
+#         message: types.Message,
+#         state: FSMContext,
+#         session: SessionLocal
+# ):
+#     """
+#     Processes feedback from student and forwards it to course chat id
+#     """
+#     data = await state.get_data()
+#     course = await repo.CourseRepository.get('id', data['course_id'], session)
+#     student = await repo.StudentRepository.get('id', data['student_id'], session)
+#     lesson = await repo.LessonRepository.get('id', data['lesson_id'], session)
+#
+#     chat_id = course.chat_id if course else config.CHAT_ID
+#
+#     template = jinja_env.get_template('feedback.html')
+#
+#     try:
+#         await bot.send_message(
+#             chat_id,
+#             template.render(student=student, course=course, lesson=lesson, msg=data.get('msg'))
+#         )
+#         await bot.forward_message(
+#             chat_id,
+#             message.chat.id,
+#             message.message_id
+#         )
+#     except ChatNotFound:
+#         error = _('Неверный Chat id у курса {course_name}. '
+#                   'Пожалуйста исправьте').format(course_name=course.name) if course else None
+#         await bot.send_message(
+#             chat_id,
+#             template.render(student=student, course=course,
+#                             lesson=lesson, msg=data.get('msg'), error=error),
+#             parse_mode='html'
+#         )
+#         await bot.forward_message(
+#             chat_id,
+#             message.chat.id,
+#             message.message_id
+#         )
+#
+#     await message.reply(_('Отправлено'))
+#     await state.finish()
 
 
-@dp.message_handler(state=Feedback.feedback_student)
-@create_session
-async def forward_student_feedback(
-        message: types.Message,
-        state: FSMContext,
-        session: SessionLocal
-):
-    """
-    Processes feedback from student and forwards it to course chat id
-    """
-    data = await state.get_data()
-    contact = await repo.ContactRepository.load_student_data('id', int(data['contact_id']), session)
-    template = jinja_env.get_template('feedback.html')
-
-    await bot.send_message(
-        config.CHAT_ID,
-        template.render(contact=contact, course=None, lesson=None, msg=data.get('msg')),
-        parse_mode='html'
-    )
-    await bot.forward_message(
-        config.CHAT_ID,
-        message.chat.id,
-        message.message_id
-    )
-
-    await message.reply(_('Отправлено'))
-    await state.finish()
 

@@ -41,6 +41,7 @@ class Message(BaseModel):
 class MessageHistory(BaseModel):
     message = models.ForeignKey(Message, verbose_name='Сообщение', on_delete=models.CASCADE)
     contact = models.ForeignKey('contacts.Contact', verbose_name='Получатель', on_delete=models.CASCADE)
+    response = models.TextField(blank=True, null=True, verbose_name='Ответ')
     delivered = models.BooleanField(verbose_name='Отправлено')
 
     def __str__(self):
