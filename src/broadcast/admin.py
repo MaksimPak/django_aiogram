@@ -1,6 +1,7 @@
 import datetime
 
 from django.contrib import admin
+from django.db.models import F
 
 from broadcast import models
 
@@ -10,10 +11,17 @@ class Recipients(admin.TabularInline):
     fields = ('contact', 'delivered', 'response', 'delta')
     readonly_fields = ('delta',)
 
+    def get_queryset(self, request):
+        qs = super(Recipients, self).get_queryset(request)
+        qs = qs.annotate(_delta=F('updated_at') - F('message__delivery_end_time'))
+        qs = qs.order_by('-_delta')
+        return qs
+
     @admin.display(description='Время ответа')
     def delta(self, instance):
-        delta = instance.updated_at - instance.message.delivery_end_time
-        return self.strfdelta(delta) if delta > datetime.timedelta(0) else '-'
+        if instance._delta > datetime.timedelta(0):
+            return self.strfdelta(instance._delta)
+        return '-'
 
     @staticmethod
     def strfdelta(delta):
