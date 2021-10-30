@@ -26,9 +26,14 @@ class Recipients(admin.TabularInline):
 
 @admin.register(models.Message)
 class HistoryAdmin(admin.ModelAdmin):
-    list_display = ('id', 'text', )
+    list_display = ('id', 'text', 'recipients_count')
+    readonly_fields = ('recipients_count',)
     list_per_page = 10
     inlines = (Recipients,)
+
+    @admin.display(description='Кол-во получателей')
+    def recipients_count(self, instance):
+        return instance.messagehistory_set.count()
 
     def has_add_permission(self, request, obj=None):
         return False
