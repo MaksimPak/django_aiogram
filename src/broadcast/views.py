@@ -8,6 +8,27 @@ from contacts import models as contact_models
 from users.models import Student
 
 
+def resend_msg(request, msg_id):
+    """
+    Renders sent message for resending
+    """
+    message = models.Message.objects.get(pk=msg_id)
+    contacts = [x.contact for x in message.messagehistory_set.all()]
+    form = BroadcastForm(initial={
+        '_selected_action': [contact.id for contact in contacts],
+        'text': message.text,
+        'video': message.video,
+        'image': message.image,
+        'link': message.link
+    })
+    context = {
+        'entities': contacts,
+        'form': form,
+        'referer': request.META['HTTP_REFERER'],
+    }
+    return render(request, "broadcast/send.html", context=context)
+
+
 def render_send(request):
     """
     Render send template for specific contact

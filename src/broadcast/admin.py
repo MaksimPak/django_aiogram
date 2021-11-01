@@ -38,6 +38,7 @@ class HistoryAdmin(admin.ModelAdmin):
     readonly_fields = ('recipients_count',)
     list_per_page = 10
     inlines = (Recipients,)
+    change_form_template = 'broadcast/admin/message_form_list.html'
 
     @admin.display(description='Кол-во получателей')
     def recipients_count(self, instance):
