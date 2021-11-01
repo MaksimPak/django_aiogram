@@ -55,7 +55,7 @@ class Lesson(BaseModel):
 
     @property
     def has_hmw(self):
-        return NotImplemented
+        raise NotImplementedError
 
     @property
     def lesson_info(self):

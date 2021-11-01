@@ -1,12 +1,11 @@
 import datetime
 import enum
-import uuid
 
 import sqlalchemy_json
-from sqlalchemy import Column, String, Enum, Boolean, ForeignKey, DateTime, Integer, types
-from sqlalchemy.dialects.postgresql import TEXT, VARCHAR, JSONB, ARRAY
-from sqlalchemy.orm import relationship
 from geoalchemy2 import Geometry
+from sqlalchemy import Column, String, Enum, Boolean, ForeignKey, DateTime, Integer, types
+from sqlalchemy.dialects.postgresql import TEXT, JSONB, ARRAY
+from sqlalchemy.orm import relationship
 
 from bot import config
 from bot.db.config import Base
@@ -102,7 +101,8 @@ class StudentTable(BaseModel):
     city = Column(String(50))
     phone = Column(String(20), unique=True)
     learning_centre_id = Column(Integer, ForeignKey('companies_learningcentre.id', ondelete='RESTRICT'))
-    application_type = Column(Enum(ApplicationType, values_callable=lambda x: [e.value for e in x]), default=ApplicationType.admin.value)
+    application_type = Column(Enum(ApplicationType, values_callable=lambda x: [e.value for e in x]),
+                              default=ApplicationType.admin.value)
     is_client = Column(Boolean, default=False)
     checkout_date = Column(DateTime, nullable=True)
     unique_code = Column(String(255), nullable=True, unique=True)
@@ -123,31 +123,21 @@ class StudentTable(BaseModel):
 
 
 class CourseTable(BaseModel):
-    class DifficultyType(enum.Enum):
-        beginner = '1'
-        intermediate = '2'
-        advanced = '3'
-
     __tablename__ = 'courses_course'
 
     name = Column(String(50))
-    info = Column(TEXT, nullable=True)
-    hashtag = Column(String(20), nullable=True)
-    learning_centre_id = Column(Integer, ForeignKey('companies_learningcentre.id', ondelete='RESTRICT'))
-    start_message = Column(String(200), nullable=True)
-    end_message = Column(String(200), nullable=True)
-    difficulty = Column(Enum(DifficultyType, values_callable=lambda x: [e.value for e in x]))
-    price = Column(Integer)
-    is_free = Column(Boolean, default=False)
-    week_size = Column(Integer)
-    is_started = Column(Boolean, default=False)
-    is_finished = Column(Boolean, default=False)
-    chat_id = Column(Integer, nullable=True)
-    autosend = Column(Boolean, default=False)
-    access_level = Column(IntEnum(AccessLevel), nullable=False, default=AccessLevel.client.value)
-
+    description = Column(TEXT, nullable=True)
+    code = Column(String(20), nullable=True)
+    company_id = Column(Integer, ForeignKey('companies_company.id', ondelete='RESTRICT'))
+    data = Column(sqlalchemy_json.mutable_json_type(
+        dbtype=JSONB, nested=True), nullable=False, default=lambda: {
+        'start_message': '',
+        'end_message': '',
+        'price': 0
+    })
     date_started = Column(DateTime, nullable=True)
     date_finished = Column(DateTime, nullable=True)
+    chat_id = Column(Integer, nullable=False)
 
     students = relationship('StudentCourse', back_populates='courses')
     lessons = relationship('LessonTable', back_populates='course')
@@ -156,20 +146,15 @@ class CourseTable(BaseModel):
 class LessonTable(BaseModel):
     __tablename__ = 'courses_lesson'
 
-    title = Column(String(50))
-    info = Column(TEXT, nullable=True)
-    video = Column(String(100))
+    name = Column(String(50))
+    description = Column(TEXT, nullable=True)
     image = Column(String(255), nullable=True)
-    image_file_id = Column(String(255), nullable=True)
+    video = Column(String(100))
     course_id = Column(Integer, ForeignKey('courses_course.id'))
-    has_homework = Column(Boolean, default=False)
     homework_desc = Column(TEXT, nullable=True)
-    date_sent = Column(DateTime, nullable=True)
 
     course = relationship('CourseTable', back_populates='lessons')
     students = relationship('StudentLesson', back_populates='lesson')
-
-
 
 
 class StudentCourse(BaseModel):
@@ -209,7 +194,8 @@ class FormTable(BaseModel):
     __tablename__ = 'forms_form'
 
     name = Column(String(50), nullable=False)
-    type = Column(Enum(FormType, values_callable=lambda x: [e.value for e in x]), nullable=False, default=FormType.public.value)
+    type = Column(Enum(FormType, values_callable=lambda x: [e.value for e in x]), nullable=False,
+                  default=FormType.public.value)
     mode = Column(Enum(FormMode, values_callable=lambda x: [e.value for e in x]), nullable=False)
     unique_code = Column(Integer, nullable=True)
     link = Column(String(50), nullable=True)
@@ -220,7 +206,8 @@ class FormTable(BaseModel):
     image = Column(String(255), nullable=True)
     access_level = Column(IntEnum(AccessLevel), nullable=False, default=AccessLevel.client.value)
 
-    questions = relationship('FormQuestionTable', back_populates='form', order_by='[FormQuestionTable.position, FormQuestionTable.id]')
+    questions = relationship('FormQuestionTable', back_populates='form',
+                             order_by='[FormQuestionTable.position, FormQuestionTable.id]')
 
     @property
     def form_link(self):
@@ -243,8 +230,10 @@ class FormQuestionTable(BaseModel):
     one_row_btns = Column(Boolean, default=False)
 
     form = relationship('FormTable', back_populates='questions')
-    answers = relationship('FormAnswerTable', back_populates='question', foreign_keys='FormAnswerTable.question_id', order_by='FormAnswerTable.id')
-    jump_answers = relationship('FormAnswerTable', back_populates='jump_to_question', foreign_keys='FormAnswerTable.jump_to_id')
+    answers = relationship('FormAnswerTable', back_populates='question', foreign_keys='FormAnswerTable.question_id',
+                           order_by='FormAnswerTable.id')
+    jump_answers = relationship('FormAnswerTable', back_populates='jump_to_question',
+                                foreign_keys='FormAnswerTable.jump_to_id')
 
 
 class FormAnswerTable(BaseModel):
@@ -307,4 +296,3 @@ class MessageHistory(BaseModel):
     message_id = Column(Integer, ForeignKey('broadcast_message.id', ondelete='CASCADE'), nullable=False)
     delivered = Column(Boolean, default=False)
     response = Column(TEXT, nullable=True)
-
