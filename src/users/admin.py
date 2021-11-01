@@ -14,10 +14,10 @@ from users import models, forms
 @admin.register(models.Lead)
 class LeadAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__', 'tg_id', 'application_type',
-                    'blocked_bot', 'phone', 'learning_centre',
+                    'blocked_bot', 'phone',
                     'checkout_date', 'get_courses',)
     list_per_page = 20
-    list_filter = ('learning_centre', 'application_type',)
+    list_filter = ('application_type',)
     list_display_links = ('__str__',)
     readonly_fields = ('checkout_date', 'tg_id', 'invite_link', 'created_at', 'blocked_bot')
     exclude = ('unique_code', 'contact')
@@ -103,7 +103,7 @@ class LeadAdmin(admin.ModelAdmin):
 class ClientAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__', 'blocked_bot', 'phone', 'get_courses',)
     list_per_page = 20
-    list_filter = ('studentcourse__course__name', 'learning_centre',)
+    list_filter = ('studentcourse__course__name',)
     list_display_links = ('__str__',)
     actions = ('send_message', 'send_checkout', 'assign_courses', 'assign_free_courses')
     readonly_fields = ('unique_code', 'tg_id', 'checkout_date', 'invite_link', 'created_at', 'blocked_bot')

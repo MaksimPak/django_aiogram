@@ -26,7 +26,7 @@ class Student(BaseModel):
     last_name = models.CharField(max_length=50, verbose_name='Фамилия', null=True, blank=True)
     city = models.CharField(max_length=50, verbose_name='Город проживания')
     phone = models.CharField(max_length=20, verbose_name='Контактный телефон', unique=True)
-    learning_centre = models.ForeignKey('companies.LearningCentre', on_delete=models.PROTECT,
+    company = models.ForeignKey('companies.Company', on_delete=models.PROTECT,
                                         verbose_name='Учебный центр', null=True, blank=True)
     application_type = models.CharField(verbose_name='Как заполнил форму', max_length=20,
                                         choices=ApplicationType.choices, default=ApplicationType.admin)

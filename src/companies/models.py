@@ -5,7 +5,7 @@ from companies.utils.uploaders import lc_upload_directory
 from general.models import BaseModel
 
 
-class LearningCentre(BaseModel):
+class Company(BaseModel):
     title = models.CharField(max_length=100, verbose_name='Название Уч центра', unique=True)
     uz_title = models.CharField(max_length=50, verbose_name='Узбекская версия', unique=True, blank=True, null=True)
     photo = models.ImageField(blank=True, null=True, verbose_name='Картинка',
