@@ -115,7 +115,6 @@ class StudentTable(BaseModel):
     courses = relationship('StudentCourse', back_populates='students')
     lessons = relationship('StudentLesson', back_populates='student')
     learning_centre = relationship('LearningCentreTable', back_populates='student')
-    lesson_url = relationship('LessonUrlTable', back_populates='student')
     contact = relationship('ContactTable', back_populates='student')
 
     @property
@@ -169,19 +168,8 @@ class LessonTable(BaseModel):
 
     course = relationship('CourseTable', back_populates='lessons')
     students = relationship('StudentLesson', back_populates='lesson')
-    lesson_url = relationship('LessonUrlTable', back_populates='lesson')
 
 
-class LessonUrlTable(BaseModel):
-    __tablename__ = 'courses_lessonurl'
-
-    student_id = Column(Integer, ForeignKey('users_student.id'), nullable=False)
-    hash = Column(VARCHAR(length=36), nullable=False, unique=True, default=lambda: str(uuid.uuid4())[:8])
-    lesson_id = Column(Integer, ForeignKey('courses_lesson.id'), nullable=False)
-    hits = Column(Integer, default=0)
-
-    lesson = relationship('LessonTable', back_populates='lesson_url')
-    student = relationship('StudentTable', back_populates='lesson_url')
 
 
 class StudentCourse(BaseModel):

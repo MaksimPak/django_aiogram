@@ -21,24 +21,29 @@ class Course(BaseModel):
         hard = '3', 'Advanced'
 
     name = models.CharField(max_length=100, verbose_name='Название курса')
-    info = models.TextField(blank=True, null=True, verbose_name='Описание')
+    info = models.TextField(blank=True, null=True, verbose_name='Описание') # desc
     hashtag = models.CharField(max_length=20, verbose_name='Хештег',
-                               null=True, blank=True, validators=[validate_hashtag])
+                               null=True, blank=True, validators=[validate_hashtag]) # code uniq
     learning_centre = models.ForeignKey('companies.LearningCentre',
-                                        on_delete=models.PROTECT, verbose_name='Уч центр')
+                                        on_delete=models.PROTECT, verbose_name='Уч центр') # company
+
+    #to json field and rename fields
     start_message = models.TextField(verbose_name='Сообщение для отправки студентам после начала курса',
                                      blank=True, null=True)
     end_message = models.TextField(verbose_name='Сообщение для отправки студентам после завершения курса',
                                    blank=True, null=True)
     difficulty = models.CharField(max_length=20, choices=DifficultyType.choices, verbose_name='Сложность')
     price = models.BigIntegerField(verbose_name='Цена')
-    is_free = models.BooleanField(verbose_name='Бесплатный курс', default=False)
-    week_size = models.IntegerField(verbose_name='Количество уроков в неделю', default=0)
-    is_started = models.BooleanField(verbose_name='Курс начат', default=False)
-    is_finished = models.BooleanField(verbose_name='Курс закончен', default=False)
+
+
+
+    is_free = models.BooleanField(verbose_name='Бесплатный курс', default=False) # isonline
+    week_size = models.IntegerField(verbose_name='Количество уроков в неделю', default=0) #remv
+    is_started = models.BooleanField(verbose_name='Курс начат', default=False) # switch to admin  btns
+    is_finished = models.BooleanField(verbose_name='Курс закончен', default=False) # switch to admin  btns
     chat_id = models.BigIntegerField(verbose_name='Telegram ID', help_text=COURSE_HELP_TEXT)
-    autosend = models.BooleanField(verbose_name='Авто-отправка', default=False)
-    access_level = models.IntegerField(verbose_name='Доступ', default=AccessType.client, choices=AccessType.choices)
+    autosend = models.BooleanField(verbose_name='Авто-отправка', default=False) # rmv field
+    access_level = models.IntegerField(verbose_name='Доступ', default=AccessType.client, choices=AccessType.choices) # rmv?
 
     date_started = models.DateTimeField(verbose_name='Дата начала курса', null=True, blank=True)
     date_finished = models.DateTimeField(verbose_name='Дата окончания курса', null=True, blank=True)
@@ -60,18 +65,18 @@ class Course(BaseModel):
 
 
 class Lesson(BaseModel):
-    title = models.CharField(max_length=100, verbose_name='Название урока')
-    info = models.TextField(blank=True, null=True, verbose_name='Описание')
+    title = models.CharField(max_length=100, verbose_name='Название урока') # name
+    info = models.TextField(blank=True, null=True, verbose_name='Описание') # description
     image = models.ImageField(verbose_name='Картинка', null=True, blank=True,
                               upload_to=lesson_upload_directory, validators=[validate_photo_extension])
     image_file_id = models.CharField(verbose_name='Photo file ID', null=True,
-                                     blank=True, editable=False, max_length=255)
+                                     blank=True, editable=False, max_length=255) # to redis
     video = models.FileField(verbose_name='Видео к уроку', upload_to=lesson_upload_directory,
                              validators=[validate_video_extension])
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    has_homework = models.BooleanField(verbose_name='Есть домашнее задание', default=False)
+    has_homework = models.BooleanField(verbose_name='Есть домашнее задание', default=False) # model property. rmv from db
     homework_desc = models.TextField(verbose_name='Homework description', null=True, blank=True)
-    date_sent = models.DateTimeField(verbose_name='Дата отсылки урока', null=True, blank=True, editable=False)
+    date_sent = models.DateTimeField(verbose_name='Дата отсылки урока', null=True, blank=True, editable=False) # rmv?
 
     def __str__(self):
         return self.title
@@ -83,16 +88,6 @@ class Lesson(BaseModel):
     class Meta:
         verbose_name = 'Урок'
         verbose_name_plural = 'Уроки'
-
-
-class LessonUrl(BaseModel):
-    student = models.ForeignKey('users.Student', on_delete=models.CASCADE, verbose_name='Студент')
-    hash = models.CharField(max_length=36, default=generate_uuid, unique=True)
-    lesson = models.ForeignKey('courses.Lesson', on_delete=models.CASCADE, verbose_name='Урок')
-    hits = models.IntegerField(verbose_name='Количество возможных переховод по ссылке', default=0)
-
-    class Meta:
-        unique_together = [['student', 'lesson']]
 
 
 class StudentCourse(BaseModel):
