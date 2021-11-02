@@ -28,12 +28,11 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('start/', signup, name='web_signup'),
     path('broadcast/', include('broadcast.urls')),
+    path('courses/', include('courses.urls')),
     path('forms/', include('forms.urls')),
     path('favicon.ico', favicon_view),
-]
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
+  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-if not settings.DEBUG:
-    urlpatterns + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
-        + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 admin.site.site_header = 'Parcel админка'

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load bootstrap4 %}
+
+{% block title %}Урок {{ lesson.title }}{% endblock %}
+{% block extra_links %}
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@clappr/player@latest/dist/clappr.min.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<div class="card my-2">
+    <div class="card-body border-card">
+        <div class="card-title mb-3">Урок {{ lesson.name }}</div>
+        {% if lesson.description %}
+         {{ lesson.description }}
+         <br>
+        {% endif %}
+        <div class="embed-responsive embed-responsive-16by9">
+            <div id="player" class="embed-responsive-item"></div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    $(function () {
+        $("#player").resize({
+            aspectRatio: 16 / 9,
+            maxHeight: 720,
+            maxWidth: 1280,
+            minHeight: 180,
+            minWidth: 320
+        });
+        var player = new Clappr.Player({
+            source: '{{request.scheme}}://{{request.META.HTTP_HOST}}{{lesson.video.url}}',
+            parentId: "#player",
+            height: "100%",
+            width: "100%"
+        });
+    });
+</script>
+{% endblock %}

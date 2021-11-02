@@ -7,7 +7,7 @@ from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import ContentType
 from aiogram.utils.exceptions import ChatNotFound
-
+import base64
 from bot import config
 from bot import repository as repo
 from bot.decorators import create_session
@@ -52,14 +52,18 @@ async def send_photo(lesson, user_id, kb, text):
     return message.photo[-1].file_id
 
 
-# async def get_lesson_text(studentlesson, session, *args, **kwargs):
-#     lesson_url = await repo.LessonUrlRepository.get_or_create(
-#         studentlesson.lesson.id, studentlesson.student.id, session)
-#
-#     template = jinja_env.get_template('lesson_info.html')
-#     text = template.render(lesson=studentlesson.lesson, hash=lesson_url.hash, **kwargs)
-#
-#     return text
+async def get_lesson_text(studentlesson, session, *args, **kwargs):
+    """
+    Create byte object and encode it with base64.
+    """
+    template = jinja_env.get_template('lesson_info.html')
+    idx = studentlesson.lesson.id
+    binary_id = studentlesson.lesson.id.to_bytes((idx.bit_length() + 7)//8, 'big')
+    encoded = base64.urlsafe_b64encode(binary_id)
+    encoded_str = encoded.decode()
+    text = template.render(lesson=studentlesson.lesson, encoded_id=encoded_str, **kwargs)
+
+    return text
 
 #
 # async def send_next_lesson(studentlesson, user_id, session):
@@ -154,46 +158,46 @@ async def course_lessons(
         reply_markup=markup
     )
 
-#
-# @dp.callback_query_handler(short_data.filter(property='lesson'))
-# @create_session
-# async def get_lesson(
-#         cb: types.callback_query,
-#         callback_data: dict,
-#         session: SessionLocal
-# ):
-#     """
-#     Display content of the lesson and create access link for video watch
-#     """
-#     await bot.answer_callback_query(cb.id)
-#     lesson_id = callback_data['value']
-#
-#     lesson = await repo.LessonRepository.get_course_inload('id', int(lesson_id), session)
-#     client = await repo.StudentRepository.get('tg_id', int(cb.from_user.id), session)
-#     kb = None
-#
-#     student_lesson = await repo.StudentLessonRepository.get_or_create(lesson.id, client.id, session)
-#
-#     if not lesson.course.is_finished:
-#         kb = KeyboardGenerator().add((_('Отметить как просмотренное'), ('watched', student_lesson.id))).keyboard
-#
-#     # todo change link to tg
-#     text = await get_lesson_text(student_lesson, session, display_hw=False, display_link=True)
-#     await bot.delete_message(cb.from_user.id, cb.message.message_id)
-#     user_id = cb.from_user.id
-#
-#     if lesson.image:
-#         file_id = await send_photo(lesson, user_id, kb, text)
-#         if not lesson.image_file_id:
-#             await repo.LessonRepository.edit(lesson, {'image_file_id': file_id}, session)
-#
-#     else:
-#         await bot.send_message(
-#             user_id,
-#             text,
-#             parse_mode='html',
-#             reply_markup=kb
-#         )
+
+@dp.callback_query_handler(short_data.filter(property='lesson'))
+@create_session
+async def get_lesson(
+        cb: types.callback_query,
+        callback_data: dict,
+        session: SessionLocal
+):
+    """
+    Display content of the lesson and create access link for video watch
+    """
+    await bot.answer_callback_query(cb.id)
+    lesson_id = callback_data['value']
+
+    lesson = await repo.LessonRepository.get_course_inload('id', int(lesson_id), session)
+    contact = await repo.ContactRepository.load_student_data('tg_id', int(cb.from_user.id), session)
+    kb = None
+
+    student_lesson = await repo.StudentLessonRepository.get_or_create(lesson.id, contact.student.id, session)
+
+    if not lesson.course.date_finished:
+        kb = KeyboardGenerator().add((_('Отметить как просмотренное'), ('watched', student_lesson.id))).keyboard
+
+    # todo change link to tg
+    text = await get_lesson_text(student_lesson, session, display_hw=False, display_link=True)
+    await bot.delete_message(cb.from_user.id, cb.message.message_id)
+    user_id = cb.from_user.id
+
+    if lesson.image:
+        file_id = await send_photo(lesson, user_id, kb, text)
+        if not lesson.image_file_id:
+            await repo.LessonRepository.edit(lesson, {'image_file_id': file_id}, session)
+
+    else:
+        await bot.send_message(
+            user_id,
+            text,
+            parse_mode='html',
+            reply_markup=kb
+        )
 
 #
 # @dp.callback_query_handler(short_data.filter(property='watched'))
