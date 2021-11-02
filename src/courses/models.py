@@ -17,7 +17,7 @@ COURSE_HELP_TEXT = """
 
 class Course(BaseModel):
     name = models.CharField(max_length=100, verbose_name='Название курса')
-    description = models.TextField(blank=True, null=True, verbose_name='Описание')
+    description = models.TextField(verbose_name='Описание')
     code = models.CharField(max_length=20, verbose_name='Хештег', unique=True,
                             null=True, blank=True, validators=[validate_hashtag])
     company = models.ForeignKey('companies.Company',

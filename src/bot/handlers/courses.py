@@ -146,7 +146,7 @@ async def course_lessons(
 
     lessons_data = [(lesson.name, ('lesson', lesson.id)) for lesson in lessons] if course.date_started else None
     markup = KeyboardGenerator(lessons_data).add((_('Назад'), ('to_courses',))).keyboard
-    msg = _('Уроки курса') if lessons_data else _('Курс ещё не начат')
+    msg = course.description if lessons_data else _('Курс ещё не начат')
     await bot.edit_message_text(
         msg,
         cb.from_user.id,

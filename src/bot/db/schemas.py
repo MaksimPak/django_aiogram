@@ -126,7 +126,7 @@ class CourseTable(BaseModel):
     __tablename__ = 'courses_course'
 
     name = Column(String(50))
-    description = Column(TEXT, nullable=True)
+    description = Column(TEXT, nullable=False)
     code = Column(String(20), nullable=True)
     company_id = Column(Integer, ForeignKey('companies_company.id', ondelete='RESTRICT'))
     data = Column(sqlalchemy_json.mutable_json_type(
