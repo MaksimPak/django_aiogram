@@ -1,4 +1,5 @@
 import datetime
+from typing import Union
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
@@ -14,7 +15,7 @@ from bot.misc import dp, bot, i18n
 from bot.misc import jinja_env
 from bot.db.config import SessionLocal
 from bot.serializers import KeyboardGenerator
-from bot.utils.callback_settings import short_data, two_valued_data, three_valued_data
+from bot.utils.callback_settings import short_data, two_valued_data, three_valued_data, simple_data
 
 _ = i18n.gettext
 
@@ -87,38 +88,41 @@ async def send_photo(lesson, user_id, kb, text):
 
 
 @dp.message_handler(Text(equals='📝 Курсы'), state='*')
+@dp.callback_query_handler(simple_data.filter(value='to_courses'))
 @create_session
 async def my_courses(
-        message: types.Message,
+        response: Union[types.Message, types.CallbackQuery],
         state: FSMContext,
         session: SessionLocal
 ):
     """
     Displays free and enrolled courses of the student
     """
+    if isinstance(response, types.CallbackQuery):
+        await response.message.delete()
+        await response.answer()
     await state.reset_state()
-    await message.reply(_('Раздел в разработке'))
-    # client = await repo.StudentRepository.get_course_inload('tg_id', int(message.from_user.id), session)
-    # if not client:
-    #     await message.reply(_('Вы не зарегистрированы. Отправьте /register чтобы зарегистрироваться'))
-    #     return
-    #
-    # course_btns = []
-    #
-    # courses = client.courses    # todo rewrite
-    # for studentcourse in courses:
-    #     watch_count = await repo.StudentLessonRepository.finished_lesson_count(
-    #         studentcourse.courses.id, client.id, session
-    #     )
-    #     lesson_count = len(studentcourse.courses.lessons)
-    #     txt = studentcourse.courses.name + ' ✅' if watch_count == lesson_count else studentcourse.courses.name
-    #     course_btns.append((txt, ('get_course', studentcourse.courses.id)))
-    #
-    # kb = KeyboardGenerator(course_btns)
-    #
-    # msg = _('Ваши курсы') if course_btns else _('Вы не записаны ни на один курс')
-    #
-    # await message.reply(msg, reply_markup=kb.keyboard)
+    contact = await repo.ContactRepository.load_student_data('tg_id', response.from_user.id, session)
+    if not contact.student:
+        await response.answer(_('Вы не зарегистрированы. Отправьте /register чтобы зарегистрироваться'))
+        return
+
+    course_btns = []
+
+    courses = contact.student.courses
+    for studentcourse in courses:
+        watch_count = await repo.StudentLessonRepository.finished_lesson_count(
+            studentcourse.courses.id, contact.student.id, session
+        )
+        lesson_count = len(studentcourse.courses.lessons)
+        txt = studentcourse.courses.name + ' ✅' if watch_count == lesson_count else studentcourse.courses.name
+        course_btns.append((txt, ('get_course', studentcourse.courses.id)))
+
+    kb = KeyboardGenerator(course_btns)
+
+    msg = _('Ваши курсы') if course_btns else _('Вы не записаны ни на один курс')
+
+    await bot.send_message(response.from_user.id, msg, reply_markup=kb.keyboard)
 
 
 @dp.callback_query_handler(short_data.filter(property='get_course'))
@@ -136,13 +140,12 @@ async def course_lessons(
     course_id = callback_data['value']
 
     course = await repo.CourseRepository.get_lesson_inload('id', int(course_id), session)
-    client = await repo.StudentRepository.get('tg_id', int(cb.from_user.id), session)
-    lessons = await repo.LessonRepository.get_student_lessons(client.id, course.id, session)
+    lessons = await repo.LessonRepository.get_course_lessons(course.id, session)
     async with state.proxy() as data:
         data['course_id'] = course_id
 
-    lessons_data = [(lesson.title, ('lesson', lesson.id)) for lesson in lessons] if course.is_started else None
-    markup = KeyboardGenerator(lessons_data).add((_('Назад'), ('to_courses', client.id))).keyboard
+    lessons_data = [(lesson.name, ('lesson', lesson.id)) for lesson in lessons] if course.date_started else None
+    markup = KeyboardGenerator(lessons_data).add((_('Назад'), ('to_courses',))).keyboard
     msg = _('Уроки курса') if lessons_data else _('Курс ещё не начат')
     await bot.edit_message_text(
         msg,

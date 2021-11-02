@@ -8,9 +8,9 @@ from sqlalchemy.orm import selectinload, with_parent
 
 from bot.db.schemas import (
     StudentTable, CourseTable, StudentCourse,
-    LessonTable, LessonUrlTable, StudentLesson,
+    LessonTable, StudentLesson,
     ContactTable, FormTable, FormQuestionTable, FormAnswerTable,
-    ContactFormTable, LearningCentreTable, AssetTable, ContactAssetTable,
+    ContactFormTable, CompanyTable, AssetTable, ContactAssetTable,
     MessageHistory
 )
 from bot.db.config import SessionLocal
@@ -128,8 +128,12 @@ class ContactRepository(BaseRepository):
         async with session:
             contact = (await session.execute(
                 select(ContactTable).where(
-                    getattr(ContactTable, attr) == value).options(selectinload(ContactTable.student)
-                                                                  .selectinload(StudentTable.learning_centre))
+                    getattr(ContactTable, attr) == value).options(
+                    selectinload(ContactTable.student).options(
+                        selectinload(StudentTable.company),
+                        selectinload(StudentTable.courses)
+                        .selectinload(StudentCourse.courses)
+                        .selectinload(CourseTable.lessons)))
             )).scalar()
 
         return contact
@@ -222,6 +226,15 @@ class LessonRepository(BaseRepository):
         return lesson
 
     @staticmethod
+    async def get_course_lessons(course_id, session):
+        async with session:
+            lessons = (await session.execute(
+                select(LessonTable).filter(LessonTable.course_id == course_id)
+            )).scalars()
+
+        return lessons
+
+    @staticmethod
     async def get_student_lessons(student_id, course_id, session):
         async with session:
             lessons = (await session.execute(
@@ -230,35 +243,6 @@ class LessonRepository(BaseRepository):
             )).scalars()
 
         return lessons
-
-
-class LessonUrlRepository(BaseRepository):
-    table = LessonUrlTable
-
-    @staticmethod
-    async def get_one(lesson_id, student_id, session):
-        """
-        Select from LessonUrl table by specifying two criterias
-        """
-        async with session:
-            lesson_url = (await session.execute(
-                select(LessonUrlTable).where(LessonUrlTable.lesson_id == lesson_id,
-                                             LessonUrlTable.student_id == student_id)
-                .options(selectinload(LessonUrlTable.lesson)))).scalar()
-        return lesson_url
-
-    @staticmethod
-    async def get_or_create(lesson_id, student_id, session):
-        lesson_url = await LessonUrlRepository.get_one(
-            lesson_id, student_id, session)
-
-        if not lesson_url:
-            await LessonUrlRepository.create(
-                {'student_id': student_id, 'lesson_id': lesson_id}, session
-            )
-            lesson_url = await LessonUrlRepository.get_one(lesson_id, student_id, session)
-
-        return lesson_url
 
 
 class StudentLessonRepository(BaseRepository):
@@ -301,8 +285,8 @@ class StudentLessonRepository(BaseRepository):
                 StudentLesson.date_sent != None,
                 StudentLesson.date_watched != None,
                 LessonTable.course_id == course_id,
-                or_(and_(LessonTable.has_homework == True, StudentLesson.homework_sent != None),
-                    LessonTable.has_homework == None)
+                or_(and_(LessonTable.homework_desc != None, StudentLesson.homework_sent != None),
+                    LessonTable.homework_desc == None)
             ))).scalar()
 
         return count
@@ -321,13 +305,13 @@ class StudentLessonRepository(BaseRepository):
 
 
 class LearningCentreRepository(BaseRepository):
-    table = LearningCentreTable
+    table = CompanyTable
 
     @staticmethod
     async def get_lcs(session):
         async with session:
             lcs = (await session.execute(
-                select(LearningCentreTable)
+                select(CompanyTable)
             )).scalars()
         return lcs
 

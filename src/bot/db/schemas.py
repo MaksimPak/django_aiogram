@@ -39,8 +39,8 @@ class BaseModel(Base):
     updated_at = Column(DateTime, onupdate=datetime.datetime.now, nullable=True)
 
 
-class LearningCentreTable(BaseModel):
-    __tablename__ = 'companies_learningcentre'
+class CompanyTable(BaseModel):
+    __tablename__ = 'companies_company'
 
     title = Column(String(50), unique=True)
     uz_title = Column(String(50), unique=True, nullable=True)
@@ -49,7 +49,7 @@ class LearningCentreTable(BaseModel):
     link = Column(String(255), nullable=True)
     slug = Column(String(50), nullable=False)
 
-    student = relationship('StudentTable', back_populates='learning_centre')
+    student = relationship('StudentTable', back_populates='company')
 
     def get_title(self, lang: str):
         return self.title if lang == 'ru' else self.uz_title
@@ -100,7 +100,7 @@ class StudentTable(BaseModel):
     last_name = Column(String(50), nullable=True)
     city = Column(String(50))
     phone = Column(String(20), unique=True)
-    learning_centre_id = Column(Integer, ForeignKey('companies_learningcentre.id', ondelete='RESTRICT'))
+    company_id = Column(Integer, ForeignKey('companies_company.id', ondelete='RESTRICT'))
     application_type = Column(Enum(ApplicationType, values_callable=lambda x: [e.value for e in x]),
                               default=ApplicationType.admin.value)
     is_client = Column(Boolean, default=False)
@@ -114,7 +114,7 @@ class StudentTable(BaseModel):
 
     courses = relationship('StudentCourse', back_populates='students')
     lessons = relationship('StudentLesson', back_populates='student')
-    learning_centre = relationship('LearningCentreTable', back_populates='student')
+    company = relationship('CompanyTable', back_populates='student')
     contact = relationship('ContactTable', back_populates='student')
 
     @property
