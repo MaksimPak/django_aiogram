@@ -31,16 +31,10 @@ class StudentCourseList(admin.TabularInline):
             'courses/message_link.html',
             {
                 'data': instance,
-                'course_id': instance.course.id
             }
         )
 
     verbose_name_plural = 'Студенты'
-
-    class Media:
-        css = {
-            'all': ('dashboard/css/studentcourse.css',)
-        }
 
 
 class LessonList(admin.StackedInline):
