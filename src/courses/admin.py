@@ -41,13 +41,13 @@ class StudentCourseList(admin.TabularInline):
         css = {
             'all': ('dashboard/css/studentcourse.css',)
         }
-#
+
+
 class LessonList(admin.StackedInline):
     model = models.Lesson
     classes = ('collapse',)
     extra = 1
 
-#
 
 @admin.register(models.Course)
 class CourseAdmin(admin.ModelAdmin):
@@ -63,36 +63,8 @@ class CourseAdmin(admin.ModelAdmin):
     ordering = ('id',)
     date_hierarchy = 'created_at'
     form = CourseForm
-    # change_form_template = 'courses/admin/change_form.html'
+    change_form_template = 'courses/admin/change_form.html'
     actions = ['duplicate']
-    #
-    # def change_view(self, request, object_id, form_url='', extra_context=None):
-    #     extra_context = extra_context or {}
-    #     course = models.Course.objects.get(pk=object_id)
-    #
-    #     lessons = course.lesson_set.all().order_by('id')
-    #     lessons_stat = []
-    #     for lesson in lessons:
-    #         data = {
-    #             'lesson': lesson,
-    #             'received': set(),
-    #             'viewed': set(),
-    #             'hw': set(),
-    #         }
-    #         for record in lesson.studentlesson_set.all():
-    #             if record.date_sent:
-    #                 data['received'].add(record.student)
-    #             if record.date_watched:
-    #                 data['viewed'].add(record.student)
-    #             if record.homework_sent:
-    #                 data['hw'].add(record.student)
-    #         lessons_stat.append(data)
-    #
-    #     extra_context['lessons_stat'] = lessons_stat
-    #     extra_context['studentcourse'] = course.studentcourse_set.all()
-    #     return super().change_view(
-    #         request, object_id, form_url, extra_context=extra_context,
-    #     )
 
     @admin.display(description='Дублировать (Максимум 3)')
     def duplicate(self, request, courses):
@@ -104,9 +76,9 @@ class CourseAdmin(admin.ModelAdmin):
             lessons = list(course.lesson_set.all())
             course.pk = None
 
-            course.is_started = False
-            course.is_finished = False
-            course.hashtag = ''
+            course.date_started = None
+            course.date_finished = None
+            course.code = None
             course.save()
 
             for lesson in lessons:

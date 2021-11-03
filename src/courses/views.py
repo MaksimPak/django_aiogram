@@ -1,11 +1,27 @@
-from django.http import HttpResponseNotFound
-from django.shortcuts import render
 import base64
+import datetime
 
-# Create your views here.
+from django.contrib import messages
+from django.http import HttpResponseNotFound
+from django.shortcuts import render, redirect
+
 from courses import models
 
 TELEGRAM_AGENT = 'TelegramBot (like TwitterBot)'
+
+
+def start_course(request, course_id):
+    models.Course.objects.filter(pk=course_id).update(date_started=datetime.datetime.now())
+    messages.add_message(request, messages.INFO, 'Курс начат')
+
+    return redirect(request.META['HTTP_REFERER'])
+
+
+def finish_course(request, course_id):
+    models.Course.objects.filter(pk=course_id).update(date_finished=datetime.datetime.now())
+    messages.add_message(request, messages.INFO, 'Курс закончен')
+
+    return redirect(request.META['HTTP_REFERER'])
 
 
 def watch_video(request, base64_id):
