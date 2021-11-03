@@ -183,42 +183,30 @@ async def check_homework(
     """
     Checks if lesson has homework. If it does, provides student with submit button
     """
+    await bot.answer_callback_query(cb.id, _('Отмечено'))
     studentlesson_id = callback_data['value']
     record = await repo.StudentLessonRepository.lesson_data('id', int(studentlesson_id), session)
 
-    async with state.proxy() as data:
-        data['hashtag'] = record.lesson.course.code
-
+    await state.update_data({'hashtag': record.lesson.course.code})
     await repo.StudentLessonRepository.edit(record, {'date_watched': datetime.datetime.now()}, session)
 
     if not record.lesson.homework_desc:
         user_id = cb.from_user.id
         await send_next_lesson(record, user_id, session)
         await cb.message.edit_reply_markup(reply_markup=None)
-
-    if record.lesson.homework_desc:
+    else:
         await bot.answer_callback_query(cb.id)
         text = await get_lesson_text(record, display_hw=True, display_link=False)
         kb = KeyboardGenerator([(_('Отправить работу'), ('submit', record.lesson.course.chat_id, record.id))]).keyboard
+        is_media = bool(cb.message.photo)
 
-        if cb.message.photo:
-            await bot.edit_message_caption(
-                cb.from_user.id,
-                cb.message.message_id,
-                caption=text,
-                parse_mode='html',
-                reply_markup=kb
-            )
-        else:
-            await bot.edit_message_text(
-                text,
-                cb.from_user.id,
-                cb.message.message_id,
-                parse_mode='html',
-                reply_markup=kb
-            )
-    else:
-        await bot.answer_callback_query(cb.id, _('Отмечено'))
+        await MessageSender.edit(
+            cb.from_user.id,
+            cb.message.message_id,
+            text,
+            kb,
+            is_media
+        )
 
 
 @dp.callback_query_handler(two_valued_data.filter(property='submit'))
@@ -241,8 +229,6 @@ async def request_homework(
         data['course_tg'] = course_tg
         data['student_lesson'] = student_lesson
 
-    await cb.message.edit_reply_markup(reply_markup=None)
-
     await bot.send_message(
         cb.from_user.id,
         _('Отправьте Вашу работу')
@@ -250,133 +236,50 @@ async def request_homework(
 
     await Homework.homework_start.set()
 
-#
-# @dp.message_handler(state=Homework.homework_start, content_types=ContentType.ANY)
-# @create_session
-# async def forward_homework(
-#         message: types.Message,
-#         state: FSMContext,
-#         session: SessionLocal
-# ):
-#     """
-#     Gets the content of the homework and forwards it to the chat specified for course
-#     """
-#     data = await state.get_data()
-#     student_lesson = await repo.StudentLessonRepository.get_lesson_student_inload(
-#         'id', int(data['student_lesson']), session)
-#
-#     record = await repo.StudentLessonRepository.get_lesson_student_inload('id', int(data['student_lesson']), session)
-#
-#     await repo.StudentLessonRepository.edit(record, {'homework_sent': datetime.datetime.now()}, session)
-#     template = jinja_env.get_template('new_homework.html')
-#
-#     try:
-#         await bot.send_message(
-#             data['course_tg'],
-#             template.render(student=record.student, hashtag=data['hashtag'], lesson=record.lesson),
-#             parse_mode='html'
-#         )
-#         await bot.forward_message(
-#             data['course_tg'],
-#             message.chat.id,
-#             message.message_id
-#         )
-#     except ChatNotFound:
-#         error = _('Неверный Chat id у курса {course_name}. '
-#                   'Пожалуйста исправьте').format(course_name=record.lesson.course.name)
-#         await bot.send_message(
-#             config.CHAT_ID,
-#             template.render(student=record.student, hashtag=data['hashtag'], lesson=record.lesson, error=error),
-#             parse_mode='html'
-#         )
-#         await bot.forward_message(
-#             config.CHAT_ID,
-#             message.chat.id,
-#             message.message_id
-#         )
-#
-#     await message.reply(_('Спасибо'))
-#
-#     if student_lesson.lesson.course.autosend:
-#         await send_next_lesson(record, message.from_user.id, session)
-#
-#     await state.finish()
 
-#
-# @dp.callback_query_handler(three_valued_data.filter(property='feedback'))
-# async def get_course_feedback(
-#         cb: types.CallbackQuery,
-#         state: FSMContext,
-#         callback_data: dict
-# ):
-#     """
-#     Sets the state for feedback processing handler and requests course feedback
-#     """
-#
-#     course_id = callback_data['first_value']
-#     student_id = callback_data['second_value']
-#     lesson_id = callback_data['third_value']
-#
-#     await bot.answer_callback_query(cb.id)
-#
-#     async with state.proxy() as data:
-#         data['course_id'] = int(course_id) if course_id != 'None' else None
-#         data['student_id'] = int(student_id) if student_id != 'None' else None
-#         data['lesson_id'] = int(lesson_id) if lesson_id != 'None' else None
-#         data['msg'] = cb.message.text
-#
-#     await cb.message.edit_reply_markup(reply_markup=None)
-#
-#     await bot.send_message(
-#         cb.from_user.id,
-#         _('Отправьте Ваше сообщение')
-#        )
-#     await Feedback.feedback.set()
-#
-#
-# @dp.message_handler(state=Feedback.feedback)
-# @create_session
-# async def forward_course_feedback(
-#         message: types.Message,
-#         state: FSMContext,
-#         session: SessionLocal
-# ):
-#     """
-#     Processes feedback from student and forwards it to course chat id
-#     """
-#     data = await state.get_data()
-#     course = await repo.CourseRepository.get('id', data['course_id'], session)
-#     student = await repo.StudentRepository.get('id', data['student_id'], session)
-#     lesson = await repo.LessonRepository.get('id', data['lesson_id'], session)
-#
-#     chat_id = course.chat_id if course else config.CHAT_ID
-#
-#     template = jinja_env.get_template('feedback.html')
-#
-#     try:
-#         await bot.send_message(
-#             chat_id,
-#             template.render(student=student, course=course, lesson=lesson, msg=data.get('msg'))
-#         )
-#         await bot.forward_message(
-#             chat_id,
-#             message.chat.id,
-#             message.message_id
-#         )
-#     except ChatNotFound:
-#         error = _('Неверный Chat id у курса {course_name}. '
-#                   'Пожалуйста исправьте').format(course_name=course.name) if course else None
-#         await bot.send_message(
-#             chat_id,
-#             template.render(student=student, course=course,
-#                             lesson=lesson, msg=data.get('msg'), error=error),
-#             parse_mode='html'
-#         )
-#         await bot.forward_message(
-#             chat_id,
-#             message.chat.id,
-#             message.message_id
-#         )
-#
-#     await message.reply(_('Отправлено'))
-#     await state.finish()
+@dp.message_handler(state=Homework.homework_start, content_types=ContentType.ANY)
+@create_session
+async def forward_homework(
+        message: types.Message,
+        state: FSMContext,
+        session: SessionLocal
+):
+    """
+    Gets the content of the homework and forwards it to the chat specified for course
+    """
+    data = await state.get_data()
+    record = await repo.StudentLessonRepository.lesson_data('id', int(data['student_lesson']), session)
+
+    await repo.StudentLessonRepository.edit(record, {'homework_sent': datetime.datetime.now()}, session)
+    template = jinja_env.get_template('new_homework.html')
+
+    try:
+        await bot.send_message(
+            data['course_tg'],
+            template.render(student=record.student, hashtag=data['hashtag'], lesson=record.lesson),
+            parse_mode='html'
+        )
+        await bot.forward_message(
+            data['course_tg'],
+            message.chat.id,
+            message.message_id
+        )
+    except ChatNotFound:
+        error = _('Неверный Chat id у курса {course_name}. '
+                  'Пожалуйста исправьте').format(course_name=record.lesson.course.name)
+        await bot.send_message(
+            config.CHAT_ID,
+            template.render(student=record.student, hashtag=data['hashtag'], lesson=record.lesson, error=error),
+            parse_mode='html'
+        )
+        await bot.forward_message(
+            config.CHAT_ID,
+            message.chat.id,
+            message.message_id
+        )
+
+    await message.reply(_('Спасибо'))
+
+    await send_next_lesson(record, message.from_user.id, session)
+
+    await state.finish()

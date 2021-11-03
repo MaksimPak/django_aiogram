@@ -131,6 +131,26 @@ class MessageSender:
             resp = await self._send()
         return resp
 
+    @staticmethod
+    async def edit(tg_id, msg_id, text, kb, is_media=False):
+        if is_media:
+            await bot.edit_message_caption(
+                    tg_id,
+                    msg_id,
+                    caption=text,
+                    parse_mode='html',
+                    reply_markup=kb
+                )
+        else:
+            await bot.edit_message_text(
+                text,
+                tg_id,
+                msg_id,
+                parse_mode='html',
+                reply_markup=kb
+            )
+
+
 
 class KeyboardGenerator:
     def __init__(self, data: List[Tuple[Any, Tuple[Union[str, int], ...]]] = None,
