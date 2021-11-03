@@ -24,9 +24,6 @@ class Homework(StatesGroup):
     homework_start = State()
 
 
-
-
-
 async def send_photo(lesson, user_id, kb, text):
     """
     Returns a file_id if photo does not have one recorded in db. Else, sends the photo by file id
@@ -34,7 +31,6 @@ async def send_photo(lesson, user_id, kb, text):
     wait_message = None
     file_obj = lesson.image_file_id
     if not file_obj:
-
         with open('media/' + lesson.image, 'br') as file:
             file_obj = file.read()
             wait_message = await bot.send_message(user_id, _('Идет обработка, пожалуйста, подождите ⌛'))
@@ -58,37 +54,26 @@ async def get_lesson_text(studentlesson, **kwargs):
     """
     template = jinja_env.get_template('lesson_info.html')
     idx = studentlesson.lesson.id
-    binary_id = studentlesson.lesson.id.to_bytes((idx.bit_length() + 7)//8, 'big')
+    binary_id = studentlesson.lesson.id.to_bytes((idx.bit_length() + 7) // 8, 'big')
     encoded = base64.urlsafe_b64encode(binary_id)
     encoded_str = encoded.decode()
     text = template.render(lesson=studentlesson.lesson, encoded_id=encoded_str, **kwargs)
 
     return text
 
-#
-# async def send_next_lesson(studentlesson, user_id, session):
-#     next_lesson = await repo.LessonRepository.get_next(
-#         'id', studentlesson.lesson.id, studentlesson.lesson.course.id, session)
-#     if studentlesson.lesson.course.is_finished or not next_lesson:
-#         return
-#
-#     new_studentlesson = await repo.StudentLessonRepository.get_or_create(
-#         next_lesson.id, int(studentlesson.student.id), session)
-#     kb = KeyboardGenerator([(_('Отметить как просмотренное'), ('watched', new_studentlesson.id))]).keyboard
-#
-#     text = await get_lesson_text(new_studentlesson, session, display_hw=False, display_link=True)
-#
-#     if studentlesson.lesson.image:
-#         file_id = await send_photo(studentlesson.lesson, user_id, kb, text)
-#         if not studentlesson.lesson.image_file_id:
-#             await repo.LessonRepository.edit(studentlesson.lesson, {'image_file_id': file_id}, session)
-#     else:
-#         await bot.send_message(
-#             user_id,
-#             text,
-#             parse_mode='html',
-#             reply_markup=kb
-#         )
+
+async def send_next_lesson(studentlesson, user_id, session):
+    next_lesson = await repo.LessonRepository.get_next(
+        'id', studentlesson.lesson.id, studentlesson.lesson.course.id, session)
+    if not next_lesson:
+        return
+
+    new_studentlesson = await repo.StudentLessonRepository.get_or_create(
+        next_lesson.id, int(studentlesson.student.id), session)
+    kb = KeyboardGenerator([(_('Отметить как просмотренное'), ('watched', new_studentlesson.id))]).keyboard
+
+    text = await get_lesson_text(new_studentlesson, display_hw=False, display_link=True)
+    await MessageSender(user_id, text, new_studentlesson.lesson.image, markup=kb).send()
 
 
 @dp.message_handler(Text(equals='📝 Курсы'), state='*')
@@ -186,54 +171,54 @@ async def get_lesson(
 
     await MessageSender(cb.from_user.id, text, lesson.image, markup=kb).send()
 
-#
-# @dp.callback_query_handler(short_data.filter(property='watched'))
-# @create_session
-# async def check_homework(
-#         cb: types.callback_query,
-#         state: FSMContext,
-#         callback_data: dict,
-#         session: SessionLocal
-# ):
-#     """
-#     Checks if lesson has homework. If it does, provides student with submit button
-#     """
-#     studentlesson_id = callback_data['value']
-#     record = await repo.StudentLessonRepository.get_lesson_student_inload('id', int(studentlesson_id), session)
-#
-#     async with state.proxy() as data:
-#         data['hashtag'] = record.lesson.course.hashtag
-#
-#     await repo.StudentLessonRepository.edit(record, {'date_watched': datetime.datetime.now()}, session)
-#
-#     if record.lesson.course.autosend and not record.lesson.has_homework:
-#         user_id = cb.from_user.id
-#         await send_next_lesson(record, user_id, session)
-#         await cb.message.edit_reply_markup(reply_markup=None)
-#
-#     if record.lesson.has_homework:
-#         await bot.answer_callback_query(cb.id)
-#         text = await get_lesson_text(record, session, display_hw=True, display_link=False)
-#         kb = KeyboardGenerator([(_('Отправить работу'), ('submit', record.lesson.course.chat_id, record.id))]).keyboard
-#
-#         if cb.message.photo:
-#             await bot.edit_message_caption(
-#                 cb.from_user.id,
-#                 cb.message.message_id,
-#                 caption=text,
-#                 parse_mode='html',
-#                 reply_markup=kb
-#             )
-#         else:
-#             await bot.edit_message_text(
-#                 text,
-#                 cb.from_user.id,
-#                 cb.message.message_id,
-#                 parse_mode='html',
-#                 reply_markup=kb
-#             )
-#     else:
-#         await bot.answer_callback_query(cb.id, _('Отмечено'))
+
+@dp.callback_query_handler(short_data.filter(property='watched'))
+@create_session
+async def check_homework(
+        cb: types.callback_query,
+        state: FSMContext,
+        callback_data: dict,
+        session: SessionLocal
+):
+    """
+    Checks if lesson has homework. If it does, provides student with submit button
+    """
+    studentlesson_id = callback_data['value']
+    record = await repo.StudentLessonRepository.lesson_data('id', int(studentlesson_id), session)
+
+    async with state.proxy() as data:
+        data['hashtag'] = record.lesson.course.code
+
+    await repo.StudentLessonRepository.edit(record, {'date_watched': datetime.datetime.now()}, session)
+
+    if not record.lesson.homework_desc:
+        user_id = cb.from_user.id
+        await send_next_lesson(record, user_id, session)
+        await cb.message.edit_reply_markup(reply_markup=None)
+
+    if record.lesson.homework_desc:
+        await bot.answer_callback_query(cb.id)
+        text = await get_lesson_text(record, display_hw=True, display_link=False)
+        kb = KeyboardGenerator([(_('Отправить работу'), ('submit', record.lesson.course.chat_id, record.id))]).keyboard
+
+        if cb.message.photo:
+            await bot.edit_message_caption(
+                cb.from_user.id,
+                cb.message.message_id,
+                caption=text,
+                parse_mode='html',
+                reply_markup=kb
+            )
+        else:
+            await bot.edit_message_text(
+                text,
+                cb.from_user.id,
+                cb.message.message_id,
+                parse_mode='html',
+                reply_markup=kb
+            )
+    else:
+        await bot.answer_callback_query(cb.id, _('Отмечено'))
 
 
 @dp.callback_query_handler(two_valued_data.filter(property='submit'))
@@ -261,7 +246,7 @@ async def request_homework(
     await bot.send_message(
         cb.from_user.id,
         _('Отправьте Вашу работу')
-       )
+    )
 
     await Homework.homework_start.set()
 
@@ -395,6 +380,3 @@ async def request_homework(
 #
 #     await message.reply(_('Отправлено'))
 #     await state.finish()
-
-
-

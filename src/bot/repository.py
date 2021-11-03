@@ -292,7 +292,7 @@ class StudentLessonRepository(BaseRepository):
         return count
 
     @staticmethod
-    async def get_lesson_student_inload(attribute, value, session):
+    async def lesson_data(attribute, value, session):
         """
         Loads lesson and student from StudentLesson table, course from Lesson table
         """
