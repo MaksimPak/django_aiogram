@@ -14,7 +14,7 @@ from bot.decorators import create_session
 from bot.misc import dp, bot, i18n
 from bot.misc import jinja_env
 from bot.db.config import SessionLocal
-from bot.serializers import KeyboardGenerator
+from bot.serializers import KeyboardGenerator, MessageSender
 from bot.utils.callback_settings import short_data, two_valued_data, three_valued_data, simple_data
 
 _ = i18n.gettext
@@ -52,7 +52,7 @@ async def send_photo(lesson, user_id, kb, text):
     return message.photo[-1].file_id
 
 
-async def get_lesson_text(studentlesson, session, *args, **kwargs):
+async def get_lesson_text(studentlesson, **kwargs):
     """
     Create byte object and encode it with base64.
     """
@@ -181,23 +181,10 @@ async def get_lesson(
     if not lesson.course.date_finished:
         kb = KeyboardGenerator().add((_('Отметить как просмотренное'), ('watched', student_lesson.id))).keyboard
 
-    # todo change link to tg
-    text = await get_lesson_text(student_lesson, session, display_hw=False, display_link=True)
+    text = await get_lesson_text(student_lesson, display_hw=False, display_link=True)
     await bot.delete_message(cb.from_user.id, cb.message.message_id)
-    user_id = cb.from_user.id
 
-    if lesson.image:
-        file_id = await send_photo(lesson, user_id, kb, text)
-        if not lesson.image_file_id:
-            await repo.LessonRepository.edit(lesson, {'image_file_id': file_id}, session)
-
-    else:
-        await bot.send_message(
-            user_id,
-            text,
-            parse_mode='html',
-            reply_markup=kb
-        )
+    await MessageSender(cb.from_user.id, text, lesson.image, markup=kb).send()
 
 #
 # @dp.callback_query_handler(short_data.filter(property='watched'))
