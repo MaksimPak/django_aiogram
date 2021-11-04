@@ -1,9 +1,11 @@
+from django import forms
 from django.contrib import admin, messages
 
 from django.template.loader import render_to_string
 from django.utils.html import format_html
 
 from courses import models
+from courses.filters import FilterByCourse
 from courses.forms import CourseForm
 
 
@@ -87,15 +89,29 @@ class CourseAdmin(admin.ModelAdmin):
     def student_count(self, course):
         return course.student_set.count()
 
-    class Media:
-        js = (
-            'dashboard/js/course_admin.js',
-        )
-        css = {
-            'all': ('dashboard/css/course_admin.css',)
-        }
-#
-#
+
+@admin.register(models.StudentLesson)
+class StudentProgress(admin.ModelAdmin):
+    list_display = ('lesson_name',)
+    list_filter = (FilterByCourse,)
+
+    @admin.display(description='Урок')
+    def lesson_name(self, instance):
+        return instance.lesson.name
+
+    def get_queryset(self, request):
+        if request.GET.get('course_id'):
+            qs = super(StudentProgress, self).get_queryset(request)
+            qs = qs.filter(lesson__course_id=request.GET['course_id'])
+            return qs
+        return models.StudentLesson.objects.none()
+
+    def get_model_perms(self, request):
+        """
+        Return empty perms dict thus hiding the model from admin index.
+        """
+        return {}
+
 # @admin.register(models.Lesson)
 # class LessonAdmin(admin.ModelAdmin):
 #     list_display = ('id', '__str__', 'lesson_info', 'video', 'course')

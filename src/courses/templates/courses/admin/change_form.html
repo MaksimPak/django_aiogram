@@ -2,13 +2,13 @@
 {% load courses %}
 
 {% block object-tools-items %}
+      {{block.super}}
       {% if original.id and not original.date_started %}
             <li><a href="{% url 'courses:start_course' original.id %}">Начать курс</a></li>
       {% elif  original.id and not original.date_finished %}
             <li><a href="{% url 'courses:finish_course' original.id %}">Закончить курс</a></li>
       {% endif %}
-      {{block.super}}
       <li><a href="{% url 'broadcast:prepare_message' %}?{{original|get_selected}}">Уведомить студентов</a></li>
-
+      <li><a href="{% url 'admin:courses_studentlesson_changelist' %}?course_id={{original.id}}">Прогресс курса</a></li>
 
 {% endblock %}
