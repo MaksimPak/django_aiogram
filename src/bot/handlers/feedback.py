@@ -58,7 +58,7 @@ async def forward_student_feedback(
     Processes feedback from student and forwards it to course chat id
     """
     data = await state.get_data()
-    history_msg = await repo.MessageHistoryRepository.get('message_id', data['history_id'], session)
+    history_msg = await repo.MessageHistoryRepository.get('id', data['history_id'], session)
     contact = await repo.ContactRepository.load_student_data('id', data['contact_id'], session)
     template = jinja_env.get_template('feedback.html')
     await repo.MessageHistoryRepository.edit(history_msg, {'response': message.text}, session)
