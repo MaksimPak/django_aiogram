@@ -79,6 +79,7 @@ class StudentLesson(BaseModel):
     student = models.ForeignKey('users.Student', on_delete=models.CASCADE)
     lesson = models.ForeignKey('courses.Lesson', on_delete=models.CASCADE)
 
+    # todo date_received de facto. rename
     date_sent = models.DateTimeField(verbose_name='Дата получения урока', null=True, blank=True)
     date_watched = models.DateTimeField(verbose_name='Дата дата просмотра урока', null=True, blank=True)
     homework_sent = models.DateTimeField(verbose_name='Дата отправки дз', null=True, blank=True)

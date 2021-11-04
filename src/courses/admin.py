@@ -92,12 +92,41 @@ class CourseAdmin(admin.ModelAdmin):
 
 @admin.register(models.StudentLesson)
 class StudentProgress(admin.ModelAdmin):
-    list_display = ('lesson_name',)
+    list_display = ('lesson_name', 'lesson_received', 'lesson_watched',
+                    'hw_submitted',)
     list_filter = (FilterByCourse,)
 
     @admin.display(description='Урок')
     def lesson_name(self, instance):
         return instance.lesson.name
+
+    @admin.display(description='#Получили')
+    def lesson_received(self, instance):
+        course_id = instance.lesson.course_id
+        count = models.StudentLesson.objects.filter(
+            lesson__course__pk=course_id,
+            date_watched__isnull=False,
+        ).count()
+        return count
+
+    @admin.display(description='#Посмотрели')
+    def lesson_watched(self, instance):
+        course_id = instance.lesson.course_id
+        count = models.StudentLesson.objects.filter(
+            lesson__course__pk=course_id,
+            date_watched__isnull=False,
+        ).count()
+        return count
+
+    @admin.display(description='#Сдали домашку')
+    def hw_submitted(self, instance):
+        course_id = instance.lesson.course_id
+        count = models.StudentLesson.objects.filter(
+            lesson__course__pk=course_id,
+            homework_sent__isnull=False,
+            lesson__homework_desc__isnull=False
+        ).count()
+        return count if count else 'Нет домашки'
 
     def get_queryset(self, request):
         if request.GET.get('course_id'):

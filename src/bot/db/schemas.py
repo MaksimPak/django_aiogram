@@ -174,6 +174,7 @@ class StudentLesson(BaseModel):
     student_id = Column(Integer, ForeignKey('users_student.id'))
     lesson_id = Column(Integer, ForeignKey('courses_lesson.id'))
 
+    # todo date_received de facto. rename
     date_sent = Column(DateTime, nullable=True)
     date_watched = Column(DateTime, nullable=True)
     homework_sent = Column(DateTime, nullable=True)
