@@ -112,7 +112,7 @@ class StudentProgress(admin.ModelAdmin):
             return ('lesson_name', 'lesson_received', 'lesson_watched',
                     'hw_submitted', 'details',)
         else:
-            return ('student',)
+            return 'student',
 
     def get_actions(self, request):
         actions = super(StudentProgress, self).get_actions(request)
