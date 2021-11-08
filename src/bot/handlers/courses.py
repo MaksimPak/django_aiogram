@@ -27,30 +27,6 @@ class Homework(StatesGroup):
     homework_start = State()
 
 
-async def send_photo(lesson, user_id, kb, text):
-    """
-    Returns a file_id if photo does not have one recorded in db. Else, sends the photo by file id
-    """
-    wait_message = None
-    file_obj = lesson.image_file_id
-    if not file_obj:
-        with open('media/' + lesson.image, 'br') as file:
-            file_obj = file.read()
-            wait_message = await bot.send_message(user_id, _('Идет обработка, пожалуйста, подождите ⌛'))
-
-    message = await bot.send_photo(
-        user_id,
-        file_obj,
-        caption=text,
-        parse_mode='html',
-        reply_markup=kb
-    )
-
-    if wait_message:
-        await wait_message.delete()
-    return message.photo[-1].file_id
-
-
 async def get_lesson_text(studentlesson, **kwargs):
     """
     Create byte object and encode it with base64.
@@ -96,8 +72,7 @@ async def my_courses(
     await state.reset_state()
     contact = await repo.ContactRepository.load_student_data('tg_id', response.from_user.id, session)
     if not contact.student:
-        await response.answer(_('Вы не зарегистрированы. Отправьте /register чтобы зарегистрироваться'))
-        return
+        return await response.answer(_('Вы не зарегистрированы. Отправьте /register чтобы зарегистрироваться'))
 
     course_btns = []
 
@@ -110,11 +85,11 @@ async def my_courses(
         txt = studentcourse.courses.name + ' ✅' if watch_count == lesson_count else studentcourse.courses.name
         course_btns.append((txt, ('get_course', studentcourse.courses.id)))
 
-    kb = KeyboardGenerator(course_btns)
+    markup = KeyboardGenerator(course_btns).keyboard
 
     msg = _('Ваши курсы') if course_btns else _('Вы не записаны ни на один курс')
 
-    await bot.send_message(response.from_user.id, msg, reply_markup=kb.keyboard)
+    await MessageSender(response.from_user.id, msg, markup=markup).send()
 
 
 @dp.callback_query_handler(short_data.filter(property='get_course'))
@@ -145,13 +120,13 @@ async def course_lessons(
     markup = KeyboardGenerator(lessons_data).add((_('Назад'), ('to_courses',))).keyboard
     msg = course.description if lessons_data else _('Курс ещё не начат')
 
-    await bot.send_message(response.from_user.id, msg, reply_markup=markup)
+    await MessageSender(response.from_user.id, msg,  markup=markup).send()
 
 
 @dp.callback_query_handler(short_data.filter(property='lesson'))
 @create_session
 async def get_lesson(
-        cb: types.callback_query,
+        cb: types.CallbackQuery,
         callback_data: dict,
         session: SessionLocal
 ):
@@ -179,7 +154,7 @@ async def get_lesson(
 @dp.callback_query_handler(short_data.filter(property='watched'))
 @create_session
 async def check_homework(
-        cb: types.callback_query,
+        cb: types.CallbackQuery,
         state: FSMContext,
         callback_data: dict,
         session: SessionLocal
@@ -215,14 +190,14 @@ async def check_homework(
 
 @dp.callback_query_handler(two_valued_data.filter(property='submit'))
 async def request_homework(
-        cb: types.callback_query,
+        cb: types.CallbackQuery,
         state: FSMContext,
         callback_data: dict
 ):
     """
     Requests homework from student and sets the for homework processing handler
     """
-    await bot.answer_callback_query(cb.id)
+    await cb.answer()
     await cb.message.edit_reply_markup(
         reply_markup=None
     )
@@ -233,10 +208,7 @@ async def request_homework(
         data['course_tg'] = course_tg
         data['student_lesson'] = student_lesson
 
-    await bot.send_message(
-        cb.from_user.id,
-        _('Отправьте Вашу работу')
-    )
+    await MessageSender(cb.from_user.id, _('Отправьте Вашу работу')).send()
 
     await Homework.homework_start.set()
 
@@ -258,11 +230,8 @@ async def forward_homework(
     template = jinja_env.get_template('new_homework.html')
 
     try:
-        await bot.send_message(
-            data['course_tg'],
-            template.render(student=record.student, hashtag=data['hashtag'], lesson=record.lesson),
-            parse_mode='html'
-        )
+        txt = template.render(student=record.student, hashtag=data['hashtag'], lesson=record.lesson)
+        await MessageSender(data['course_tg'], txt).send()
         await bot.forward_message(
             data['course_tg'],
             message.chat.id,
@@ -271,19 +240,13 @@ async def forward_homework(
     except ChatNotFound:
         error = _('Неверный Chat id у курса {course_name}. '
                   'Пожалуйста исправьте').format(course_name=record.lesson.course.name)
-        await bot.send_message(
-            config.CHAT_ID,
-            template.render(student=record.student, hashtag=data['hashtag'], lesson=record.lesson, error=error),
-            parse_mode='html'
-        )
+        txt = template.render(student=record.student, hashtag=data['hashtag'], lesson=record.lesson, error=error)
+        await MessageSender(config.CHAT_ID, txt).send()
         await bot.forward_message(
             config.CHAT_ID,
             message.chat.id,
             message.message_id
         )
-
     await message.reply(_('Спасибо'))
-
     await send_next_lesson(record, message.from_user.id, session)
-
     await state.finish()

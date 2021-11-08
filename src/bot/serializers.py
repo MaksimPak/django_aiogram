@@ -151,7 +151,6 @@ class MessageSender:
             )
 
 
-
 class KeyboardGenerator:
     def __init__(self, data: List[Tuple[Any, Tuple[Union[str, int], ...]]] = None,
                  keyboard=None, **kwargs):
