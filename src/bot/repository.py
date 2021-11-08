@@ -320,6 +320,18 @@ class StudentCourseRepository(BaseRepository):
     table = StudentCourse
 
     @staticmethod
+    async def exists(student_id, course_id, session):
+        async with session:
+            record = (await session.execute(
+                select(StudentCourse.id).where(
+                    StudentCourse.course_id == course_id,
+                    StudentCourse.student_id == student_id
+                )
+            )).scalar()
+
+        return bool(record)
+
+    @staticmethod
     async def bunch_create(student_id, courses, session):
         async with session:
             session.add_all(

@@ -1,4 +1,6 @@
+import base64
 import datetime
+import re
 from typing import Union
 
 from aiogram import types
@@ -7,15 +9,16 @@ from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import ContentType
 from aiogram.utils.exceptions import ChatNotFound
-import base64
+
 from bot import config
 from bot import repository as repo
+from bot.db.config import SessionLocal
 from bot.decorators import create_session
 from bot.misc import dp, bot, i18n
 from bot.misc import jinja_env
-from bot.db.config import SessionLocal
 from bot.serializers import KeyboardGenerator, MessageSender
-from bot.utils.callback_settings import short_data, two_valued_data, three_valued_data, simple_data
+from bot.utils.callback_settings import short_data, two_valued_data, simple_data
+from bot.utils.filters import CourseStudent
 
 _ = i18n.gettext
 
@@ -115,20 +118,25 @@ async def my_courses(
 
 
 @dp.callback_query_handler(short_data.filter(property='get_course'))
+@dp.message_handler(CourseStudent(), state='*')
 @create_session
 async def course_lessons(
-        cb: types.callback_query,
+        response: Union[types.CallbackQuery, types.Message],
         session: SessionLocal,
         state: FSMContext,
-        callback_data: dict
+        callback_data: dict = None,
+        deep_link: re.Match = None
 ):
     """
     Displays all lessons of the course
     """
-    await bot.answer_callback_query(cb.id)
-    course_id = callback_data['value']
+    if type(response) == types.CallbackQuery:
+        await response.answer() and await response.message.delete()
+        course_id = int(callback_data['value'])
+    else:
+        course_id = int(deep_link.group(1))
 
-    course = await repo.CourseRepository.get_lesson_inload('id', int(course_id), session)
+    course = await repo.CourseRepository.get_lesson_inload('id', course_id, session)
     lessons = await repo.LessonRepository.get_course_lessons(course.id, session)
     async with state.proxy() as data:
         data['course_id'] = course_id
@@ -136,12 +144,8 @@ async def course_lessons(
     lessons_data = [(lesson.name, ('lesson', lesson.id)) for lesson in lessons] if course.date_started else None
     markup = KeyboardGenerator(lessons_data).add((_('Назад'), ('to_courses',))).keyboard
     msg = course.description if lessons_data else _('Курс ещё не начат')
-    await bot.edit_message_text(
-        msg,
-        cb.from_user.id,
-        cb.message.message_id,
-        reply_markup=markup
-    )
+
+    await bot.send_message(response.from_user.id, msg, reply_markup=markup)
 
 
 @dp.callback_query_handler(short_data.filter(property='lesson'))

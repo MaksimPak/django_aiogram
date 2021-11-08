@@ -1,3 +1,5 @@
+import os
+
 from django.contrib import admin, messages
 from django.shortcuts import render
 from django.template.loader import render_to_string
@@ -52,7 +54,7 @@ class CourseAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__', 'course_info',
                     'company', 'student_count')
     list_display_links = ('__str__',)
-    readonly_fields = ('date_started', 'date_finished', 'created_at',)
+    readonly_fields = ('date_started', 'date_finished', 'created_at', 'link')
     exclude = ('week_size', 'lesson_count',)
     list_per_page = 20
     search_fields = ('id', 'name')
@@ -63,6 +65,10 @@ class CourseAdmin(admin.ModelAdmin):
     form = CourseForm
     change_form_template = 'courses/admin/change_form.html'
     actions = ('duplicate',)
+
+    @admin.display(description='Ссылка на курс')
+    def link(self, instance):
+        return f'https://t.me/{os.getenv("BOT_NAME")}?start=course{instance.id}'
 
     @admin.display(description='Дублировать (Максимум 3)')
     def duplicate(self, request, courses):
