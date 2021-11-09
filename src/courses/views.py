@@ -10,6 +10,15 @@ from courses import models
 TELEGRAM_AGENT = 'TelegramBot (like TwitterBot)'
 
 
+def delete_from_course(request, course_id, student_id):
+    models.StudentCourse.objects.filter(
+        course_id=course_id,
+        student_id=student_id
+    ).delete()
+    messages.add_message(request, messages.INFO, 'Студент удален из курса')
+    return redirect(request.META['HTTP_REFERER'])
+
+
 def start_course(request, course_id):
     models.Course.objects.filter(pk=course_id).update(date_started=datetime.datetime.now())
     messages.add_message(request, messages.INFO, 'Курс начат')

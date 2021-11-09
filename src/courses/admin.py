@@ -15,8 +15,8 @@ from courses.forms import CourseForm
 
 class StudentCourseList(admin.TabularInline):
     model = models.StudentCourse
-    fields = ('student_display', 'created_at', 'message_student', 'has_paid')
-    readonly_fields = ('student_display', 'created_at', 'message_student')
+    fields = ('student_display', 'created_at', 'message_student', 'has_paid', 'delete_student')
+    readonly_fields = ('student_display', 'created_at', 'message_student', 'delete_student')
     can_delete = False
     extra = 0
     classes = ('collapse',)
@@ -35,6 +35,15 @@ class StudentCourseList(admin.TabularInline):
     def message_student(self, instance):
         return render_to_string(
             'courses/message_link.html',
+            {
+                'data': instance,
+            }
+        )
+
+    @admin.display(description='Удалить')
+    def delete_student(self, instance):
+        return render_to_string(
+            'courses/delete_student.html',
             {
                 'data': instance,
             }
