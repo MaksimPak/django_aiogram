@@ -45,8 +45,13 @@ class StudentCourseList(admin.TabularInline):
 
 class LessonList(admin.StackedInline):
     model = models.Lesson
+    readonly_fields = ('link',)
     classes = ('collapse',)
     extra = 1
+
+    @admin.display(description='Ссылка на урок')
+    def link(self, instance):
+        return f'https://t.me/{os.getenv("BOT_NAME")}?start=lesson{instance.id}'
 
 
 @admin.register(models.Course)

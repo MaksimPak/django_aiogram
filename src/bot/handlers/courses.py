@@ -18,7 +18,7 @@ from bot.misc import dp, bot, i18n
 from bot.misc import jinja_env
 from bot.serializers import KeyboardGenerator, MessageSender
 from bot.utils.callback_settings import short_data, two_valued_data, simple_data
-from bot.utils.filters import CourseStudent
+from bot.utils.filters import CourseStudent, LessonStudent
 
 _ = i18n.gettext
 
@@ -124,31 +124,38 @@ async def course_lessons(
 
 
 @dp.callback_query_handler(short_data.filter(property='lesson'))
+@dp.message_handler(LessonStudent(), state='*')
 @create_session
 async def get_lesson(
-        cb: types.CallbackQuery,
-        callback_data: dict,
-        session: SessionLocal
+        response: Union[types.CallbackQuery, types.Message],
+        session: SessionLocal,
+        callback_data: dict = None,
+        deep_link: re.Match = None
 ):
     """
     Display content of the lesson and create access link for video watch
     """
-    await bot.answer_callback_query(cb.id)
-    lesson_id = callback_data['value']
+    if type(response) == types.CallbackQuery:
+        await response.answer() and await response.message.delete()
+        lesson_id = int(callback_data['value'])
+    else:
+        lesson_id = int(deep_link.group(1))
 
-    lesson = await repo.LessonRepository.get_course_inload('id', int(lesson_id), session)
-    contact = await repo.ContactRepository.load_student_data('tg_id', int(cb.from_user.id), session)
+    lesson = await repo.LessonRepository.get_course_inload(
+        'id', int(lesson_id), session)
+    contact = await repo.ContactRepository.load_student_data(
+        'tg_id', int(response.from_user.id), session)
     kb = None
 
-    student_lesson = await repo.StudentLessonRepository.get_or_create(lesson.id, contact.student.id, session)
+    student_lesson = await repo.StudentLessonRepository.get_or_create(
+        lesson.id, contact.student.id, session)
 
     if not lesson.course.date_finished:
-        kb = KeyboardGenerator().add((_('Отметить как просмотренное'), ('watched', student_lesson.id))).keyboard
+        kb = KeyboardGenerator().add(
+            (_('Отметить как просмотренное'), ('watched', student_lesson.id))).keyboard
 
     text = await get_lesson_text(student_lesson, display_hw=False, display_link=True)
-    await bot.delete_message(cb.from_user.id, cb.message.message_id)
-
-    await MessageSender(cb.from_user.id, text, lesson.image, markup=kb).send()
+    await MessageSender(response.from_user.id, text, lesson.image, markup=kb).send()
 
 
 @dp.callback_query_handler(short_data.filter(property='watched'))
