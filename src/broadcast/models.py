@@ -29,6 +29,7 @@ class Message(BaseModel):
 
     delivery_start_time = models.DateTimeField('Начало отправки', default=timezone.now)
     delivery_end_time = models.DateTimeField('Окончание отправки', null=True, blank=True)
+    notes = models.TextField(verbose_name='Заметки к сообщению', blank=True, null=True)
 
     def __str__(self):
         return f'MessageId{self.id}'

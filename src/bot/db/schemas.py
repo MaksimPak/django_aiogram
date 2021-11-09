@@ -288,6 +288,7 @@ class Message(BaseModel):
     link = Column(String(255), nullable=True)
     delivery_start_time = Column(DateTime, nullable=False)
     delivery_end_time = Column(DateTime, nullable=True)
+    notes = Column(TEXT, nullable=True)
 
 
 class MessageHistory(BaseModel):

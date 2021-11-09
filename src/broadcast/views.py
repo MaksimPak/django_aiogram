@@ -5,7 +5,6 @@ from broadcast import models
 from broadcast.forms import BroadcastForm
 from broadcast.tasks import send_to_queue
 from contacts import models as contact_models
-from users.models import Student
 
 
 def resend_msg(request, msg_id):
@@ -19,7 +18,8 @@ def resend_msg(request, msg_id):
         'text': message.text,
         'video': message.video,
         'image': message.image,
-        'link': message.link
+        'link': message.link,
+        'notes': message.notes,
     })
     context = {
         'entities': contacts,
@@ -59,7 +59,8 @@ def send(request):
         text=request.POST.get('text'),
         video=request.FILES.get('video'),
         image=request.FILES.get('image'),
-        link=request.POST.get('link')
+        link=request.POST.get('link'),
+        notes=request.POST.get('notes'),
     )
 
     selected = request.POST.getlist('_selected_action')
