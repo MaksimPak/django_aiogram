@@ -3,9 +3,10 @@ import enum
 
 import sqlalchemy_json
 from geoalchemy2 import Geometry
-from sqlalchemy import Column, String, Enum, Boolean, ForeignKey, DateTime, Integer, types
+from sqlalchemy import Column, String, Enum, Boolean, ForeignKey, DateTime, Integer, types, SmallInteger, \
+    CheckConstraint
 from sqlalchemy.dialects.postgresql import TEXT, JSONB, ARRAY
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, validates
 
 from bot import config
 from bot.db.config import Base
@@ -153,8 +154,18 @@ class LessonTable(BaseModel):
     course_id = Column(Integer, ForeignKey('courses_course.id'))
     homework_desc = Column(TEXT, nullable=True)
 
+    form = Column(Integer, ForeignKey('forms_form.id', ondelete='SET NULL'), nullable=True)
+    form_pass_rate = Column(SmallInteger, CheckConstraint('form_pass_rate >= 0'),
+                            nullable=True, default=0)
+
     course = relationship('CourseTable', back_populates='lessons')
     students = relationship('StudentLesson', back_populates='lesson')
+
+    @validates('form_pass_rate')
+    def validate_pass_rate(self, key, value):
+        if value > 100:
+            raise ValueError('Value cannot be higher than 100')
+        return value
 
 
 class StudentCourse(BaseModel):

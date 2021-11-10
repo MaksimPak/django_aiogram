@@ -1,12 +1,10 @@
-from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
-
 from django.template.defaultfilters import truncatewords
 
 from courses.utils.helpers import course_additional
 from courses.utils.uploaders import lesson_upload_directory
-from general.models import BaseModel, AccessType
-from general.utils.helpers import generate_uuid
+from general.models import BaseModel
 from general.validators import validate_hashtag, validate_photo_extension, validate_video_extension
 
 COURSE_HELP_TEXT = """
@@ -44,11 +42,20 @@ class Lesson(BaseModel):
     name = models.CharField(max_length=100, verbose_name='Название урока')
     description = models.TextField(blank=True, null=True, verbose_name='Описание')
     image = models.ImageField(verbose_name='Картинка', null=True, blank=True,
-                              upload_to=lesson_upload_directory, validators=[validate_photo_extension])
-    video = models.FileField(verbose_name='Видео к уроку', upload_to=lesson_upload_directory,
+                              upload_to=lesson_upload_directory,
+                              validators=[validate_photo_extension])
+    video = models.FileField(verbose_name='Видео к уроку',
+                             upload_to=lesson_upload_directory,
                              validators=[validate_video_extension])
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     homework_desc = models.TextField(verbose_name='Описание дз', null=True, blank=True)
+
+    form = models.ForeignKey('forms.Form', verbose_name='Форма',
+                             on_delete=models.SET_NULL,
+                             blank=True, null=True)
+    form_pass_rate = models.PositiveSmallIntegerField(verbose_name='% Прохождения формы',
+                                                      null=True, blank=True, default=0,
+                                                      validators=[MinValueValidator(0), MaxValueValidator(100)])
 
     def __str__(self):
         return self.name
