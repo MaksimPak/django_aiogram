@@ -14,6 +14,7 @@ class UnknownContact(Filter):
     @create_session
     async def check(self, message: types.Message, session):
         contact = await repo.ContactRepository.get('tg_id', message.from_user.id, session)
+        await repo.ContactRepository.edit(contact, {'blocked_bot': False}, session)
         return not contact
 
 
