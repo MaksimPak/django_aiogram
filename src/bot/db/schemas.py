@@ -154,12 +154,13 @@ class LessonTable(BaseModel):
     course_id = Column(Integer, ForeignKey('courses_course.id'))
     homework_desc = Column(TEXT, nullable=True)
 
-    form = Column(Integer, ForeignKey('forms_form.id', ondelete='SET NULL'), nullable=True)
+    form_id = Column(Integer, ForeignKey('forms_form.id', ondelete='SET NULL'), nullable=True)
     form_pass_rate = Column(SmallInteger, CheckConstraint('form_pass_rate >= 0'),
                             nullable=True, default=0)
 
     course = relationship('CourseTable', back_populates='lessons')
     students = relationship('StudentLesson', back_populates='lesson')
+    form = relationship('FormTable', back_populates='lesson')
 
     @validates('form_pass_rate')
     def validate_pass_rate(self, key, value):
@@ -220,6 +221,7 @@ class FormTable(BaseModel):
 
     questions = relationship('FormQuestionTable', back_populates='form',
                              order_by='[FormQuestionTable.position, FormQuestionTable.id]')
+    lesson = relationship('LessonTable', back_populates='form')
 
     @property
     def form_link(self):

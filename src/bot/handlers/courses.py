@@ -42,13 +42,19 @@ async def get_lesson_text(studentlesson, **kwargs):
 
 
 async def send_next_lesson(studentlesson, user_id, session):
+    if studentlesson.lesson.form:
+        form_data = ('Пройти', ('form', studentlesson.lesson.form.id))
+        markup = KeyboardGenerator(form_data).keyboard
+        return await MessageSender(user_id, 'Пройдите форму для продолжения', markup=markup).send()
+
     next_lesson = await repo.LessonRepository.get_next(
         'id', studentlesson.lesson.id, studentlesson.lesson.course.id, session)
+
     if not next_lesson:
         return
 
     new_studentlesson = await repo.StudentLessonRepository.get_or_create(
-        next_lesson.id, int(studentlesson.student.id), session)
+        next_lesson.id, studentlesson.student.id, session)
     kb = KeyboardGenerator([(_('Отметить как просмотренное'), ('watched', new_studentlesson.id))]).keyboard
 
     text = await get_lesson_text(new_studentlesson, display_hw=False, display_link=True)
@@ -112,7 +118,12 @@ async def course_lessons(
         course_id = int(deep_link.group(1))
 
     course = await repo.CourseRepository.get_lesson_inload('id', course_id, session)
-    lessons = await repo.LessonRepository.get_course_lessons(course.id, session)
+    contact = await repo.ContactRepository.load_student_data('tg_id', response.from_user.id, session)
+    received_lessons = await repo.StudentLessonRepository.student_lessons(
+        contact.student.id, course_id, session)
+
+    lessons = [x.lesson for x, in received_lessons] if received_lessons else [course.lessons[0]]
+
     async with state.proxy() as data:
         data['course_id'] = course_id
 
@@ -153,7 +164,6 @@ async def get_lesson(
     if not lesson.course.date_finished:
         kb = KeyboardGenerator().add(
             (_('Отметить как просмотренное'), ('watched', student_lesson.id))).keyboard
-
     text = await get_lesson_text(student_lesson, display_hw=False, display_link=True)
     await MessageSender(response.from_user.id, text, lesson.image, markup=kb).send()
 

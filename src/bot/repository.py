@@ -249,6 +249,18 @@ class StudentLessonRepository(BaseRepository):
     table = StudentLesson
 
     @staticmethod
+    async def student_lessons(student_id, course_id, session):
+        async with session:
+            lessons = (await session.execute(
+                select(StudentLesson).filter(
+                    StudentLesson.lesson.has(course_id=course_id),
+                    StudentLesson.student_id == student_id
+                ).options(selectinload(StudentLesson.lesson))
+            )).all()
+
+        return lessons
+
+    @staticmethod
     async def get_or_create(lesson_id, student_id, session):
         studentlesson = await StudentLessonRepository.get_one(
             lesson_id, student_id, session)
@@ -299,7 +311,9 @@ class StudentLessonRepository(BaseRepository):
         async with session:
             record = (await session.execute(
                 select(StudentLesson).where(getattr(StudentLesson, attribute) == value).options(
-                    selectinload(StudentLesson.lesson).selectinload(LessonTable.course)).options(
+                    selectinload(StudentLesson.lesson)
+                    .options(selectinload(LessonTable.course), selectinload(LessonTable.form))
+                    ).options(
                     selectinload(StudentLesson.student)))).scalar()
         return record
 
