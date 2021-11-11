@@ -86,14 +86,14 @@ async def initial(
         await repo.ContactRepository.edit(contact, {'blocked_bot': False}, session)
 
     if not contact.student:
-        kb = await KeyboardGenerator.main_kb(contact)
+        kb = await KeyboardGenerator.main_kb(message.from_user.id)
         await bot.send_message(
             message.from_user.id,
             _('Добро пожаловать в бот Megaskill! Пожалуйста, выберите опцию'),
             reply_markup=kb
         )
     else:
-        kb = await KeyboardGenerator.main_kb()
+        kb = await KeyboardGenerator.main_kb(message.from_user.id)
         await bot.send_message(
             message.from_user.id,
             _('Выберите опцию'),

@@ -61,4 +61,3 @@ class LessonStudent(Filter):
         )
 
         return {'deep_link': match} if is_allowed else False
-

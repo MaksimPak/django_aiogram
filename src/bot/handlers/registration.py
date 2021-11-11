@@ -143,7 +143,7 @@ async def create_lead(
     if contact.data.get('courses'):
         await repo.StudentCourseRepository.bunch_create(student.id, contact.data['courses'], session)
 
-    reply_kb = await KeyboardGenerator.main_kb()
+    reply_kb = await KeyboardGenerator.main_kb(user_id)
     await bot.send_message(user_id, _('Вы успешно зарегистрированы!'), reply_markup=reply_kb)
 
 
@@ -319,7 +319,7 @@ async def register_deep_link(
     """
     contact = await repo.ContactRepository.get('tg_id', message.from_user.id, session)
     student = await repo.StudentRepository.load_with_contact('unique_code', message.get_args(), session)
-    kb = await KeyboardGenerator.main_kb()
+    kb = await KeyboardGenerator.main_kb(message.from_user.id)
 
     if student and not student.contact:
         await repo.StudentRepository.edit(student, {'contact': contact}, session)

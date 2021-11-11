@@ -141,7 +141,8 @@ class CourseTable(BaseModel):
     chat_id = Column(Integer, nullable=False)
 
     students = relationship('StudentCourse', back_populates='courses')
-    lessons = relationship('LessonTable', back_populates='course')
+    lessons = relationship('LessonTable', back_populates='course',
+                           order_by='[LessonTable.id]')
 
 
 class LessonTable(BaseModel):

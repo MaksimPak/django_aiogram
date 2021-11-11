@@ -4,7 +4,7 @@ from typing import Any
 
 from sqlalchemy import select, func, or_, and_
 from sqlalchemy import exc
-from sqlalchemy.orm import selectinload, with_parent
+from sqlalchemy.orm import selectinload, with_parent, subqueryload, contains_eager
 
 from bot.db.schemas import (
     StudentTable, CourseTable, StudentCourse,
@@ -252,10 +252,12 @@ class StudentLessonRepository(BaseRepository):
     async def student_lessons(student_id, course_id, session):
         async with session:
             lessons = (await session.execute(
-                select(StudentLesson).filter(
+                select(StudentLesson).join(StudentLesson.lesson)
+                .options(contains_eager(StudentLesson.lesson))
+                .filter(
                     StudentLesson.lesson.has(course_id=course_id),
-                    StudentLesson.student_id == student_id
-                ).options(selectinload(StudentLesson.lesson))
+                    StudentLesson.student_id == student_id)
+                .order_by(LessonTable.id)
             )).all()
 
         return lessons

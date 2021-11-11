@@ -1,8 +1,7 @@
 import hashlib
-import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Union, List, Tuple, Any
+from typing import Iterable, Union, Tuple, Any
 
 from aiogram import types
 from aiogram.contrib.fsm_storage.redis import RedisStorage2
@@ -12,9 +11,11 @@ from aiogram.types import (
 )
 
 from bot import config
+from bot import repository as repo
 from bot.config import DATABASES
-from bot.misc import bot
 from bot.db.schemas import FormTable, FormQuestionTable, FormAnswerTable
+from bot.decorators import create_session
+from bot.misc import bot
 from bot.utils.callback_settings import (
     simple_data,
     short_data,
@@ -152,8 +153,7 @@ class MessageSender:
 
 
 class KeyboardGenerator:
-    def __init__(self, data: Iterable[Tuple[Any, Tuple[Union[str, int], ...]]] = None,
-                 keyboard=None, **kwargs):
+    def __init__(self, data=None, keyboard=None, **kwargs):
         if keyboard:
             self.keyboard = keyboard
         else:
@@ -198,7 +198,9 @@ class KeyboardGenerator:
         return btns
 
     @staticmethod
-    async def main_kb(contact=None):
+    @create_session
+    async def main_kb(tg_id, session):
+        contact = await repo.ContactRepository.load_student_data('tg_id', tg_id, session)
         btns = [
             KeyboardButton('📝 Курсы'),
             KeyboardButton('🧑‍🎓 Профиль'),
@@ -207,7 +209,7 @@ class KeyboardGenerator:
             KeyboardButton('🛠️ Ассеты'),
         ]
 
-        if contact:
+        if not contact.student:
             btns = [
                 KeyboardButton('🧑‍🎓 Профиль'),
                 KeyboardButton('🤔 Опросники'),

@@ -61,6 +61,9 @@ async def start_question_sending(
 ):
     form = await repo.FormRepository.get_questions(int(form_id), session)
 
+    if not form.questions:
+        await MessageSender(chat_id, 'Ошибка').send()
+
     async with state.proxy() as data:
         data['form_id'] = int(form_id)
 
@@ -126,18 +129,7 @@ async def next_question(
             markup=kb
         ).send()
     else:
-        percent_score = round((data['score'] / data['question_len']) * 100)
-        end_message = _('Спасибо за участие!')
-        for key in form.end_message.keys():
-            num1, num2 = map(int, key.split('-'))
-            if percent_score in range(num1, num2+1):
-                end_message = await _normalize_end_msg(form.end_message[key])
-        kb = await KeyboardGenerator.main_kb(contact)
-        await bot.send_message(
-            chat_id,
-            end_message,
-            reply_markup=kb,
-        )
+        await finish_form(data, form, contact)
         await state.finish()
 
 
@@ -160,6 +152,32 @@ async def process_multianswer(
     )
 
     await cb.message.edit_reply_markup(kb)
+
+
+@create_session
+async def open_lesson(lesson_id, contact, user_scored, session):
+    lesson = await repo.LessonRepository.get_course_inload('id', lesson_id, session)
+    if user_scored >= lesson.form_pass_rate:
+        next_lesson = await repo.LessonRepository.get_next(
+            'id', lesson.id, lesson.course.id, session
+        )
+        await repo.StudentLessonRepository.get_or_create(
+            next_lesson.id, contact.student.id, session
+        )
+
+
+async def finish_form(data, form, contact):
+    percent_score = round((data['score'] / data['question_len']) * 100)
+    if data.get('lesson_id'):
+        await open_lesson(data.get('lesson_id'), contact, percent_score)
+
+    end_message = _('Спасибо за участие!')
+    for key in form.end_message.keys():
+        num1, num2 = map(int, key.split('-'))
+        if percent_score in range(num1, num2 + 1):
+            end_message = await _normalize_end_msg(form.end_message[key])
+    kb = await KeyboardGenerator.main_kb(contact.tg_id)
+    await MessageSender(contact.tg_id, end_message, markup=kb).send()
 
 
 @dp.callback_query_handler(simple_data.filter(value='forms'))
@@ -190,21 +208,29 @@ async def display_forms(
 
 @dp.message_handler(CommandStart(re.compile(r'^quiz(\d+)')), ChatTypeFilter(types.ChatType.PRIVATE), state='*')
 @dp.message_handler(Regexp(re.compile(r'^/quiz(\d+)')), state='*')
-@dp.callback_query_handler(short_data.filter(property='form'), state='*')
+@dp.callback_query_handler(
+    short_data.filter(property='form') | two_valued_data.filter(property='form'),
+    state='*')
 @dp.throttled(throttled, rate=.7)
 @create_session
 async def form_initial(
         response: Union[types.CallbackQuery, types.Message],
         session: SessionLocal,
+        state: FSMContext,
         callback_data: dict = None,
         regexp: re.Match = None,
-        deep_link: re.Match = None
+        deep_link: re.Match = None,
 ):
     if type(response) == types.CallbackQuery:
         await response.answer()
-        form_id = callback_data['value']
+        form_id = callback_data.get('value') or callback_data.get('first_value')
+        lesson_id = callback_data.get('second_value')
     else:
         form_id = regexp.group(1) if regexp else deep_link.group(1)
+        lesson_id = None
+
+    if lesson_id:
+        await state.update_data(lesson_id=int(lesson_id))
 
     message_id = response.message.message_id if type(response) == types.CallbackQuery else response.message_id
     search_field = 'id' if type(response) == types.CallbackQuery else 'unique_code'

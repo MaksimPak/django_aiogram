@@ -43,7 +43,7 @@ async def get_lesson_text(studentlesson, **kwargs):
 
 async def send_next_lesson(studentlesson, user_id, session):
     if studentlesson.lesson.form:
-        form_data = ('Пройти', ('form', studentlesson.lesson.form.id))
+        form_data = ('Пройти', ('form', studentlesson.lesson.form.id, studentlesson.lesson.id))
         markup = KeyboardGenerator(form_data).keyboard
         return await MessageSender(user_id, 'Пройдите форму для продолжения', markup=markup).send()
 
