@@ -157,10 +157,10 @@ async def process_multianswer(
 @create_session
 async def open_lesson(lesson_id, contact, user_scored, session):
     lesson = await repo.LessonRepository.get_course_inload('id', lesson_id, session)
-    if user_scored >= lesson.form_pass_rate:
-        next_lesson = await repo.LessonRepository.get_next(
-            'id', lesson.id, lesson.course.id, session
-        )
+    next_lesson = await repo.LessonRepository.get_next(
+        'id', lesson.id, lesson.course.id, session
+    )
+    if user_scored >= lesson.form_pass_rate and next_lesson:
         await repo.StudentLessonRepository.get_or_create(
             next_lesson.id, contact.student.id, session
         )
