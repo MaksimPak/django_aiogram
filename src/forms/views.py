@@ -1,5 +1,9 @@
-from django.shortcuts import render
+from tempfile import NamedTemporaryFile
+
+import qrcode
 from django.db import connection
+from django.shortcuts import render
+from qrcode.image.svg import SvgImage
 
 from forms import models
 from forms.utils.helpers import normalize_answer, stringify_bool, generate_report
@@ -32,16 +36,22 @@ def form_statistics(request, form_id: int):
     Generate HTML page for displaying statistics
     """
     form = models.Form.objects.get(pk=form_id)
-    answers = models.ContactFormAnswers.objects.filter(form__pk=form_id)
     questions = form.formquestion_set.all()
     percentage = get_answers_percentage(form_id, questions)
+    qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_L,
+                       image_factory=SvgImage)
+    qr.add_data(form.link)
+    img_2 = qr.make_image()
     context = {
         'form': form,
         'questions': questions,
-        'answers': answers,
         'percentage': percentage
     }
-    return render(request, 'forms/statistics.html', context=context)
+    with NamedTemporaryFile() as tmp:
+        img_2.save(tmp.name)
+        stream = tmp.read().decode()
+        context['qr'] = stream
+        return render(request, 'forms/statistics.html', context=context)
 
 
 def form_report(request, form_id: int):

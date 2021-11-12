@@ -8,32 +8,11 @@
 
 <div class="card my-2">
     <div class="card-body border-card">
-        <div class="card-title mb-3">{{form}}</div>
-        Код опросника: /quiz{{form.unique_code}}
+        <div class="card-title">{{form}}</div>
+        Код опросника: /quiz{{form.unique_code}}<br>
+        Пройти форму: {{qr|safe}}
     </div>
 </div>
-
-<table class="table table-dark">
-  <thead>
-    <tr>
-      <th>Имя</th>
-      <th>Всего отвечено</th>
-      <th>Бал</th>
-      <th>Дата и время</th>
-    </tr>
-  </thead>
-  <tbody>
-  {% for answer in answers %}
-    <tr>
-      <td>{{answer.contact}}</td>
-      <td>{{answer.data|length}}</td>
-      <td>{{answer.score}}</td>
-      <td>{{answer.created_at}}</td>
-    </tr>
-  {% endfor %}
-  </tbody>
-</table>
-
 
 {% for question in questions %}
 <div><b>{{question.text}}</b></div>

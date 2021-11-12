@@ -25,4 +25,5 @@ GeoAlchemy2==0.9.4
 lxml==4.6.3
 uvloop==0.16.0
 ujson==4.2.0
-aiohttp[speedups]==3.7.4
+aiohttp[speedups]
+qrcode[pil]
