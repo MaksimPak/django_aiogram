@@ -39,7 +39,7 @@ def form_statistics(request, form_id: int):
     questions = form.formquestion_set.all()
     percentage = get_answers_percentage(form_id, questions)
     qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_L,
-                       image_factory=SvgImage)
+                       image_factory=SvgImage, box_size=30)
     qr.add_data(form.link)
     img_2 = qr.make_image()
     context = {
