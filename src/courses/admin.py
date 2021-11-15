@@ -62,6 +62,15 @@ class LessonList(admin.StackedInline):
     def link(self, instance):
         return f'https://t.me/{os.getenv("BOT_NAME")}?start=lesson{instance.id}'
 
+    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+        field = super(LessonList, self).formfield_for_foreignkey(db_field, request, **kwargs)
+
+        if db_field.name == 'form':
+            field.queryset = field.queryset.filter(
+                mode='quiz')
+
+        return field
+
 
 @admin.register(models.Course)
 class CourseAdmin(admin.ModelAdmin):
