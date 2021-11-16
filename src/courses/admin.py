@@ -13,6 +13,25 @@ from courses.filters import FilterByCourse, StatusFilter
 from courses.forms import CourseForm
 
 
+class LessonMedia(admin.TabularInline):
+    model = models.Lesson
+    extra = 0
+    fields = ('video', 'watch_count',)
+    readonly_fields = ('watch_count',)
+
+    @admin.display(description='Просмотров')
+    def watch_count(self, instance):
+        count = models.StudentLesson.objects.filter(lesson=instance,
+                                                    date_watched__isnull=False).count()
+        return count
+
+    def has_add_permission(self, request, course):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 class StudentCourseList(admin.TabularInline):
     model = models.StudentCourse
     fields = ('student_display', 'created_at', 'message_student', 'has_paid', 'delete_student')
@@ -119,6 +138,22 @@ class CourseAdmin(admin.ModelAdmin):
     @admin.display(description='Количество студентов')
     def student_count(self, course):
         return course.student_set.count()
+
+
+@admin.register(models.CourseMedia)
+class CourseMediaAdmin(admin.ModelAdmin):
+    list_display = ('id', '__str__')
+    list_display_links = ('__str__',)
+    inlines = (LessonMedia,)
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def get_fields(self, request, obj=None):
+        return []
 
 
 @admin.register(models.StudentLesson)

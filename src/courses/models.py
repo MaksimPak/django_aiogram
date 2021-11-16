@@ -38,6 +38,14 @@ class Course(BaseModel):
         verbose_name_plural = 'Курсы'
 
 
+class CourseMedia(Course):
+
+    class Meta:
+        proxy = True
+        verbose_name = 'Видеоматериал Курса'
+        verbose_name_plural = 'Видеоматериалы Курса'
+
+
 class Lesson(BaseModel):
     name = models.CharField(max_length=100, verbose_name='Название урока')
     description = models.TextField(blank=True, null=True, verbose_name='Описание')
