@@ -137,9 +137,10 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
             return answer.contact.is_registered
         return False
 
-    @admin.display(description='Дата прохождения')
+    @admin.display(description='Время последнего ответа')
     def date_passed(self, answer):
-        return answer.updated_at if answer.updated_at else answer.created_at
+        date = answer.updated_at if answer.updated_at else answer.created_at
+        return date.strftime('%m/%d/%Y, %H:%M')
 
     @admin.display(description='Массовая рассылка')
     def send_message(self, request, answers):
