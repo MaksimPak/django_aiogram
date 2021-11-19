@@ -152,7 +152,7 @@ class ContactFormAnswersAdmin(admin.ModelAdmin):
         }
         return render(request, "broadcast/send.html", context=context)
 
-    @admin.display(description='Балл')
+    @admin.display(description='Балл', ordering='score')
     def points(self, instance):
         question_count = instance.form.formquestion_set.all().count()
         return f'{instance.score}/{question_count}' if instance.score else None
