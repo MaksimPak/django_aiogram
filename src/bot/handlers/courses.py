@@ -119,6 +119,9 @@ async def course_lessons(
 
     course = await repo.CourseRepository.get_lesson_inload('id', course_id, session)
     contact = await repo.ContactRepository.load_student_data('tg_id', response.from_user.id, session)
+
+    await repo.StudentCourseRepository.create_or_none(contact.student.id, course_id, session)
+
     received_lessons = await repo.StudentLessonRepository.student_lessons(
         contact.student.id, course_id, session)
 

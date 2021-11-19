@@ -336,6 +336,13 @@ class StudentCourseRepository(BaseRepository):
     table = StudentCourse
 
     @staticmethod
+    async def create_or_none(student_id, course_id, session):
+        exists = await StudentCourseRepository.exists(student_id, course_id, session)
+
+        if not exists:
+            await StudentCourseRepository.create_record(student_id, course_id, session)
+
+    @staticmethod
     async def exists(student_id, course_id, session):
         async with session:
             record = (await session.execute(

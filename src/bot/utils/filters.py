@@ -33,14 +33,7 @@ class CourseStudent(Filter):
         if not contact.student or not match:
             return False
 
-        course_id = int(match.group(1))
-        is_allowed = await repo.StudentCourseRepository.exists(
-            contact.student.id,
-            course_id,
-            session
-        )
-
-        return {'deep_link': match} if is_allowed else False
+        return {'deep_link': match}
 
 
 class LessonStudent(Filter):
