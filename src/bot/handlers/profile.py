@@ -75,7 +75,7 @@ async def profile_kb(
     data = [(_(title), (key, client.id)) for title, key, _tmp in PROFILE_FIELDS]
 
     kb = KeyboardGenerator(data, row_width=2).keyboard
-    ro_fields = [(_('Учебный центр'), 'learning_centre', lc_renderer)]
+    ro_fields = [(_('Учебный центр'), 'company', lc_renderer)]
     message = ''
     fields = (*PROFILE_FIELDS, *ro_fields)
     for title, key, renderer in fields:
