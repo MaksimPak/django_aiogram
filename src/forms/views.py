@@ -41,7 +41,6 @@ def form_statistics(request, form_id: int):
     qr = qrcode.make(
         form.link, error_correction=qrcode.constants.ERROR_CORRECT_L,
         image_factory=SvgImage, box_size=30)
-    print(form.contactformanswers_set.count())
     context = {
         'form': form,
         'questions': questions,

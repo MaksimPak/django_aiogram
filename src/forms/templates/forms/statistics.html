@@ -9,7 +9,7 @@
 <div class="card my-2">
     <div class="card-body border-card">
         <div class="card-title">{{form}}</div>
-        Код опросника: /quiz{{form.unique_code}}<br>
+        Ссылка: {{form.link}}<br>
         {{qr|safe}}
         <br>
         Всего ответов: {{form.contactformanswers_set.count}}
