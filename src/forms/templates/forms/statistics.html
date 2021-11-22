@@ -9,7 +9,8 @@
 <div class="card my-2">
     <div class="card-body border-card">
         <div class="card-title">{{form}}</div>
-        Ссылка: {{form.link}}<br>
+        <a href="{{form.link}}">Ссылка на форму</a>
+        <br>
         {{qr|safe}}
         <br>
         Всего ответов: {{form.contactformanswers_set.count}}
