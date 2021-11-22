@@ -1,5 +1,6 @@
 from functools import partial
 
+from django import forms
 from django.contrib import admin, messages
 from django.db.models.expressions import RawSQL
 from django.http import HttpResponseRedirect
@@ -45,6 +46,12 @@ class FormQuestionList(admin.StackedInline):
             return mark_safe(f'<a href="{changeform_url}" target="_blank">Создать Ответы</a>')
         else:
             return 'Сначала создайте вопрос'
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name == 'text':
+            kwargs['widget'] = forms.Textarea
+            return db_field.formfield(**kwargs)
+        return super(FormQuestionList, self).formfield_for_dbfield(db_field, request, **kwargs)
 
     class Media:
         js = (
@@ -114,7 +121,6 @@ class FormAdmin(admin.ModelAdmin):
                     answer.save()
 
         self.message_user(request, '{0} форм(а) были успешно дублированны'.format(forms.count()), messages.SUCCESS)
-
 
 @admin.register(models.ContactFormAnswers)
 class ContactFormAnswersAdmin(admin.ModelAdmin):

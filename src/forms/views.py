@@ -38,17 +38,17 @@ def form_statistics(request, form_id: int):
     form = models.Form.objects.get(pk=form_id)
     questions = form.formquestion_set.all()
     percentage = get_answers_percentage(form_id, questions)
-    qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_L,
-                       image_factory=SvgImage, box_size=30)
-    qr.add_data(form.link)
-    img_2 = qr.make_image()
+    qr = qrcode.make(
+        form.link, error_correction=qrcode.constants.ERROR_CORRECT_L,
+        image_factory=SvgImage, box_size=30)
+    print(form.contactformanswers_set.count())
     context = {
         'form': form,
         'questions': questions,
         'percentage': percentage
     }
     with NamedTemporaryFile() as tmp:
-        img_2.save(tmp.name)
+        qr.save(tmp.name)
         stream = tmp.read().decode()
         context['qr'] = stream
         return render(request, 'forms/statistics.html', context=context)

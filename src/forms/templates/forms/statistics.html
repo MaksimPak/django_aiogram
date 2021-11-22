@@ -11,6 +11,8 @@
         <div class="card-title">{{form}}</div>
         Код опросника: /quiz{{form.unique_code}}<br>
         {{qr|safe}}
+        <br>
+        Всего ответов: {{form.contactformanswers_set.count}}
     </div>
 </div>
 
@@ -21,13 +23,5 @@
   <li>{{ans.text}}: {{percentage|dict_key:ans.id}}%</li>
   {%endfor%}
 </ul>
-{% if form.mode != 'quiz'%}
-<small><b>additional</b>:</small>
-{% for x in answers %}:
- {% if question.id in x.data|int_json_key and x.data|int_json_key|dict_key:question.id not in question.answers.all|answer_texts %}
-    {{x.data|int_json_key|dict_key:question.id}}
- {%endif%}
-{% endfor %}
-{%endif%}
 {% endfor %}
 {% endblock %}
