@@ -47,12 +47,6 @@ class FormQuestionList(admin.StackedInline):
         else:
             return 'Сначала создайте вопрос'
 
-    def formfield_for_dbfield(self, db_field, request, **kwargs):
-        if db_field.name == 'text':
-            kwargs['widget'] = forms.Textarea
-            return db_field.formfield(**kwargs)
-        return super(FormQuestionList, self).formfield_for_dbfield(db_field, request, **kwargs)
-
     class Media:
         js = (
             'forms/js/form_admin.js',
