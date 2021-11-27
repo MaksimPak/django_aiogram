@@ -38,7 +38,7 @@ class Form(BaseModel):
 class FormQuestion(BaseModel):
     form = models.ForeignKey(Form, on_delete=models.CASCADE, verbose_name='Форма')
     multi_answer = models.BooleanField(verbose_name='Мульти-ответ', default=False)
-    text = models.TextField(max_length=100, verbose_name='Текст')
+    text = models.TextField(verbose_name='Текст')
     image = models.ImageField(verbose_name='Картинка', blank=True,
                               null=True, upload_to=form_question_directory)
     position = models.IntegerField(verbose_name='Нумерация')
