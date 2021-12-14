@@ -52,6 +52,10 @@ class Student(BaseModel):
         return f'{self.first_name[0]}.{self.last_name or ""}'
 
     @property
+    def full_name(self):
+        return f'{self.first_name} {self.last_name or ""}'
+
+    @property
     def status(self):
         return 'client' if self.is_client else 'lead'
 

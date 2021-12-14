@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'forms.apps.FormsConfig',
     'broadcast.apps.BroadcastConfig',
+    'certificates.apps.CertificatesConfig',
 
     'bootstrap4',
     'flat_json_widget',

@@ -1,5 +1,6 @@
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
 
 from broadcast import models
 from broadcast.forms import BroadcastForm
@@ -50,6 +51,7 @@ def render_send(request):
     return render(request, 'broadcast/send.html', context=context)
 
 
+@csrf_exempt
 def send(request):
     """
     Handles POST Requests.
