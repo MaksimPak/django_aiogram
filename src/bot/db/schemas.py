@@ -113,7 +113,7 @@ class StudentTable(BaseModel):
     comment = Column(String(255), nullable=True)
     games = Column(ARRAY(String(50)), nullable=True)
 
-    courses = relationship('StudentCourse', back_populates='students')
+    courses = relationship('StudentCourse', back_populates='students', order_by='[StudentCourse.created_at]')
     lessons = relationship('StudentLesson', back_populates='student')
     company = relationship('CompanyTable', back_populates='student')
     contact = relationship('ContactTable', back_populates='student')
