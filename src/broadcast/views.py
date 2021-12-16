@@ -51,7 +51,6 @@ def render_send(request):
     return render(request, 'broadcast/send.html', context=context)
 
 
-@csrf_exempt
 def send(request):
     """
     Handles POST Requests.

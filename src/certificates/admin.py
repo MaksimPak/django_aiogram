@@ -3,6 +3,8 @@ import os
 import requests
 from django.contrib import admin
 from django.middleware import csrf
+from django.middleware.csrf import get_token
+
 from certificates import models
 
 # Register your models here.
@@ -29,11 +31,13 @@ class CertificateAdmin(admin.ModelAdmin):
     @admin.display(description='Отправить сертификаты')
     def send_cert(self, request, certs):
         url = os.environ.get('DOMAIN') + 'broadcast/send/'
-
         for cert in certs:
+            headers = {'X-CSRFToken': get_token(request)}
             data = {
                 '_selected_action': cert.student.id,
                 'text': f'Сертификат по курсу {cert.template.course}'
             }
-            requests.post(url,data=data, files={'image': cert.generated_cert.read()})
+            requests.post(url, data=data, headers=headers,
+                          files={'image': cert.generated_cert.read()}, cookies=request.COOKIES)
+
 

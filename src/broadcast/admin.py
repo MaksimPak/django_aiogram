@@ -19,7 +19,7 @@ class Recipients(admin.TabularInline):
 
     @admin.display(description='Время ответа')
     def delta(self, instance):
-        if instance._delta > datetime.timedelta(0):
+        if instance._delta and instance._delta > datetime.timedelta(0):
             return self.strfdelta(instance._delta)
         return '-'
 
