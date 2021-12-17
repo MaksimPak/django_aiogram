@@ -24,6 +24,8 @@ class Course(BaseModel):
     date_started = models.DateTimeField(verbose_name='Дата начала курса', null=True, blank=True)
     date_finished = models.DateTimeField(verbose_name='Дата окончания курса', null=True, blank=True)
 
+    set_priority_date = models.DateTimeField(verbose_name='Первый в спике бота', null=True, blank=True)
+
     chat_id = models.BigIntegerField(verbose_name='Telegram ID', help_text=COURSE_HELP_TEXT)
 
     def __str__(self):

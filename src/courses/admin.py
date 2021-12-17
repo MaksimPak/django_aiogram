@@ -96,8 +96,8 @@ class CourseAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__', 'course_info',
                     'company', 'student_count')
     list_display_links = ('__str__',)
-    readonly_fields = ('date_started', 'date_finished', 'created_at', 'link')
-    exclude = ('week_size', 'lesson_count',)
+    readonly_fields = ('date_started', 'date_finished', 'created_at', 'link',)
+    exclude = ('week_size', 'lesson_count', 'set_priority_date')
     list_per_page = 20
     search_fields = ('id', 'name')
     list_filter = ('company',)

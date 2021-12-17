@@ -4,9 +4,9 @@ import enum
 import sqlalchemy_json
 from geoalchemy2 import Geometry
 from sqlalchemy import Column, String, Enum, Boolean, ForeignKey, DateTime, Integer, types, SmallInteger, \
-    CheckConstraint
+    CheckConstraint, select
 from sqlalchemy.dialects.postgresql import TEXT, JSONB, ARRAY
-from sqlalchemy.orm import relationship, validates
+from sqlalchemy.orm import relationship, validates, deferred
 
 from bot import config
 from bot.db.config import Base
@@ -113,7 +113,8 @@ class StudentTable(BaseModel):
     comment = Column(String(255), nullable=True)
     games = Column(ARRAY(String(50)), nullable=True)
 
-    courses = relationship('StudentCourse', back_populates='students', order_by='[StudentCourse.created_at]')
+    courses = relationship('StudentCourse', back_populates='students',
+                           order_by='[StudentCourse.priority_date_deferred, StudentCourse.created_at]')
     lessons = relationship('StudentLesson', back_populates='student')
     company = relationship('CompanyTable', back_populates='student')
     contact = relationship('ContactTable', back_populates='student')
@@ -139,6 +140,7 @@ class CourseTable(BaseModel):
     date_started = Column(DateTime, nullable=True)
     date_finished = Column(DateTime, nullable=True)
     chat_id = Column(Integer, nullable=False)
+    set_priority_date = Column(DateTime, nullable=True)
 
     students = relationship('StudentCourse', back_populates='courses')
     lessons = relationship('LessonTable', back_populates='course',
@@ -179,6 +181,8 @@ class StudentCourse(BaseModel):
 
     courses = relationship('CourseTable', back_populates='students')
     students = relationship('StudentTable', back_populates='courses')
+
+    priority_date_deferred = deferred(select([CourseTable.set_priority_date]).where(CourseTable.id == course_id))
 
 
 class StudentLesson(BaseModel):

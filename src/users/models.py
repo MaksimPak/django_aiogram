@@ -43,7 +43,6 @@ class Student(BaseModel):
     location = PointField(null=True, blank=True, verbose_name='Локация')
     games = ArrayField(models.CharField(max_length=50, blank=True), null=True, blank=True, verbose_name='Игры')
 
-    @deprecated
     def __str__(self):
         return f'{self.first_name} {self.last_name or ""}'
 
