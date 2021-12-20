@@ -64,7 +64,7 @@ async def send_next_lesson(studentlesson, user_id, session):
 @dp.message_handler(Text(equals='📝 Курсы'), state='*')
 @dp.callback_query_handler(simple_data.filter(value='to_courses'))
 @create_session
-async def my_courses(
+async def get_categories(
         response: Union[types.Message, types.CallbackQuery],
         state: FSMContext,
         session: SessionLocal
@@ -80,22 +80,45 @@ async def my_courses(
     if not contact.student:
         return await response.answer(_('Вы не зарегистрированы. Отправьте /register чтобы зарегистрироваться'))
 
+    groups = await repo.CourseCategoryRepository.get_all(session)
+    groups_btns = [(x.name, ('group_course', x.id)) for x in groups]
+    markup = KeyboardGenerator(groups_btns).keyboard
+    msg = _('Выберите группу') if markup else _('Ошибка. Нет созданных групп')
+
+    await MessageSender(response.chat.id, msg, markup=markup).send()
+
+
+@dp.callback_query_handler(short_data.filter(property='group_course'))
+@create_session
+async def group_courses(
+        cb: types.CallbackQuery,
+        callback_data: dict,
+        session: SessionLocal
+):
+    """
+    Displays free and enrolled courses of the student
+    """
+    await cb.message.delete()
+    await cb.answer()
+    category_id = int(callback_data['value'])
+    contact = await repo.ContactRepository.load_student_data('tg_id', cb.from_user.id, session)
+
     course_btns = []
 
-    courses = contact.student.courses
-    for studentcourse in courses:
+    courses = await repo.StudentCourseRepository.get_courses(contact.student.id, category_id, session)
+    for studentcourse, course in courses:
         watch_count = await repo.StudentLessonRepository.finished_lesson_count(
-            studentcourse.courses.id, contact.student.id, session
+            course.id, contact.student.id, session
         )
-        lesson_count = len(studentcourse.courses.lessons)
-        txt = studentcourse.courses.name + ' ✅' if watch_count == lesson_count else studentcourse.courses.name
-        course_btns.append((txt, ('get_course', studentcourse.courses.id)))
+        lesson_count = await repo.LessonRepository.course_lesson_count(course.id, session)
+        txt = course.name + ' ✅' if watch_count == lesson_count else course.name
+        course_btns.append((txt, ('get_course', course.id)))
 
     markup = KeyboardGenerator(course_btns).keyboard
 
     msg = _('Ваши курсы') if course_btns else _('Вы не записаны ни на один курс')
 
-    await MessageSender(response.from_user.id, msg, markup=markup).send()
+    await MessageSender(cb.from_user.id, msg, markup=markup).send()
 
 
 @dp.callback_query_handler(short_data.filter(property='get_course'))

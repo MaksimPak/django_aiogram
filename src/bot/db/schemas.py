@@ -125,6 +125,8 @@ class StudentTable(BaseModel):
 
 
 class CourseCategoryTable(BaseModel):
+    __tablename__ = 'courses_coursecategory'
+
     name = Column(String(100))
 
 
@@ -135,7 +137,7 @@ class CourseTable(BaseModel):
     description = Column(TEXT, nullable=False)
     code = Column(String(20), nullable=True)
     company_id = Column(Integer, ForeignKey('companies_company.id', ondelete='RESTRICT'))
-    category = Column(Integer, ForeignKey('courses_coursecategory.id', ondelete='CASCADE'))
+    category_id = Column(Integer, ForeignKey('courses_coursecategory.id', ondelete='CASCADE'))
     data = Column(sqlalchemy_json.mutable_json_type(
         dbtype=JSONB, nested=True), nullable=False, default=lambda: {
         'start_message': '',

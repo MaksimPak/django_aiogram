@@ -11,7 +11,7 @@ from bot.db.schemas import (
     LessonTable, StudentLesson,
     ContactTable, FormTable, FormQuestionTable, FormAnswerTable,
     ContactFormTable, CompanyTable, AssetTable, ContactAssetTable,
-    MessageHistory
+    MessageHistory, CourseCategoryTable
 )
 from bot.db.config import SessionLocal
 
@@ -93,7 +93,6 @@ class ContactRepository(BaseRepository):
             )).scalar()
 
         return instance
-
 
     @staticmethod
     async def get_or_create(
@@ -178,6 +177,18 @@ class StudentRepository(BaseRepository):
         return student
 
 
+class CourseCategoryRepository(BaseRepository):
+    table = CourseCategoryTable
+
+    @staticmethod
+    async def get_all(session: SessionLocal):
+        async with session:
+            categories = (await session.execute(
+                select(CourseCategoryTable)
+            )).scalars()
+        return categories
+
+
 class CourseRepository(BaseRepository):
     table = CourseTable
 
@@ -243,6 +254,16 @@ class LessonRepository(BaseRepository):
             )).scalars()
 
         return lessons
+
+    @staticmethod
+    async def course_lesson_count(course_id, session):
+        async with session:
+            count = await session.execute(
+                select(func.count(LessonTable.id)).where(
+                    LessonTable.course_id == course_id
+                )
+            )
+        return count
 
 
 class StudentLessonRepository(BaseRepository):
@@ -382,6 +403,18 @@ class StudentCourseRepository(BaseRepository):
                 ).options(selectinload(StudentCourse.students))
                 .options(selectinload(StudentCourse.courses)))).scalar()
         return record
+
+    @staticmethod
+    async def get_courses(student_id, group_id, session):
+        async with session:
+            stmt = select(StudentCourse, CourseTable) \
+                .join_from(StudentCourse, CourseTable, StudentCourse.course_id == CourseTable.id).where(
+                StudentCourse.student_id == student_id,
+                CourseTable.category_id == group_id
+            )
+            filtered = (await session.execute(stmt)).all()
+
+        return filtered
 
     @staticmethod
     async def filter_from_relationship(relationship, session: SessionLocal):
