@@ -91,6 +91,12 @@ class LessonList(admin.StackedInline):
         return field
 
 
+@admin.register(models.CourseCategory)
+class CourseCategoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name')
+    list_per_page = 10
+
+
 @admin.register(models.Course)
 class CourseAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__', 'course_info',

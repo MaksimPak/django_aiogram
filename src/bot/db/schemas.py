@@ -124,6 +124,10 @@ class StudentTable(BaseModel):
         return f'{self.first_name} {self.last_name}' if self.last_name else self.first_name
 
 
+class CourseCategoryTable(BaseModel):
+    name = Column(String(100))
+
+
 class CourseTable(BaseModel):
     __tablename__ = 'courses_course'
 
@@ -131,6 +135,7 @@ class CourseTable(BaseModel):
     description = Column(TEXT, nullable=False)
     code = Column(String(20), nullable=True)
     company_id = Column(Integer, ForeignKey('companies_company.id', ondelete='RESTRICT'))
+    category = Column(Integer, ForeignKey('courses_coursecategory.id', ondelete='CASCADE'))
     data = Column(sqlalchemy_json.mutable_json_type(
         dbtype=JSONB, nested=True), nullable=False, default=lambda: {
         'start_message': '',
