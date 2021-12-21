@@ -257,7 +257,7 @@ class StudentProgress(admin.ModelAdmin):
 
     @staticmethod
     def _send_cert(request, certs):
-        url = os.environ.get('DOMAIN') + 'broadcast/send/'
+        url = os.environ.get('DOMAIN') + '/broadcast/send/'
         for cert in certs:
             headers = {'X-CSRFToken': get_token(request)}
             data = {

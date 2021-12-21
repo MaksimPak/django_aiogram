@@ -30,7 +30,7 @@ class CertificateAdmin(admin.ModelAdmin):
 
     @admin.display(description='Отправить сертификаты')
     def send_cert(self, request, certs):
-        url = os.environ.get('DOMAIN') + 'broadcast/send/'
+        url = os.environ.get('DOMAIN') + '/broadcast/send/'
         for cert in certs:
             headers = {'X-CSRFToken': get_token(request)}
             data = {
