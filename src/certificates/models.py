@@ -1,6 +1,7 @@
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
+from certificates.managers import CertManager
 from certificates.utils.uploaders import cert_tmplt_dir, cert_upload_dir
 from certificates.utils.validators import validate_x_y
 
@@ -19,6 +20,8 @@ class CertTemplate(BaseModel):
 
 
 class Certificate(BaseModel):
+    objects = CertManager()
+
     student = models.ForeignKey('contacts.Contact', on_delete=models.CASCADE,
                                 verbose_name='Студент')
     template = models.ForeignKey(CertTemplate, on_delete=models.CASCADE,

@@ -1,10 +1,14 @@
 import os
 
+import requests
+from django.apps import apps
 from django.contrib import admin, messages
+from django.middleware.csrf import get_token
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.html import format_html
+from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
 
 from broadcast.forms import BroadcastForm
@@ -178,7 +182,7 @@ class StudentProgress(admin.ModelAdmin):
         return {}
 
     def get_list_display(self, request):
-        if request.GET.get('course_id'):
+        if not request.GET.get('lesson__id__exact'):
             return ('lesson_name', 'lesson_received', 'lesson_watched',
                     'hw_submitted', 'details',)
         else:
@@ -188,6 +192,7 @@ class StudentProgress(admin.ModelAdmin):
         actions = super(StudentProgress, self).get_actions(request)
         if request.GET.get('lesson__id__exact'):
             self.actions.append(self.send_message)
+            self.actions.append(self.send_certs)
         return actions
 
     @admin.display(description='Урок')
@@ -230,10 +235,37 @@ class StudentProgress(admin.ModelAdmin):
         model = instance._meta.model_name
         app = instance._meta.app_label
         changeform_url = reverse(
-            f'admin:{app}_{model}_changelist'
+            f'admin:{app}_{model}_changelist',
         )
-        changeform_url += f'?lesson__id__exact={instance.lesson.id}'
+        querystrings = {
+            'course_id': instance.lesson.course_id,
+            'lesson__id__exact': instance.lesson_id,
+        }
+        changeform_url = '{}?{}'.format(changeform_url, urlencode(querystrings))
         return mark_safe(f'<a href="{changeform_url}">Посмотреть</a>')
+
+    @staticmethod
+    @admin.display(description='Сгенерировать сертификаты и отправить')
+    def send_certs(modeladmin, request, qs):
+        Certificate = apps.get_model('certificates', 'Certificate')
+        course = models.Course.objects.get(pk=request.GET.get('course_id'))
+        new_certs = Certificate.objects.bulk_create([
+            Certificate(student_id=studlesson.student_id,
+                        template=course.certtemplate) for studlesson in qs]
+        )
+        modeladmin._send_cert(request, new_certs)
+
+    @staticmethod
+    def _send_cert(request, certs):
+        url = os.environ.get('DOMAIN') + 'broadcast/send/'
+        for cert in certs:
+            headers = {'X-CSRFToken': get_token(request)}
+            data = {
+                '_selected_action': cert.student.id,
+                'text': f'Сертификат по курсу {cert.template.course}'
+            }
+            requests.post(url, data=data, headers=headers,
+                          files={'image': cert.generated_cert.read()}, cookies=request.COOKIES)
 
     @staticmethod
     @admin.display(description='Массовая рассылка')
