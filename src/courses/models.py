@@ -71,6 +71,7 @@ class Lesson(BaseModel):
                              validators=[validate_video_extension])
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     homework_desc = models.TextField(verbose_name='Описание дз', null=True, blank=True)
+    comment = models.TextField(verbose_name='Сообщение по завершению', null=True, blank=True)
 
     form = models.ForeignKey('forms.Form', verbose_name='Форма',
                              on_delete=models.SET_NULL,

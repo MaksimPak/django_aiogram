@@ -85,7 +85,7 @@ async def get_categories(
     markup = KeyboardGenerator(groups_btns).keyboard
     msg = _('Выберите группу') if markup else _('Ошибка. Нет созданных групп')
 
-    await MessageSender(response.chat.id, msg, markup=markup).send()
+    await MessageSender(response.from_user.id, msg, markup=markup).send()
 
 
 @dp.callback_query_handler(short_data.filter(property='group_course'))
@@ -194,6 +194,27 @@ async def get_lesson(
     await MessageSender(response.from_user.id, text, lesson.image, markup=kb).send()
 
 
+@create_session
+async def proceed(cb, record, session):
+    if not record.lesson.homework_desc:
+        user_id = cb.from_user.id
+        await send_next_lesson(record, user_id, session)
+        await cb.message.edit_reply_markup(reply_markup=None)
+    else:
+        await bot.answer_callback_query(cb.id)
+        text = await get_lesson_text(record, display_hw=True, display_link=False)
+        kb = KeyboardGenerator([(_('Отправить работу'), ('submit', record.lesson.course.chat_id, record.id))]).keyboard
+        is_media = bool(cb.message.photo)
+
+        await MessageSender.edit(
+            cb.from_user.id,
+            cb.message.message_id,
+            text,
+            kb,
+            is_media
+        )
+
+
 @dp.callback_query_handler(short_data.filter(property='watched'))
 @create_session
 async def check_homework(
@@ -212,23 +233,25 @@ async def check_homework(
     await state.update_data({'hashtag': record.lesson.course.code})
     await repo.StudentLessonRepository.edit(record, {'date_watched': datetime.datetime.now()}, session)
 
-    if not record.lesson.homework_desc:
-        user_id = cb.from_user.id
-        await send_next_lesson(record, user_id, session)
+    if record.lesson.comment:
+        markup = KeyboardGenerator((_('Перейти дальше'), ('proceed', record.id))).keyboard
         await cb.message.edit_reply_markup(reply_markup=None)
+        await MessageSender(cb.from_user.id, record.lesson.comment, markup=markup).send()
     else:
-        await bot.answer_callback_query(cb.id)
-        text = await get_lesson_text(record, display_hw=True, display_link=False)
-        kb = KeyboardGenerator([(_('Отправить работу'), ('submit', record.lesson.course.chat_id, record.id))]).keyboard
-        is_media = bool(cb.message.photo)
+        await proceed(cb, record)
 
-        await MessageSender.edit(
-            cb.from_user.id,
-            cb.message.message_id,
-            text,
-            kb,
-            is_media
-        )
+
+@dp.callback_query_handler(short_data.filter(property='proceed'))
+@create_session
+async def mark_understood(
+        cb: types.CallbackQuery,
+        callback_data: dict,
+        session
+):
+    await cb.answer()
+    studentlesson_id = callback_data['value']
+    record = await repo.StudentLessonRepository.lesson_data('id', int(studentlesson_id), session)
+    await proceed(cb, record)
 
 
 @dp.callback_query_handler(two_valued_data.filter(property='submit'))

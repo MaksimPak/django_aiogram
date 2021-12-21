@@ -163,6 +163,7 @@ class LessonTable(BaseModel):
     video = Column(String(100))
     course_id = Column(Integer, ForeignKey('courses_course.id'))
     homework_desc = Column(TEXT, nullable=True)
+    comment = Column(TEXT, nullable=True)
 
     form_id = Column(Integer, ForeignKey('forms_form.id', ondelete='SET NULL'), nullable=True)
     form_pass_rate = Column(SmallInteger, CheckConstraint('form_pass_rate >= 0'),
