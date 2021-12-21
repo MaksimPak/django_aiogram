@@ -258,8 +258,9 @@ class StudentProgress(admin.ModelAdmin):
     @staticmethod
     def _send_cert(request, certs):
         url = os.environ.get('DOMAIN') + '/broadcast/send/'
+        referer = os.environ.get('DOMAIN') + request.get_full_path()
         for cert in certs:
-            headers = {'X-CSRFToken': get_token(request), 'Referer': request.get_full_path()}
+            headers = {'X-CSRFToken': get_token(request), 'Referer': referer}
             data = {
                 '_selected_action': cert.student.id,
                 'text': f'Сертификат по курсу {cert.template.course}'
