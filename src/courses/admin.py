@@ -250,7 +250,7 @@ class StudentProgress(admin.ModelAdmin):
         Certificate = apps.get_model('certificates', 'Certificate')
         course = models.Course.objects.get(pk=request.GET.get('course_id'))
         new_certs = Certificate.objects.bulk_create([
-            Certificate(student_id=studlesson.student_id,
+            Certificate(student=studlesson.student.contact,
                         template=course.certtemplate) for studlesson in qs]
         )
         modeladmin._send_cert(request, new_certs)
