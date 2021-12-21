@@ -169,6 +169,10 @@ class LessonTable(BaseModel):
     form_pass_rate = Column(SmallInteger, CheckConstraint('form_pass_rate >= 0'),
                             nullable=True, default=0)
 
+    rate_lesson_msg = Column(TEXT, nullable=True)
+    likes = Column(Integer, default=0)
+    dislikes = Column(Integer, default=0)
+
     course = relationship('CourseTable', back_populates='lessons')
     students = relationship('StudentLesson', back_populates='lesson')
     form = relationship('FormTable', back_populates='lesson')

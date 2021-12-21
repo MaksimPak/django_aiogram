@@ -72,6 +72,7 @@ class Lesson(BaseModel):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     homework_desc = models.TextField(verbose_name='Описание дз', null=True, blank=True)
     comment = models.TextField(verbose_name='Сообщение по завершению', null=True, blank=True)
+    rate_lesson_msg = models.TextField(verbose_name='Сообщение при оценке урока', null=True, blank=True)
 
     form = models.ForeignKey('forms.Form', verbose_name='Форма',
                              on_delete=models.SET_NULL,
@@ -79,6 +80,9 @@ class Lesson(BaseModel):
     form_pass_rate = models.PositiveSmallIntegerField(verbose_name='% Прохождения формы',
                                                       null=True, blank=True, default=0,
                                                       validators=[MinValueValidator(0), MaxValueValidator(100)])
+
+    likes = models.IntegerField(verbose_name='Лайки', default=0)
+    dislikes = models.IntegerField(verbose_name='Дизлайки', default=0)
 
     def __str__(self):
         return self.name
