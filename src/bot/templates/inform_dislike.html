@@ -1,7 +1,11 @@
-#feedback
-{% if course is not none %} Course hashtag: {{ course.code }}{% endif %}
-{% if lesson is not none %} Lesson title: {{ lesson.name }} {% endif %}
-
+#badmark
+{% if course is not none %}
+Course title: {{course.name}}
+Course hashtag: {{ course.code }}
+{% endif %}
+{% if lesson is not none %}
+Lesson title: {{ lesson.name }}
+{% endif %}
 {% if contact.is_registered %}
 {% if contact.student.is_client %}
 Фидбек от Клиент[<a href="{{config.DOMAIN}}/admin/dashboard/client/{{ contact.student.id }}/change/">{{ contact.student.first_name }} {{ contact.student.last_name or '' }}]</a>
@@ -11,9 +15,11 @@
 {% else %}
 Фидбек от ТГ[<a href="{{config.DOMAIN}}/admin/dashboard/contact/{{ contact.id }}/change/">{{contact.first_name}} {{ contact.last_name or '' }}</a>]
 {% endif %}
+
 {% if msg is not none %}
-<b>Текст отправки</b>: {{msg}}
+<b>Причина</b>: {{msg}}
 {% endif %}
+
 {% if error %}
 <strong> {{ error }} </strong>
 {% endif %}

@@ -22,6 +22,8 @@ from bot.utils.filters import CourseStudent, LessonStudent
 
 _ = i18n.gettext
 
+class DislikeText(StatesGroup):
+    freeze = State()
 
 class Homework(StatesGroup):
     homework_start = State()
@@ -195,20 +197,29 @@ async def get_lesson(
 
 
 @create_session
-async def proceed(cb, record, session):
+async def proceed_normal(
+        response: Union[types.CallbackQuery, types.Message],
+        record,
+        session
+):
+    chat_id = response.from_user.id
+    message = response.message if isinstance(response, types.CallbackQuery) else response
+
+    if isinstance(response, types.CallbackQuery):
+        await response.answer()
+        await message.edit_reply_markup(reply_markup=None)
+
     if not record.lesson.homework_desc:
-        user_id = cb.from_user.id
+        user_id = chat_id
         await send_next_lesson(record, user_id, session)
-        await cb.message.edit_reply_markup(reply_markup=None)
     else:
-        await bot.answer_callback_query(cb.id)
         text = await get_lesson_text(record, display_hw=True, display_link=False)
         kb = KeyboardGenerator([(_('Отправить работу'), ('submit', record.lesson.course.chat_id, record.id))]).keyboard
-        is_media = bool(cb.message.photo)
+        is_media = bool(message.photo)
 
         await MessageSender.edit(
-            cb.from_user.id,
-            cb.message.message_id,
+            chat_id,
+            message.message_id,
             text,
             kb,
             is_media
@@ -230,15 +241,113 @@ async def check_homework(
     studentlesson_id = callback_data['value']
     record = await repo.StudentLessonRepository.lesson_data('id', int(studentlesson_id), session)
 
-    await state.update_data({'hashtag': record.lesson.course.code})
+    await state.update_data({'hashtag': record.lesson.course.code, 'studentlesson': record.id})
     await repo.StudentLessonRepository.edit(record, {'date_watched': datetime.datetime.now()}, session)
 
-    if record.lesson.comment:
-        markup = KeyboardGenerator((_('Перейти дальше'), ('proceed', record.id))).keyboard
-        await cb.message.edit_reply_markup(reply_markup=None)
-        await MessageSender(cb.from_user.id, record.lesson.comment, markup=markup).send()
+    if record.lesson.rate_lesson_msg and not record.is_rated:
+        await send_rate_msg(cb, record)
+    elif record.lesson.comment:
+        await send_lesson_comment(cb, record)
     else:
-        await proceed(cb, record)
+        await proceed_normal(cb, record)
+
+
+async def send_rate_msg(cb, record):
+    markup = KeyboardGenerator([('like', ('rate_lesson', 'like')),
+                                ('dislike', ('rate_lesson', 'dislike'))]).keyboard
+    return await MessageSender(
+        cb.from_user.id,
+        record.lesson.rate_lesson_msg,
+        markup=markup
+    ).send()
+
+
+async def send_lesson_comment(response: Union[types.CallbackQuery, types.Message], record):
+    message = response.message if isinstance(response, types.CallbackQuery) else response
+
+    if isinstance(response, types.CallbackQuery):
+        await message.edit_reply_markup(reply_markup=None)
+
+    markup = KeyboardGenerator((_('Перейти дальше'), ('proceed', record.id))).keyboard
+    await MessageSender(response.from_user.id, record.lesson.comment, markup=markup).send()
+
+
+async def process_dislike(cb, record):
+    markup = KeyboardGenerator([('Ответить', ('dislike_msg',)),
+                                ('Продолжить', ('proceed', record.id))]).keyboard
+    await cb.message.edit_reply_markup(reply_markup=None)
+
+    await MessageSender(
+        cb.from_user.id,
+        _('Пожалуйста, напишите, что вам не понравилось'),
+        markup=markup
+    ).send()
+
+
+@dp.callback_query_handler(simple_data.filter(value='dislike_msg'))
+async def dislike_reason(
+        cb: types.CallbackQuery,
+):
+    await cb.answer()
+    await MessageSender(cb.from_user.id, 'why?').send()
+    await DislikeText.freeze.set()
+
+
+@dp.message_handler(state=DislikeText.freeze)
+@create_session
+async def dislike_notify(
+        msg: types.Message,
+        state: FSMContext,
+        session: SessionLocal
+):
+    await msg.answer(_('Спасибо за отзыв!'))
+
+    data = await state.get_data()
+    course = await repo.CourseRepository.get('id', data['course_id'], session)
+    contact = await repo.ContactRepository.load_student_data('tg_id', msg.from_user.id, session)
+    record = await repo.StudentLessonRepository.lesson_data('id', data['studentlesson'], session)
+    template = jinja_env.get_template('inform_dislike.html')
+
+    txt = template.render(contact=contact, course=course, lesson=record.lesson, msg=msg.text)
+
+    await MessageSender(course.chat_id, txt).send()
+
+    if record.lesson.comment:
+        await send_lesson_comment(msg, record)
+    else:
+        await proceed_normal(msg, record)
+    await state.finish()
+
+
+@dp.callback_query_handler(short_data.filter(property='rate_lesson'))
+@create_session
+async def rate_lesson(
+        cb: types.CallbackQuery,
+        callback_data: dict,
+        state: FSMContext,
+        session: SessionLocal
+):
+    await cb.answer()
+    rate = callback_data['value']
+    data = await state.get_data()
+
+    try:
+        record = await repo.StudentLessonRepository.lesson_data('id', data['studentlesson'], session)
+    except KeyError:
+        return await cb.message.delete()
+    await repo.StudentLessonRepository.edit(record, {'is_rated': True}, session)
+
+    if rate == 'like':
+        await repo.LessonRepository.edit(record.lesson, {'likes': record.lesson.likes + 1}, session)
+
+        if record.lesson.comment:
+            await send_lesson_comment(cb, record)
+        else:
+            await proceed_normal(cb, record)
+
+    else:
+        await repo.LessonRepository.edit(record.lesson, {'dislikes': record.lesson.dislikes + 1}, session)
+        await process_dislike(cb, record)
 
 
 @dp.callback_query_handler(short_data.filter(property='proceed'))
@@ -246,12 +355,12 @@ async def check_homework(
 async def mark_understood(
         cb: types.CallbackQuery,
         callback_data: dict,
-        session
+        session: SessionLocal
 ):
     await cb.answer()
     studentlesson_id = callback_data['value']
     record = await repo.StudentLessonRepository.lesson_data('id', int(studentlesson_id), session)
-    await proceed(cb, record)
+    await proceed_normal(cb, record)
 
 
 @dp.callback_query_handler(two_valued_data.filter(property='submit'))

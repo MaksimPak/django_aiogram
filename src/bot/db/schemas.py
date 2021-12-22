@@ -194,7 +194,8 @@ class StudentCourse(BaseModel):
     courses = relationship('CourseTable', back_populates='students')
     students = relationship('StudentTable', back_populates='courses')
 
-    priority_date_deferred = deferred(select([CourseTable.set_priority_date]).where(CourseTable.id == course_id))
+    priority_date_deferred = deferred(select([CourseTable.set_priority_date]).where(
+        CourseTable.id == course_id).scalar_subquery())
 
 
 class StudentLesson(BaseModel):
@@ -202,6 +203,7 @@ class StudentLesson(BaseModel):
 
     student_id = Column(Integer, ForeignKey('users_student.id'))
     lesson_id = Column(Integer, ForeignKey('courses_lesson.id'))
+    is_rated = Column(Boolean, default=False)
 
     # todo date_received de facto. rename
     date_sent = Column(DateTime, nullable=True)

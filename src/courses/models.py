@@ -112,6 +112,7 @@ class StudentCourse(BaseModel):
 class StudentLesson(BaseModel):
     student = models.ForeignKey('users.Student', on_delete=models.CASCADE)
     lesson = models.ForeignKey('courses.Lesson', on_delete=models.CASCADE)
+    is_rated = models.BooleanField(editable=False, default=False)
 
     # todo date_received de facto. rename
     date_sent = models.DateTimeField(verbose_name='Дата получения урока', null=True, blank=True)
