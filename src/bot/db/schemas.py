@@ -9,6 +9,8 @@ from sqlalchemy.dialects.postgresql import TEXT, JSONB, ARRAY
 from sqlalchemy.orm import relationship, validates, deferred
 
 from bot import config
+from itertools import chain
+
 from bot.db.config import Base
 
 
@@ -133,6 +135,15 @@ class CourseCategoryTable(BaseModel):
 class CourseTable(BaseModel):
     __tablename__ = 'courses_course'
 
+    class LevelsExtended(enum.Enum):
+        controllable = 4
+
+    # Course needs extra level of access which was not considered
+    # in base AccessLevel. Since alchemy expects python enums
+    # for column, base enum had to be extended.
+    # python does not allow inheriting enums, i.e. new enum created
+    CourseLevels = enum.Enum('CourseLevels', [(x.name, x.value) for x in chain(AccessLevel, LevelsExtended)])  # noqa
+
     name = Column(String(50))
     description = Column(TEXT, nullable=False)
     code = Column(String(20), nullable=True)
@@ -146,6 +157,8 @@ class CourseTable(BaseModel):
     })
     date_started = Column(DateTime, nullable=True)
     date_finished = Column(DateTime, nullable=True)
+    access_level = Column(IntEnum(CourseLevels), nullable=False, default=CourseLevels.client.value)  # noqa
+
     chat_id = Column(Integer, nullable=False)
     set_priority_date = Column(DateTime, nullable=True)
 

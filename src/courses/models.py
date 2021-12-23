@@ -2,15 +2,11 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.template.defaultfilters import truncatewords
 
+from courses import help_texts
 from courses.utils.helpers import course_additional
 from courses.utils.uploaders import lesson_upload_directory
-from general.models import BaseModel
+from general.models import BaseModel, AccessType
 from general.validators import validate_hashtag, validate_photo_extension, validate_video_extension
-
-COURSE_HELP_TEXT = """
-Если вводится Chatid группы вам нужно создать группу, добавить туда бота, узнать её чат айди, и ввести его здесь.
-Боту надо дать админ права в группе чтобы он мог форвардить сообщения
-"""
 
 
 class CourseCategory(BaseModel):
@@ -25,6 +21,8 @@ class CourseCategory(BaseModel):
 
 
 class Course(BaseModel):
+    COURSE_LEVELS = AccessType.choices + [(4, 'Контролируемый')]  # Extra option needed for rare cases
+
     name = models.CharField(max_length=100, verbose_name='Название курса')
     description = models.TextField(verbose_name='Описание')
     code = models.CharField(max_length=20, verbose_name='Хештег', unique=True,
@@ -37,8 +35,10 @@ class Course(BaseModel):
     date_finished = models.DateTimeField(verbose_name='Дата окончания курса', null=True, blank=True)
 
     set_priority_date = models.DateTimeField(verbose_name='Первый в спике бота', null=True, blank=True)
+    access_level = models.IntegerField(verbose_name='Доступ', default=AccessType.client,
+                                       choices=COURSE_LEVELS, help_text=help_texts.COURSE_ACCESS_LEVEL)
 
-    chat_id = models.BigIntegerField(verbose_name='Telegram ID', help_text=COURSE_HELP_TEXT)
+    chat_id = models.BigIntegerField(verbose_name='Telegram ID', help_text=help_texts.COURSE_CHAT_ID)
 
     def __str__(self):
         return self.name
