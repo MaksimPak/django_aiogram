@@ -253,8 +253,9 @@ async def check_homework(
 
 
 async def send_rate_msg(cb, record):
-    markup = KeyboardGenerator([('like', ('rate_lesson', 'like')),
-                                ('dislike', ('rate_lesson', 'dislike'))]).keyboard
+    await cb.message.edit_reply_markup(None)
+    markup = KeyboardGenerator([('👍', ('rate_lesson', 'like')),
+                                ('👎', ('rate_lesson', 'dislike'))]).keyboard
     return await MessageSender(
         cb.from_user.id,
         record.lesson.rate_lesson_msg,
@@ -273,8 +274,8 @@ async def send_lesson_comment(response: Union[types.CallbackQuery, types.Message
 
 
 async def process_dislike(cb, record):
-    markup = KeyboardGenerator([('Ответить', ('dislike_msg',)),
-                                ('Продолжить', ('proceed', record.id))]).keyboard
+    markup = KeyboardGenerator([('Ответить 📝', ('dislike_msg',)),
+                                ('Пропустить ➡️', ('proceed', record.id))]).keyboard
     await cb.message.edit_reply_markup(reply_markup=None)
 
     await MessageSender(
@@ -289,7 +290,10 @@ async def dislike_reason(
         cb: types.CallbackQuery,
 ):
     await cb.answer()
-    await MessageSender(cb.from_user.id, 'why?').send()
+    await MessageSender(
+        cb.from_user.id,
+        _('Пожалуйста, напишите, что вам не понравилось в уроке')
+        ).send()
     await DislikeText.freeze.set()
 
 
@@ -316,7 +320,7 @@ async def dislike_notify(
         await send_lesson_comment(msg, record)
     else:
         await proceed_normal(msg, record)
-    await state.finish()
+    await state.reset_state(with_data=False)
 
 
 @dp.callback_query_handler(short_data.filter(property='rate_lesson'))
