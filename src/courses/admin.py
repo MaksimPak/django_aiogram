@@ -184,7 +184,8 @@ class StudentProgress(admin.ModelAdmin):
     def get_list_display(self, request):
         if not request.GET.get('lesson__id__exact'):
             return ('lesson_name', 'lesson_received', 'lesson_watched',
-                    'hw_submitted', 'details',)
+                    'hw_submitted', 'lesson_likes', 'lesson_dislikes',
+                    'details',)
         else:
             return 'student',
 
@@ -194,6 +195,14 @@ class StudentProgress(admin.ModelAdmin):
             self.actions.append(self.send_message)
             self.actions.append(self.send_certs)
         return actions
+
+    @admin.display(description='👍')
+    def lesson_likes(self, instance):
+        return instance.lesson.likes
+
+    @admin.display(description='👎')
+    def lesson_dislikes(self, instance):
+        return instance.lesson.dislikes
 
     @admin.display(description='Урок')
     def lesson_name(self, instance):
