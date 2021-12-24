@@ -8,12 +8,12 @@ Lesson title: {{ lesson.name }}
 {% endif %}
 {% if contact.is_registered %}
 {% if contact.student.is_client %}
-Фидбек от Клиент[<a href="{{config.DOMAIN}}/admin/dashboard/client/{{ contact.student.id }}/change/">{{ contact.student.first_name }} {{ contact.student.last_name or '' }}]</a>
+Фидбек от Клиент[<a href="{{config.DOMAIN}}/admin/users/client/{{ contact.student.id }}/change/">{{ contact.student.first_name }} {{ contact.student.last_name or '' }}]</a>
 {% else %}
-Фидбек от Лид[<a href="{{config.DOMAIN}}/admin/dashboard/lead/{{ contact.student.id }}/change/">{{ contact.student.first_name }} {{ contact.student.last_name or '' }}]</a>
+Фидбек от Лид[<a href="{{config.DOMAIN}}/admin/users/lead/{{ contact.student.id }}/change/">{{ contact.student.first_name }} {{ contact.student.last_name or '' }}]</a>
 {% endif %}
 {% else %}
-Фидбек от ТГ[<a href="{{config.DOMAIN}}/admin/dashboard/contact/{{ contact.id }}/change/">{{contact.first_name}} {{ contact.last_name or '' }}</a>]
+Фидбек от ТГ[<a href="{{config.DOMAIN}}/admin/contacts/contact/{{ contact.id }}/change/">{{contact.first_name}} {{ contact.last_name or '' }}</a>]
 {% endif %}
 
 {% if msg is not none %}
