@@ -53,6 +53,9 @@ async def send_next_lesson(studentlesson, user_id, session):
         'id', studentlesson.lesson.id, studentlesson.lesson.course.id, session)
 
     if not next_lesson:
+        record = await repo.StudentCourseRepository.get_record(
+            studentlesson.student_id, studentlesson.lesson.course.id, session)
+        await repo.StudentCourseRepository.edit(record, {'has_finished': True}, session)
         return
 
     new_studentlesson = await repo.StudentLessonRepository.get_or_create(
@@ -104,23 +107,52 @@ async def group_courses(
     await cb.answer()
     category_id = int(callback_data['value'])
     contact = await repo.ContactRepository.load_student_data('tg_id', cb.from_user.id, session)
-
     course_btns = []
 
-    courses = await repo.StudentCourseRepository.get_courses(contact.student.id, category_id, session)
-    for studentcourse, course in courses:
-        watch_count = await repo.StudentLessonRepository.finished_lesson_count(
-            course.id, contact.student.id, session
-        )
-        lesson_count = await repo.LessonRepository.course_lesson_count(course.id, session)
-        txt = course.name + ' ✅' if watch_count == lesson_count else course.name
+    course_data = await repo.CourseRepository.get_courses(category_id, contact.student.id, session)
+    for course, studentcourse in course_data:
+        txt = course.name
+        if studentcourse and studentcourse.has_finished:
+            txt += ' ✅'
         course_btns.append((txt, ('get_course', course.id)))
 
     markup = KeyboardGenerator(course_btns).keyboard
 
-    msg = _('Ваши курсы') if course_btns else _('Вы не записаны ни на один курс')
+    msg = _('Ваши курсы') if course_btns else _('Курсов нет')
 
     await MessageSender(cb.from_user.id, msg, markup=markup).send()
+
+
+@create_session
+async def has_access(contact, course, session):
+    in_course = await repo.StudentCourseRepository.exists(contact.student.id, course.id, session)
+    if in_course:
+        return True
+
+    if contact.access_level >= course.access_level.value and not in_course:
+        await repo.StudentCourseRepository.create_or_none(
+            contact.student.id, course.id, session)
+        return True
+    else:
+        error = ''
+        level_diff = course.access_level.value - contact.access_level
+        try:
+            required_status = contact.get_status(modificator=level_diff)
+            error = _('Недостаточно доступа. Ваш статус {current}. '
+                      'Пожайлуста, увеличьте его до {required_status}'
+                      .format(
+                            current=contact.get_status(),
+                            required_status=required_status
+                      ))
+        except ValueError:
+            error = _('Для доступа к данному курсу, '
+                      'обратитесь к администрации')
+        finally:
+            await MessageSender(
+                contact.tg_id,
+                error
+            ).send()
+        return False
 
 
 @dp.callback_query_handler(short_data.filter(property='get_course'))
@@ -145,21 +177,20 @@ async def course_lessons(
     course = await repo.CourseRepository.get_lesson_inload('id', course_id, session)
     contact = await repo.ContactRepository.load_student_data('tg_id', response.from_user.id, session)
 
-    await repo.StudentCourseRepository.create_or_none(contact.student.id, course_id, session)
+    if await has_access(contact, course):
+        received_lessons = await repo.StudentLessonRepository.student_lessons(
+            contact.student.id, course_id, session)
 
-    received_lessons = await repo.StudentLessonRepository.student_lessons(
-        contact.student.id, course_id, session)
+        lessons = [x.lesson for x, in received_lessons] if received_lessons else [course.lessons[0]]
 
-    lessons = [x.lesson for x, in received_lessons] if received_lessons else [course.lessons[0]]
+        async with state.proxy() as data:
+            data['course_id'] = course_id
 
-    async with state.proxy() as data:
-        data['course_id'] = course_id
+        lessons_data = [(lesson.name, ('lesson', lesson.id)) for lesson in lessons] if course.date_started else None
+        markup = KeyboardGenerator(lessons_data).add((_('Назад'), ('to_courses',))).keyboard
+        msg = course.description if lessons_data else _('Курс ещё не начат')
 
-    lessons_data = [(lesson.name, ('lesson', lesson.id)) for lesson in lessons] if course.date_started else None
-    markup = KeyboardGenerator(lessons_data).add((_('Назад'), ('to_courses',))).keyboard
-    msg = course.description if lessons_data else _('Курс ещё не начат')
-
-    await MessageSender(response.from_user.id, msg,  markup=markup).send()
+        await MessageSender(response.from_user.id, msg,  markup=markup).send()
 
 
 @dp.callback_query_handler(short_data.filter(property='lesson'))

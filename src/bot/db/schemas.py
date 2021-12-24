@@ -1,5 +1,6 @@
 import datetime
 import enum
+from itertools import chain
 
 import sqlalchemy_json
 from geoalchemy2 import Geometry
@@ -9,8 +10,6 @@ from sqlalchemy.dialects.postgresql import TEXT, JSONB, ARRAY
 from sqlalchemy.orm import relationship, validates, deferred
 
 from bot import config
-from itertools import chain
-
 from bot.db.config import Base
 
 
@@ -81,6 +80,17 @@ class ContactTable(BaseModel):
             access_level = 3
 
         return access_level
+
+    def get_status(self, modificator: int = 0):
+        mapping = {
+            1: 'Незарегистрированный',
+            2: 'Лид',
+            3: 'Клиент'
+        }
+        try:
+            return mapping[self.access_level + modificator]
+        except KeyError:
+            raise ValueError('The desired status is not considered')
 
     @property
     def profile_link(self):
@@ -203,6 +213,7 @@ class StudentCourse(BaseModel):
     course_id = Column(Integer, ForeignKey('courses_course.id'), nullable=False)
     student_id = Column(Integer, ForeignKey('users_student.id'), nullable=False)
     has_paid = Column(Boolean, default=False)
+    has_finished = Column(Boolean, default=False)
 
     courses = relationship('CourseTable', back_populates='students')
     students = relationship('StudentTable', back_populates='courses')

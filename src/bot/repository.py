@@ -193,6 +193,20 @@ class CourseRepository(BaseRepository):
     table = CourseTable
 
     @staticmethod
+    async def get_courses(category_id, student_id, session):
+        async with session:
+            courses = (await session.execute(
+                select(CourseTable, StudentCourse)
+                .join(StudentCourse, isouter=True)
+                .where(
+                    CourseTable.category_id == category_id,
+                    or_(StudentCourse.student_id == student_id, StudentCourse.student_id == None),
+                    CourseTable.date_finished == None)
+                .order_by(CourseTable.set_priority_date, CourseTable.created_at)
+            )).all()
+            return courses
+
+    @staticmethod
     async def get_lesson_inload(attribute: str, value: Any, session: SessionLocal):
         """
         Emits a second (or more) SELECT statement to load Lessons at once from CourseTable

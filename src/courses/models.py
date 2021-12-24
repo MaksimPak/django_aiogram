@@ -104,6 +104,7 @@ class StudentCourse(BaseModel):
     student = models.ForeignKey('users.Student', on_delete=models.CASCADE)
     course = models.ForeignKey('courses.Course', on_delete=models.CASCADE)
     has_paid = models.BooleanField(verbose_name='Оплатил курс', default=False)
+    has_finished = models.BooleanField(verbose_name='Завершил курс', default=False)
 
     class Meta:
         unique_together = [['student', 'course']]
