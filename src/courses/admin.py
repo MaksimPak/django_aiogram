@@ -3,6 +3,7 @@ import os
 import requests
 from django.apps import apps
 from django.contrib import admin, messages
+from django.db.models import Count, Q
 from django.middleware.csrf import get_token
 from django.shortcuts import render
 from django.template.loader import render_to_string
@@ -38,8 +39,8 @@ class LessonMedia(admin.TabularInline):
 
 class StudentCourseList(admin.TabularInline):
     model = models.StudentCourse
-    fields = ('student_display', 'created_at', 'message_student', 'has_paid', 'delete_student')
-    readonly_fields = ('student_display', 'created_at', 'message_student', 'delete_student')
+    fields = ('student_display', 'created_at', 'message_student', 'has_paid', 'has_finished', 'delete_student')
+    readonly_fields = ('student_display', 'created_at', 'message_student', 'has_finished', 'delete_student')
     can_delete = False
     extra = 0
     classes = ('collapse',)
@@ -104,7 +105,7 @@ class CourseCategoryAdmin(admin.ModelAdmin):
 @admin.register(models.Course)
 class CourseAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__', 'course_info',
-                    'company', 'student_count')
+                    'company', 'student_count', 'finished_count',)
     list_display_links = ('__str__',)
     readonly_fields = ('date_started', 'date_finished', 'created_at', 'link',)
     exclude = ('week_size', 'lesson_count', 'set_priority_date')
@@ -117,6 +118,14 @@ class CourseAdmin(admin.ModelAdmin):
     form = CourseForm
     change_form_template = 'courses/admin/change_form.html'
     actions = ('duplicate',)
+
+    def get_queryset(self, request):
+        qs = super(CourseAdmin, self).get_queryset(request)
+        qs = qs.annotate(
+            student_total=Count('student'),
+            num_finished=Count('studentcourse', filter=Q(studentcourse__has_finished=True))
+        )
+        return qs
 
     @admin.display(description='Ссылка на курс')
     def link(self, instance):
@@ -145,9 +154,13 @@ class CourseAdmin(admin.ModelAdmin):
 
         self.message_user(request, '{0} курс(а) были успешно дублированны'.format(courses.count()), messages.SUCCESS)
 
-    @admin.display(description='Количество студентов')
+    @admin.display(description='Количество студентов',ordering='student_total')
     def student_count(self, course):
         return course.student_set.count()
+
+    @admin.display(description='Количество завершивших', ordering='num_finished')
+    def finished_count(self, course):
+        return course.studentcourse_set.filter(has_finished=True).count()
 
 
 @admin.register(models.CourseMedia)

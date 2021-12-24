@@ -116,6 +116,7 @@ class FormAdmin(admin.ModelAdmin):
 
         self.message_user(request, '{0} форм(а) были успешно дублированны'.format(forms.count()), messages.SUCCESS)
 
+
 @admin.register(models.ContactFormAnswers)
 class ContactFormAnswersAdmin(admin.ModelAdmin):
     list_display = ('id', 'contact', 'date_passed', 'is_registered', 'points')
