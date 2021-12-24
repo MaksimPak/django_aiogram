@@ -150,6 +150,8 @@ class CourseAdmin(admin.ModelAdmin):
                 lesson.id = None
                 lesson.course = course
                 lesson.date_sent = None
+                lesson.likes = 0
+                lesson.dislikes = 0
                 lesson.save()
 
         self.message_user(request, '{0} курс(а) были успешно дублированны'.format(courses.count()), messages.SUCCESS)
