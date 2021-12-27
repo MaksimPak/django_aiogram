@@ -16,8 +16,19 @@ class CourseCategory(BaseModel):
         return self.name
 
     class Meta:
-        verbose_name = 'Группа'
-        verbose_name_plural = 'Группы'
+        verbose_name = 'Группа курса'
+        verbose_name_plural = 'Группы Курсов'
+
+
+class LessonCategory(BaseModel):
+    name = models.CharField(max_length=100, verbose_name='Название группы')
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Группа урока'
+        verbose_name_plural = 'Группы уроков'
 
 
 class Course(BaseModel):

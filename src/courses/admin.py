@@ -96,10 +96,17 @@ class LessonList(admin.StackedInline):
         return field
 
 
+@admin.register(models.LessonCategory)
+class LessonCategoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name')
+    list_per_page = 10
+
+
 @admin.register(models.CourseCategory)
 class CourseCategoryAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
     list_per_page = 10
+    admin_priority = 2
 
 
 @admin.register(models.Course)
@@ -118,6 +125,7 @@ class CourseAdmin(admin.ModelAdmin):
     form = CourseForm
     change_form_template = 'courses/admin/change_form.html'
     actions = ('duplicate',)
+    admin_priority = 1
 
     def get_queryset(self, request):
         qs = super(CourseAdmin, self).get_queryset(request)
@@ -170,6 +178,7 @@ class CourseMediaAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__')
     list_display_links = ('__str__',)
     inlines = (LessonMedia,)
+    admin_priority = 3
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -303,3 +312,31 @@ class StudentProgress(admin.ModelAdmin):
             'referer': request.META['HTTP_REFERER'],
         }
         return render(request, "broadcast/send.html", context=context)
+
+
+def get_app_list(self, request):
+    """
+    Internally, Django filters model names based on their verbose name.
+    This part of code augments model sorting by adding additional parameter
+    admin_priority and filters the list based on its value.
+
+    All glory to this dude.
+    https://forum.djangoproject.com/t/reordering-list-of-models-in-django-admin/5300
+    """
+    app_dict = self._build_app_dict(request)
+    from django.contrib.admin.sites import site
+    for app_name in app_dict.keys():
+        app = app_dict[app_name]
+        model_priority = {
+            model['object_name']: getattr(
+                site._registry[apps.get_model(app_name, model['object_name'])],
+                'admin_priority',
+                100
+            )
+            for model in app['models']
+        }
+        app['models'].sort(key=lambda x: model_priority[x['object_name']])
+        yield app
+
+
+admin.AdminSite.get_app_list = get_app_list
