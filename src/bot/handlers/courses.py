@@ -89,7 +89,7 @@ async def get_categories(
 
     groups = await repo.CourseCategoryRepository.get_all(session)
     groups_btns = [(x.name, ('group_course', x.id)) for x in groups]
-    markup = KeyboardGenerator(groups_btns).keyboard
+    markup = KeyboardGenerator(groups_btns, row_width=2).keyboard
     msg = _('Выберите группу') if markup else _('Ошибка. Нет созданных групп')
 
     await MessageSender(response.from_user.id, msg, markup=markup).send()
