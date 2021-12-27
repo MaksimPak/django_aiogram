@@ -197,10 +197,11 @@ class CourseRepository(BaseRepository):
         async with session:
             courses = (await session.execute(
                 select(CourseTable, StudentCourse)
-                .join(StudentCourse, isouter=True)
+                .join(StudentCourse, and_(
+                    StudentCourse.course_id == CourseTable.id,
+                    or_(StudentCourse.student_id == student_id, StudentCourse.student_id == None)), isouter=True)
                 .where(
                     CourseTable.category_id == category_id,
-                    or_(StudentCourse.student_id == student_id, StudentCourse.student_id == None),
                     CourseTable.date_finished == None)
                 .order_by(CourseTable.set_priority_date, CourseTable.created_at)
             )).all()
