@@ -22,8 +22,10 @@ from bot.utils.filters import CourseStudent, LessonStudent
 
 _ = i18n.gettext
 
+
 class DislikeText(StatesGroup):
     freeze = State()
+
 
 class Homework(StatesGroup):
     homework_start = State()
@@ -45,7 +47,7 @@ async def get_lesson_text(studentlesson, **kwargs):
 
 async def send_next_lesson(studentlesson, user_id, session):
     if studentlesson.lesson.form:
-        form_data = ('Пройти', ('form', studentlesson.lesson.form.id, studentlesson.lesson.id))
+        form_data = [('Пройти', ('form', studentlesson.lesson.form.id, studentlesson.lesson.id))]
         markup = KeyboardGenerator(form_data).keyboard
         return await MessageSender(user_id, 'Пройдите форму для продолжения', markup=markup).send()
 
@@ -75,7 +77,7 @@ async def get_categories(
         session: SessionLocal
 ):
     """
-    Displays free and enrolled courses of the student
+    Display available categories
     """
     if isinstance(response, types.CallbackQuery):
         await response.message.delete()
@@ -101,7 +103,7 @@ async def group_courses(
         session: SessionLocal
 ):
     """
-    Displays free and enrolled courses of the student
+    Displays courses of the selected category
     """
     await cb.message.delete()
     await cb.answer()
@@ -114,7 +116,7 @@ async def group_courses(
         txt = course.name
         if studentcourse and studentcourse.has_finished:
             txt += ' ✅'
-        course_btns.append((txt, ('get_course', course.id)))
+        course_btns.append((txt, ('lesson_groups', course.id)))
 
     markup = KeyboardGenerator(course_btns).keyboard
 
@@ -125,6 +127,9 @@ async def group_courses(
 
 @create_session
 async def has_access(contact, course, session):
+    """
+    Check if student has enough access level to get course
+    """
     in_course = await repo.StudentCourseRepository.exists(contact.student.id, course.id, session)
     if in_course:
         return True
@@ -155,10 +160,10 @@ async def has_access(contact, course, session):
         return False
 
 
-@dp.callback_query_handler(short_data.filter(property='get_course'))
+@dp.callback_query_handler(short_data.filter(property='lesson_groups'))
 @dp.message_handler(CourseStudent(), state='*')
 @create_session
-async def course_lessons(
+async def lesson_groups(
         response: Union[types.CallbackQuery, types.Message],
         session: SessionLocal,
         state: FSMContext,
@@ -186,11 +191,42 @@ async def course_lessons(
         async with state.proxy() as data:
             data['course_id'] = course_id
 
-        lessons_data = [(lesson.name, ('lesson', lesson.id)) for lesson in lessons] if course.date_started else None
-        markup = KeyboardGenerator(lessons_data).add((_('Назад'), ('to_courses',))).keyboard
-        msg = course.description if lessons_data else _('Курс ещё не начат')
+        lesson_categories = {
+            (lesson.category.name, ('lesson_chosen_group', lesson.category_id)) for lesson in lessons
+        } if course.date_started else None
+
+        markup = KeyboardGenerator(lesson_categories).add([(_('Назад'), ('to_courses',))]).keyboard
+        msg = course.description if lesson_categories else _('Курс ещё не начат')
 
         await MessageSender(response.from_user.id, msg,  markup=markup).send()
+
+
+@dp.callback_query_handler(short_data.filter(property='lesson_chosen_group'))
+@create_session
+async def lesson_groups(
+        cb: types.CallbackQuery,
+        session: SessionLocal,
+        state: FSMContext,
+        callback_data: dict = None,
+):
+    await cb.answer() and await cb.message.delete()
+    data = await state.get_data()
+    category_id = int(callback_data['value'])
+    course_id = data['course_id']
+
+    course = await repo.CourseRepository.get_lesson_inload('id', course_id, session)
+    contact = await repo.ContactRepository.load_student_data('tg_id', cb.from_user.id, session)
+
+    received_lessons = await repo.StudentLessonRepository.lessons_by_category(
+        contact.student.id, course_id, category_id, session)
+
+    lessons = [x.lesson for x, in received_lessons] if received_lessons else [course.lessons[0]]
+
+    lessons_data = [(lesson.name, ('lesson', lesson.id)) for lesson in lessons] if course.date_started else None
+    markup = KeyboardGenerator(lessons_data, row_width=2).keyboard
+    msg = course.description if lessons_data else _('Курс ещё не начат')
+
+    await MessageSender(cb.from_user.id, msg,  markup=markup).send()
 
 
 @dp.callback_query_handler(short_data.filter(property='lesson'))
@@ -222,7 +258,7 @@ async def get_lesson(
 
     if not lesson.course.date_finished:
         kb = KeyboardGenerator().add(
-            (_('Отметить как просмотренное'), ('watched', student_lesson.id))).keyboard
+            [(_('Отметить как просмотренное'), ('watched', student_lesson.id))]).keyboard
     text = await get_lesson_text(student_lesson, display_hw=False, display_link=True)
     await MessageSender(response.from_user.id, text, lesson.image, markup=kb).send()
 
@@ -300,7 +336,7 @@ async def send_lesson_comment(response: Union[types.CallbackQuery, types.Message
     if isinstance(response, types.CallbackQuery):
         await message.edit_reply_markup(reply_markup=None)
 
-    markup = KeyboardGenerator((_('Перейти дальше'), ('proceed', record.id))).keyboard
+    markup = KeyboardGenerator([(_('Перейти дальше'), ('proceed', record.id))]).keyboard
     await MessageSender(response.from_user.id, record.lesson.comment, markup=markup).send()
 
 

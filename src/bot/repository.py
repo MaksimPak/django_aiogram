@@ -217,6 +217,7 @@ class CourseRepository(BaseRepository):
                     getattr(CourseTable, attribute) == value
                 ).options(
                     selectinload(CourseTable.lessons)
+                    .selectinload(LessonTable.category)
                 ))).scalar()
 
         return course
@@ -291,6 +292,21 @@ class StudentLessonRepository(BaseRepository):
                 .options(contains_eager(StudentLesson.lesson))
                 .filter(
                     StudentLesson.lesson.has(course_id=course_id),
+                    StudentLesson.student_id == student_id)
+                .order_by(LessonTable.id)
+            )).all()
+
+        return lessons
+
+    @staticmethod
+    async def lessons_by_category(student_id, course_id, category_id, session):
+        async with session:
+            lessons = (await session.execute(
+                select(StudentLesson).join(StudentLesson.lesson)
+                .options(contains_eager(StudentLesson.lesson))
+                .filter(
+                    StudentLesson.lesson.has(course_id=course_id),
+                    StudentLesson.lesson.has(category_id=category_id),
                     StudentLesson.student_id == student_id)
                 .order_by(LessonTable.id)
             )).all()

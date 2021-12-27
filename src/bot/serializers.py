@@ -161,7 +161,7 @@ class KeyboardGenerator:
         if data:
             self.add(data)
 
-    def add(self, buttons: Union[Tuple[Any, Tuple[Union[str, int], ...]], Iterable]):
+    def add(self, buttons):
         self.keyboard.add(
             *self.prepare_buttons(buttons)
         )
@@ -170,9 +170,8 @@ class KeyboardGenerator:
     @staticmethod
     def prepare_buttons(buttons):
         btns = []
-        buttons = [buttons] if not isinstance(buttons, list) else buttons
+        buttons = [buttons] if not hasattr(buttons, '__iter__') else buttons
         for title, props in buttons:
-
             callback = None
             props_len = len(props)
             if props_len == 1:

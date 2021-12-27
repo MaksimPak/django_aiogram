@@ -142,6 +142,14 @@ class CourseCategoryTable(BaseModel):
     name = Column(String(100))
 
 
+class LessonCategoryTable(BaseModel):
+    __tablename__ = 'courses_lessoncategory'
+
+    name = Column(String(100))
+
+    lessons = relationship('LessonTable', back_populates='category')
+
+
 class CourseTable(BaseModel):
     __tablename__ = 'courses_course'
 
@@ -158,7 +166,7 @@ class CourseTable(BaseModel):
     description = Column(TEXT, nullable=False)
     code = Column(String(20), nullable=True)
     company_id = Column(Integer, ForeignKey('companies_company.id', ondelete='RESTRICT'))
-    category_id = Column(Integer, ForeignKey('courses_coursecategory.id', ondelete='CASCADE'))
+    category_id = Column(Integer, ForeignKey('courses_coursecategory.id', ondelete='RESTRICT'))
     data = Column(sqlalchemy_json.mutable_json_type(
         dbtype=JSONB, nested=True), nullable=False, default=lambda: {
         'start_message': '',
@@ -185,6 +193,7 @@ class LessonTable(BaseModel):
     image = Column(String(255), nullable=True)
     video = Column(String(100))
     course_id = Column(Integer, ForeignKey('courses_course.id'))
+    category_id = Column(Integer, ForeignKey('courses_lessoncategory.id', ondelete='RESTRICT'))
     homework_desc = Column(TEXT, nullable=True)
     comment = Column(TEXT, nullable=True)
 
@@ -197,6 +206,7 @@ class LessonTable(BaseModel):
     dislikes = Column(Integer, default=0)
 
     course = relationship('CourseTable', back_populates='lessons')
+    category = relationship('LessonCategoryTable', back_populates='lessons', lazy='selectin')
     students = relationship('StudentLesson', back_populates='lesson')
     form = relationship('FormTable', back_populates='lesson')
 

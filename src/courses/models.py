@@ -40,7 +40,7 @@ class Course(BaseModel):
                             null=True, blank=True, validators=[validate_hashtag])
     company = models.ForeignKey('companies.Company',
                                 on_delete=models.PROTECT, verbose_name='Уч центр')
-    category = models.ForeignKey('courses.CourseCategory', on_delete=models.CASCADE, verbose_name='Группа')
+    category = models.ForeignKey('courses.CourseCategory', on_delete=models.PROTECT, verbose_name='Группа')
     data = models.JSONField(null=True, blank=True, default=course_additional)
     date_started = models.DateTimeField(verbose_name='Дата начала курса', null=True, blank=True)
     date_finished = models.DateTimeField(verbose_name='Дата окончания курса', null=True, blank=True)
@@ -81,6 +81,7 @@ class Lesson(BaseModel):
                              upload_to=lesson_upload_directory,
                              validators=[validate_video_extension])
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    category = models.ForeignKey(LessonCategory, on_delete=models.PROTECT, verbose_name='Группа')
     homework_desc = models.TextField(verbose_name='Описание дз', null=True, blank=True)
     comment = models.TextField(verbose_name='Сообщение по завершению', null=True, blank=True)
     rate_lesson_msg = models.TextField(verbose_name='Сообщение при оценке урока', null=True, blank=True)
