@@ -5,7 +5,7 @@ from itertools import chain
 import sqlalchemy_json
 from geoalchemy2 import Geometry
 from sqlalchemy import Column, String, Enum, Boolean, ForeignKey, DateTime, Integer, types, SmallInteger, \
-    CheckConstraint, select
+    CheckConstraint, select, BigInteger
 from sqlalchemy.dialects.postgresql import TEXT, JSONB, ARRAY
 from sqlalchemy.orm import relationship, validates, deferred
 
@@ -62,7 +62,7 @@ class ContactTable(BaseModel):
 
     first_name = Column(String(255))
     last_name = Column(String(255), nullable=True)
-    tg_id = Column(Integer, nullable=True, unique=True)
+    tg_id = Column(BigInteger, nullable=True, unique=True)
     data = Column(sqlalchemy_json.mutable_json_type(dbtype=JSONB, nested=True), nullable=True, default=dict)
     is_registered = Column(Boolean, default=False)
     blocked_bot = Column(Boolean, default=False)
