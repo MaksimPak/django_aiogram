@@ -212,7 +212,7 @@ MAP_WIDGETS = {
 
 if APP_ENVIRONMENT != 'development':
     sentry_sdk.init(
-        dsn="https://48a409ab3b5148a8a0d78985db6f9eaa@o437434.ingest.sentry.io/5753954",
+        dsn=os.getenv('SENTRY_DSN', 'parcel'),
         integrations=[DjangoIntegration()],
 
         # Set traces_sample_rate to 1.0 to capture 100%
